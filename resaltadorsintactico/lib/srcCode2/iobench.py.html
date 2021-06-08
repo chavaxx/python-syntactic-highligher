@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'># -*- coding: utf-8 -*-</i>
+<i class ='comment'># This file should be kept compatible with both Python 2.6 and Python &gt;= 3.0.</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>itertools</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>platform</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>time</i>
+<i class ='keyword'>from</i> <i class ='variable'>optparse</i> <i class ='keyword'>import</i> <i class ='variable'>OptionParser</i>
+
+<i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i>
+
+<i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;utf8&#39;</i>
+<i class ='variable'>NEWLINES</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;lf&#39;</i>
+
+<i class ='comment'># Compatibility</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='variable'>xrange</i>
+<i class ='keyword'>except</i> <i class ='variable'>NameError</i><i class ='delimiter'>:</i>
+    <i class ='variable'>xrange</i> <i class ='delimiter'>=</i> <i class ='datatype'>range</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>text_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>mode</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>mode</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='variable'>encoding</i> <i class ='keyword'>or</i> <i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>TypeError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='charlist'>&#39;r&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>mode</i><i class ='delimiter'>:</i>
+            <i class ='variable'>mode</i> <i class ='delimiter'>+=</i> <i class ='charlist'>&#39;U&#39;</i> <i class ='comment'># &#39;U&#39; mode is needed only in Python 2.x</i>
+        <i class ='keyword'>return</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>mode</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>file_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>s</i> <i class ='keyword'>in</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;20 KiB&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;400 KiB&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;10 MiB&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>size</i><i class ='delimiter'>,</i> <i class ='variable'>unit</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>size</i><i class ='delimiter'>)</i> <i class ='operator'>*</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;KiB&#39;</i><i class ='delimiter'>:</i> <i class ='integer'>1024</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;MiB&#39;</i><i class ='delimiter'>:</i> <i class ='integer'>1024</i> <i class ='operator'>**</i> <i class ='integer'>2</i><i class ='delimiter'>}</i><i class ='delimiter'>[</i><i class ='variable'>unit</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>size</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>binary_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>name</i> <i class ='operator'>+</i> <i class ='string'>&quot;.bin&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='keyword'>in</i> <i class ='variable'>get_</i><i class ='variable'>file_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>text_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s-%s-%s.txt&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i><i class ='delimiter'>,</i> <i class ='variable'>NEWLINES</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='keyword'>in</i> <i class ='variable'>get_</i><i class ='variable'>file_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='variable'>mode</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='variable'>decorate</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>file_</i><i class ='variable'>open_</i><i class ='variable'>mode</i> <i class ='delimiter'>=</i> <i class ='variable'>mode</i>
+        <i class ='keyword'>return</i> <i class ='variable'>f</i>
+    <i class ='keyword'>return</i> <i class ='variable'>decorate</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>sizes</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='variable'>decorate</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>file_</i><i class ='variable'>sizes</i> <i class ='delimiter'>=</i> <i class ='variable'>sizes</i>
+        <i class ='keyword'>return</i> <i class ='variable'>f</i>
+    <i class ='keyword'>return</i> <i class ='variable'>decorate</i>
+
+
+<i class ='comment'># Here begin the tests</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>bytewise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; read one unit at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>small_</i><i class ='variable'>chunks</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; read 20 units at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>20</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>big_</i><i class ='variable'>chunks</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; read 4096 units at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>4096</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;small&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;large&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>whole_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; read whole contents at once &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;rt&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>lines</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; read one line at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>bytewise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; seek forward one unit at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+    <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>tell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>blockwise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; seek forward 1000 units at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+    <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>tell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>1000</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>seek_</i><i class ='variable'>bytewise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; alternate read &amp; seek one unit &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>seek_</i><i class ='variable'>blockwise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; alternate read &amp; seek 1000 units &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>1000</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>1000</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;small&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>write_</i><i class ='variable'>bytewise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; write one unit at a time &quot;&quot;&quot;</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>write_</i><i class ='variable'>small_</i><i class ='variable'>chunks</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; write 20 units at a time &quot;&quot;&quot;</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>20</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>20</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>write_</i><i class ='variable'>medium_</i><i class ='variable'>chunks</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; write 4096 units at a time &quot;&quot;&quot;</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>4096</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>4096</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;large&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>write_</i><i class ='variable'>large_</i><i class ='variable'>chunks</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; write 1e6 units at a time &quot;&quot;&quot;</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>1000000</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1000000</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;w+&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;small&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>modify_</i><i class ='variable'>bytewise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; modify one unit at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;w+&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>modify_</i><i class ='variable'>small_</i><i class ='variable'>chunks</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; modify 20 units at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>20</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>20</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;w+&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>modify_</i><i class ='variable'>medium_</i><i class ='variable'>chunks</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; modify 4096 units at a time &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>4096</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>4096</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;wb+&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>modify_</i><i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>bytewise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; alternate write &amp; seek one unit &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;wb+&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>modify_</i><i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>blockwise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; alternate write &amp; seek 1000 units &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>2000</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1000</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>2000</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># XXX the 2 following tests don&#39;t work with py3k&#39;s text IO</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;wb+&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>modify_</i><i class ='variable'>bytewise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; alternate read &amp; write one unit &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>2</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>(</i><i class ='string'>&quot;wb+&quot;</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>@</i><i class ='variable'>with_</i><i class ='variable'>sizes</i><i class ='delimiter'>(</i><i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>read_</i><i class ='variable'>modify_</i><i class ='variable'>blockwise</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot; alternate read &amp; write 1000 units &quot;&quot;&quot;</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>xrange</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>2000</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>1000</i><i class ='delimiter'>)</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1000</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>2000</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>read_</i><i class ='variable'>tests</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='variable'>read_</i><i class ='variable'>bytewise</i><i class ='delimiter'>,</i> <i class ='variable'>read_</i><i class ='variable'>small_</i><i class ='variable'>chunks</i><i class ='delimiter'>,</i> <i class ='variable'>read_</i><i class ='variable'>lines</i><i class ='delimiter'>,</i> <i class ='variable'>read_</i><i class ='variable'>big_</i><i class ='variable'>chunks</i><i class ='delimiter'>,</i>
+    <i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>read_</i><i class ='variable'>whole_</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i>
+    <i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>bytewise</i><i class ='delimiter'>,</i> <i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>blockwise</i><i class ='delimiter'>,</i>
+    <i class ='variable'>read_</i><i class ='variable'>seek_</i><i class ='variable'>bytewise</i><i class ='delimiter'>,</i> <i class ='variable'>read_</i><i class ='variable'>seek_</i><i class ='variable'>blockwise</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>]</i>
+
+<i class ='variable'>write_</i><i class ='variable'>tests</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='variable'>write_</i><i class ='variable'>bytewise</i><i class ='delimiter'>,</i> <i class ='variable'>write_</i><i class ='variable'>small_</i><i class ='variable'>chunks</i><i class ='delimiter'>,</i> <i class ='variable'>write_</i><i class ='variable'>medium_</i><i class ='variable'>chunks</i><i class ='delimiter'>,</i> <i class ='variable'>write_</i><i class ='variable'>large_</i><i class ='variable'>chunks</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>]</i>
+
+<i class ='variable'>modify_</i><i class ='variable'>tests</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='variable'>modify_</i><i class ='variable'>bytewise</i><i class ='delimiter'>,</i> <i class ='variable'>modify_</i><i class ='variable'>small_</i><i class ='variable'>chunks</i><i class ='delimiter'>,</i> <i class ='variable'>modify_</i><i class ='variable'>medium_</i><i class ='variable'>chunks</i><i class ='delimiter'>,</i>
+    <i class ='keyword'>None</i><i class ='delimiter'>,</i>
+    <i class ='variable'>modify_</i><i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>bytewise</i><i class ='delimiter'>,</i> <i class ='variable'>modify_</i><i class ='variable'>seek_</i><i class ='variable'>forward_</i><i class ='variable'>blockwise</i><i class ='delimiter'>,</i>
+    <i class ='variable'>read_</i><i class ='variable'>modify_</i><i class ='variable'>bytewise</i><i class ='delimiter'>,</i> <i class ='variable'>read_</i><i class ='variable'>modify_</i><i class ='variable'>blockwise</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>during</i><i class ='delimiter'>(</i><i class ='variable'>duration</i><i class ='delimiter'>,</i> <i class ='variable'>func</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>t</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i>
+    <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>times</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>start_</i><i class ='variable'>timestamp</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>t</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>real_</i><i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='variable'>start</i><i class ='delimiter'>[</i><i class ='integer'>4</i><i class ='delimiter'>]</i> <i class ='keyword'>or</i> <i class ='variable'>start_</i><i class ='variable'>timestamp</i>
+    <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+        <i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='hexadecimal'>_</i><i class ='variable'>t</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='variable'>start_</i><i class ='variable'>timestamp</i> <i class ='operator'>&gt;</i> <i class ='variable'>duration</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+    <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>times</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>real</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>end</i><i class ='delimiter'>[</i><i class ='integer'>4</i><i class ='delimiter'>]</i> <i class ='keyword'>if</i> <i class ='variable'>start</i><i class ='delimiter'>[</i><i class ='integer'>4</i><i class ='delimiter'>]</i> <i class ='keyword'>else</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='variable'>real_</i><i class ='variable'>start</i>
+    <i class ='keyword'>return</i> <i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>real</i><i class ='delimiter'>,</i> <i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='variable'>end</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='variable'>start</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>warm_</i><i class ='variable'>cache</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>all_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='variable'>print_</i><i class ='variable'>label</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>func</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;[-.]&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i>
+            <i class ='delimiter'>(</i><i class ='string'>&quot;[%s] %s... &quot;</i>
+                <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>center</i><i class ='delimiter'>(</i><i class ='integer'>7</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>func</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>ljust</i><i class ='delimiter'>(</i><i class ='integer'>52</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>flush</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>print_</i><i class ='variable'>results</i><i class ='delimiter'>(</i><i class ='variable'>size</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>real</i><i class ='delimiter'>,</i> <i class ='variable'>cpu</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>bw</i> <i class ='delimiter'>=</i> <i class ='variable'>n</i> <i class ='operator'>*</i> <i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>size</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='integer'>1024</i> <i class ='operator'>**</i> <i class ='integer'>2</i> <i class ='operator'>/</i> <i class ='variable'>real</i>
+        <i class ='variable'>bw</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='string'>&quot;%4d MiB/s&quot;</i> <i class ='keyword'>if</i> <i class ='variable'>bw</i> <i class ='operator'>&gt;</i> <i class ='integer'>100</i> <i class ='keyword'>else</i> <i class ='string'>&quot;%.3g MiB/s&quot;</i><i class ='delimiter'>)</i> <i class ='operator'>%</i> <i class ='variable'>bw</i>
+        <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>bw</i><i class ='delimiter'>.</i><i class ='variable'>rjust</i><i class ='delimiter'>(</i><i class ='integer'>12</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>cpu</i> <i class ='operator'>&lt;</i> <i class ='float'>0.90</i> <i class ='operator'>*</i> <i class ='variable'>real</i><i class ='delimiter'>:</i>
+            <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;   warning: test above used only %d%% CPU, &quot;</i>
+                <i class ='string'>&quot;result may be flawed!\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='float'>100.0</i> <i class ='operator'>*</i> <i class ='variable'>cpu</i> <i class ='operator'>/</i> <i class ='variable'>real</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>one_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>,</i> <i class ='variable'>open_</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>mode</i> <i class ='delimiter'>=</i> <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>.</i><i class ='variable'>file_</i><i class ='variable'>open_</i><i class ='variable'>mode</i>
+        <i class ='variable'>print_</i><i class ='variable'>label</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='string'>&quot;w&quot;</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>mode</i> <i class ='keyword'>or</i> <i class ='string'>&quot;+&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>mode</i><i class ='delimiter'>:</i>
+            <i class ='variable'>warm_</i><i class ='variable'>cache</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open_</i><i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>real</i><i class ='delimiter'>,</i> <i class ='variable'>cpu</i> <i class ='delimiter'>=</i> <i class ='variable'>run_</i><i class ='variable'>during</i><i class ='delimiter'>(</i><i class ='float'>1.5</i><i class ='delimiter'>,</i> <i class ='keyword'>lambda</i><i class ='delimiter'>:</i> <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>print_</i><i class ='variable'>results</i><i class ='delimiter'>(</i><i class ='variable'>size</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>real</i><i class ='delimiter'>,</i> <i class ='variable'>cpu</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>test_</i><i class ='variable'>family</i><i class ='delimiter'>(</i><i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='variable'>mode_</i><i class ='variable'>filter</i><i class ='delimiter'>,</i> <i class ='variable'>files</i><i class ='delimiter'>,</i> <i class ='variable'>open_</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>make_</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>test_</i><i class ='variable'>func</i> <i class ='keyword'>in</i> <i class ='variable'>tests</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>test_</i><i class ='variable'>func</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>if</i> <i class ='variable'>mode_</i><i class ='variable'>filter</i> <i class ='keyword'>in</i> <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>.</i><i class ='variable'>file_</i><i class ='variable'>open_</i><i class ='variable'>mode</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>for</i> <i class ='variable'>s</i> <i class ='keyword'>in</i> <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>.</i><i class ='variable'>file_</i><i class ='variable'>sizes</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>files</i><i class ='delimiter'>[</i><i class ='variable'>size_</i><i class ='variable'>names</i><i class ='delimiter'>[</i><i class ='variable'>s</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i>
+                <i class ='comment'>#name += file_ext</i>
+                <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='datatype'>tuple</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>f</i> <i class ='keyword'>in</i> <i class ='variable'>make_</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+                <i class ='variable'>run_</i><i class ='variable'>one_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>open_</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>size_</i><i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+        <i class ='string'>&quot;small&quot;</i><i class ='delimiter'>:</i> <i class ='integer'>0</i><i class ='delimiter'>,</i>
+        <i class ='string'>&quot;medium&quot;</i><i class ='delimiter'>:</i> <i class ='integer'>1</i><i class ='delimiter'>,</i>
+        <i class ='string'>&quot;large&quot;</i><i class ='delimiter'>:</i> <i class ='integer'>2</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>}</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Python %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i> <i class ='operator'>&lt;</i> <i class ='delimiter'>(</i><i class ='integer'>3</i><i class ='delimiter'>,</i> <i class ='integer'>3</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxunicode</i> <i class ='operator'>&gt;</i> <i class ='hexadecimal'>0xffff</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;UCS-4 (wide build)&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;UTF-16 (narrow build)&quot;</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;PEP 393&quot;</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unicode: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>text</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>platform</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>binary_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>get_</i><i class ='variable'>binary_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>text_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>get_</i><i class ='variable'>text_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;b&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Binary unit = one byte&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;t&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Text unit = one character (%s-decoded)&quot;</i> <i class ='operator'>%</i> <i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Binary reads</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;b&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i> <i class ='keyword'>and</i> <i class ='string'>&quot;r&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n** Binary input **\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>test_</i><i class ='variable'>family</i><i class ='delimiter'>(</i><i class ='variable'>read_</i><i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='string'>&quot;t&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>binary_</i><i class ='variable'>files</i><i class ='delimiter'>,</i> <i class ='keyword'>lambda</i> <i class ='variable'>fn</i><i class ='delimiter'>:</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Text reads</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;t&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i> <i class ='keyword'>and</i> <i class ='string'>&quot;r&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n** Text input **\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>test_</i><i class ='variable'>family</i><i class ='delimiter'>(</i><i class ='variable'>read_</i><i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='string'>&quot;b&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>text_</i><i class ='variable'>files</i><i class ='delimiter'>,</i> <i class ='keyword'>lambda</i> <i class ='variable'>fn</i><i class ='delimiter'>:</i> <i class ='variable'>text_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Binary writes</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;b&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i> <i class ='keyword'>and</i> <i class ='string'>&quot;w&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n** Binary append **\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>test_</i><i class ='variable'>family</i><i class ='delimiter'>(</i><i class ='variable'>write_</i><i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='string'>&quot;t&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>binary_</i><i class ='variable'>files</i><i class ='delimiter'>,</i>
+            <i class ='keyword'>lambda</i> <i class ='variable'>fn</i><i class ='delimiter'>:</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>devnull</i><i class ='delimiter'>,</i> <i class ='string'>&quot;wb&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Text writes</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;t&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i> <i class ='keyword'>and</i> <i class ='string'>&quot;w&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n** Text append **\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>text_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>test_</i><i class ='variable'>family</i><i class ='delimiter'>(</i><i class ='variable'>write_</i><i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='string'>&quot;b&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>text_</i><i class ='variable'>files</i><i class ='delimiter'>,</i>
+            <i class ='keyword'>lambda</i> <i class ='variable'>fn</i><i class ='delimiter'>:</i> <i class ='variable'>text_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>devnull</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Binary overwrites</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;b&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i> <i class ='keyword'>and</i> <i class ='string'>&quot;w&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n** Binary overwrite **\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>test_</i><i class ='variable'>family</i><i class ='delimiter'>(</i><i class ='variable'>modify_</i><i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='string'>&quot;t&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>binary_</i><i class ='variable'>files</i><i class ='delimiter'>,</i>
+            <i class ='keyword'>lambda</i> <i class ='variable'>fn</i><i class ='delimiter'>:</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r+b&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Text overwrites</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;t&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i> <i class ='keyword'>and</i> <i class ='string'>&quot;w&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n** Text overwrite **\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>text_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>test_</i><i class ='variable'>family</i><i class ='delimiter'>(</i><i class ='variable'>modify_</i><i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='string'>&quot;b&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>text_</i><i class ='variable'>files</i><i class ='delimiter'>,</i>
+            <i class ='keyword'>lambda</i> <i class ='variable'>fn</i><i class ='delimiter'>:</i> <i class ='variable'>text_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r+&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>make_</i><i class ='variable'>test_</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>prepare_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Preparing files...&quot;</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Binary files</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='keyword'>in</i> <i class ='variable'>get_</i><i class ='variable'>binary_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>getsize</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>size</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='string'>&quot;wb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>urandom</i><i class ='delimiter'>(</i><i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Text files</i>
+    <i class ='variable'>chunk</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>with</i> <i class ='variable'>text_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;utf8&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;# &lt;iobench text chunk marker&gt;&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i><i class ='delimiter'>(</i>
+                <i class ='string'>&quot;Couldn&#39;t find chunk marker in %s !&quot;</i> <i class ='operator'>%</i> <i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>NEWLINES</i> <i class ='operator'>==</i> <i class ='string'>&quot;all&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>it</i> <i class ='delimiter'>=</i> <i class ='variable'>itertools</i><i class ='delimiter'>.</i><i class ='variable'>cycle</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;\r&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;\r\n&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>it</i> <i class ='delimiter'>=</i> <i class ='variable'>itertools</i><i class ='delimiter'>.</i><i class ='variable'>repeat</i><i class ='delimiter'>(</i>
+                <i class ='delimiter'>{</i><i class ='string'>&quot;cr&quot;</i><i class ='delimiter'>:</i> <i class ='string'>&quot;\r&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;lf&quot;</i><i class ='delimiter'>:</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;crlf&quot;</i><i class ='delimiter'>:</i> <i class ='string'>&quot;\r\n&quot;</i><i class ='delimiter'>}</i><i class ='delimiter'>[</i><i class ='variable'>NEWLINES</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>chunk</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>next</i><i class ='delimiter'>(</i><i class ='variable'>it</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>f</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>chunk</i><i class ='delimiter'>,</i> <i class ='datatype'>bytes</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>chunk</i> <i class ='delimiter'>=</i> <i class ='variable'>chunk</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;utf8&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>chunk</i> <i class ='delimiter'>=</i> <i class ='variable'>chunk</i><i class ='delimiter'>.</i><i class ='variable'>encode</i><i class ='delimiter'>(</i><i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='keyword'>in</i> <i class ='variable'>get_</i><i class ='variable'>text_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>getsize</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>size</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>head</i> <i class ='delimiter'>=</i> <i class ='variable'>chunk</i> <i class ='operator'>*</i> <i class ='delimiter'>(</i><i class ='variable'>size</i> <i class ='operator'>//</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>chunk</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tail</i> <i class ='delimiter'>=</i> <i class ='variable'>chunk</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>size</i> <i class ='operator'>%</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>chunk</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='comment'># Adjust tail to end on a character boundary</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>tail</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>break</i>
+            <i class ='keyword'>except</i> <i class ='variable'>UnicodeDecodeError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>tail</i> <i class ='delimiter'>=</i> <i class ='variable'>tail</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='string'>&quot;wb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>head</i><i class ='delimiter'>)</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>tail</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>global</i> <i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i><i class ='delimiter'>,</i> <i class ='variable'>NEWLINES</i>
+
+    <i class ='variable'>usage</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;usage: %prog [-h|--help] [options]&quot;</i>
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>OptionParser</i><i class ='delimiter'>(</i><i class ='variable'>usage</i><i class ='delimiter'>=</i><i class ='variable'>usage</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-b&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--binary&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;binary&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run binary I/O tests&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-t&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--text&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;text&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run text I/O tests&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-r&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--read&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;read&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run read tests&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-w&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--write&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;write&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run write &amp; modify tests&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-E&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--encoding&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;encoding&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;encoding for text tests (default: %s)&quot;</i> <i class ='operator'>%</i> <i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-N&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--newlines&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;newlines&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;lf&#39;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;line endings for text tests &quot;</i>
+                           <i class ='string'>&quot;(one of: {lf (default), cr, crlf, all})&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-m&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--io-module&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;io_module&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;io module to test (default: builtin open())&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>options</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='string'>&quot;unexpected arguments&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>NEWLINES</i> <i class ='delimiter'>=</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>newlines</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>NEWLINES</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;lf&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;cr&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;crlf&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;all&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='string'>&quot;invalid &#39;newlines&#39; option: %r&quot;</i> <i class ='operator'>%</i> <i class ='variable'>NEWLINES</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>test_</i><i class ='variable'>options</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>:</i>
+        <i class ='variable'>test_</i><i class ='variable'>options</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;r&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>:</i>
+        <i class ='variable'>test_</i><i class ='variable'>options</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;w&quot;</i>
+    <i class ='keyword'>elif</i> <i class ='keyword'>not</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>:</i>
+        <i class ='variable'>test_</i><i class ='variable'>options</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;rw&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>text</i><i class ='delimiter'>:</i>
+        <i class ='variable'>test_</i><i class ='variable'>options</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;t&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>binary</i><i class ='delimiter'>:</i>
+        <i class ='variable'>test_</i><i class ='variable'>options</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;b&quot;</i>
+    <i class ='keyword'>elif</i> <i class ='keyword'>not</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>text</i><i class ='delimiter'>:</i>
+        <i class ='variable'>test_</i><i class ='variable'>options</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;tb&quot;</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>encoding</i><i class ='delimiter'>:</i>
+        <i class ='variable'>TEXT_</i><i class ='variable'>ENCODING</i> <i class ='delimiter'>=</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>encoding</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>io_</i><i class ='variable'>module</i><i class ='delimiter'>:</i>
+        <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;open&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>__</i><i class ='variable'>import__</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>io_</i><i class ='variable'>module</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;open&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>open</i>
+
+    <i class ='variable'>prepare_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>run_</i><i class ='variable'>all_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>test_</i><i class ='variable'>options</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># -- This part to exercise text reading. Don&#39;t change anything! --</i>
+<i class ='comment'># &lt;iobench text chunk marker&gt;</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+1.
+Gáttir allar,
+áðr gangi fram,
+um skoðask skyli,
+um skyggnast skyli,
+því at óvíst er at vita,
+hvar óvinir
+sitja á fleti fyrir.
+
+2.
+Gefendr heilir!
+Gestr er inn kominn,
+hvar skal sitja sjá?
+Mjök er bráðr,
+sá er á bröndum skal
+síns of freista frama.
+
+3.
+Elds er þörf,
+þeims inn er kominn
+ok á kné kalinn;
+matar ok váða
+er manni þörf,
+þeim er hefr um fjall farit.
+
+4.
+Vatns er þörf,
+þeim er til verðar kemr,
+þerru ok þjóðlaðar,
+góðs of æðis,
+ef sér geta mætti,
+orðs ok endrþögu.
+
+5.
+Vits er þörf,
+þeim er víða ratar;
+dælt er heima hvat;
+at augabragði verðr,
+sá er ekki kann
+ok með snotrum sitr.
+
+6.
+At hyggjandi sinni
+skyli-t maðr hræsinn vera,
+heldr gætinn at geði;
+þá er horskr ok þögull
+kemr heimisgarða til,
+sjaldan verðr víti vörum,
+því at óbrigðra vin
+fær maðr aldregi
+en mannvit mikit.
+
+7.
+Inn vari gestr,
+er til verðar kemr,
+þunnu hljóði þegir,
+eyrum hlýðir,
+en augum skoðar;
+svá nýsisk fróðra hverr fyrir.
+
+8.
+Hinn er sæll,
+er sér of getr
+lof ok líknstafi;
+ódælla er við þat,
+er maðr eiga skal
+annars brjóstum í.
+&quot;&quot;&quot;</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+C&#39;est revenir tard, je le sens, sur un sujet trop rebattu et déjà presque oublié. Mon état, qui ne me permet plus aucun travail suivi, mon aversion pour le genre polémique, ont causé ma lenteur à écrire et ma répugnance à publier. J&#39;aurais même tout à fait supprimé ces Lettres, ou plutôt je lie les aurais point écrites, s&#39;il n&#39;eût été question que de moi : Mais ma patrie ne m&#39;est pas tellement devenue étrangère que je puisse voir tranquillement opprimer ses citoyens, surtout lorsqu&#39;ils n&#39;ont compromis leurs droits qu&#39;en défendant ma cause. Je serais le dernier des hommes si dans une telle occasion j&#39;écoutais un sentiment qui n&#39;est plus ni douceur ni patience, mais faiblesse et lâcheté, dans celui qu&#39;il empêche de remplir son devoir.
+Rien de moins important pour le public, j&#39;en conviens, que la matière de ces lettres. La constitution d&#39;une petite République, le sort d&#39;un petit particulier, l&#39;exposé de quelques injustices, la réfutation de quelques sophismes ; tout cela n&#39;a rien en soi d&#39;assez considérable pour mériter beaucoup de lecteurs : mais si mes sujets sont petits mes objets sont grands, et dignes de l&#39;attention de tout honnête homme. Laissons Genève à sa place, et Rousseau dans sa dépression ; mais la religion, mais la liberté, la justice ! voilà, qui que vous soyez, ce qui n&#39;est pas au-dessous de vous.
+Qu&#39;on ne cherche pas même ici dans le style le dédommagement de l&#39;aridité de la matière. Ceux que quelques traits heureux de ma plume ont si fort irrités trouveront de quoi s&#39;apaiser dans ces lettres, L&#39;honneur de défendre un opprimé eût enflammé mon coeur si j&#39;avais parlé pour un autre. Réduit au triste emploi de me défendre moi-même, j&#39;ai dû me borner à raisonner ; m&#39;échauffer eût été m&#39;avilir. J&#39;aurai donc trouvé grâce en ce point devant ceux qui s&#39;imaginent qu&#39;il est essentiel à la vérité d&#39;être dite froidement ; opinion que pourtant j&#39;ai peine à comprendre. Lorsqu&#39;une vive persuasion nous anime, le moyen d&#39;employer un langage glacé ? Quand Archimède tout transporté courait nu dans les rues de Syracuse, en avait-il moins trouvé la vérité parce qu&#39;il se passionnait pour elle ? Tout au contraire, celui qui la sent ne peut s&#39;abstenir de l&#39;adorer ; celui qui demeure froid ne l&#39;a pas vue.
+Quoi qu&#39;il en soit, je prie les lecteurs de vouloir bien mettre à part mon beau style, et d&#39;examiner seulement si je raisonne bien ou mal ; car enfin, de cela seul qu&#39;un auteur s&#39;exprime en bons termes, je ne vois pas comment il peut s&#39;ensuivre que cet auteur ne sait ce qu&#39;il dit.
+&quot;&quot;&quot;</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

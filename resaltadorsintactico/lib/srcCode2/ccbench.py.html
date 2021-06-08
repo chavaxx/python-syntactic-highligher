@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'># This file should be kept compatible with both Python 2.6 and Python &gt;= 3.0.</i>
+
+<i class ='keyword'>from</i> <i class ='hexadecimal'>__f</i><i class ='variable'>uture__</i> <i class ='keyword'>import</i> <i class ='variable'>division</i>
+<i class ='keyword'>from</i> <i class ='hexadecimal'>__f</i><i class ='variable'>uture__</i> <i class ='keyword'>import</i> <i class ='variable'>print_</i><i class ='variable'>function</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+ccbench, a Python concurrency benchmark.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>time</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>itertools</i>
+<i class ='keyword'>import</i> <i class ='variable'>threading</i>
+<i class ='keyword'>import</i> <i class ='variable'>subprocess</i>
+<i class ='keyword'>import</i> <i class ='variable'>socket</i>
+<i class ='keyword'>from</i> <i class ='variable'>optparse</i> <i class ='keyword'>import</i> <i class ='variable'>OptionParser</i><i class ='delimiter'>,</i> <i class ='variable'>SUPPRESS_</i><i class ='variable'>HELP</i>
+<i class ='keyword'>import</i> <i class ='variable'>platform</i>
+
+<i class ='comment'># Compatibility</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='variable'>xrange</i>
+<i class ='keyword'>except</i> <i class ='variable'>NameError</i><i class ='delimiter'>:</i>
+    <i class ='variable'>xrange</i> <i class ='delimiter'>=</i> <i class ='datatype'>range</i>
+
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='variable'>map</i> <i class ='delimiter'>=</i> <i class ='variable'>itertools</i><i class ='delimiter'>.</i><i class ='variable'>imap</i>
+<i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>pass</i>
+
+
+<i class ='variable'>THROUGHPUT_</i><i class ='variable'>DURATION</i> <i class ='delimiter'>=</i> <i class ='float'>2.0</i>
+
+<i class ='variable'>LATENCY_</i><i class ='variable'>PING_</i><i class ='variable'>INTERVAL</i> <i class ='delimiter'>=</i> <i class ='float'>0.1</i>
+<i class ='variable'>LATENCY_</i><i class ='variable'>DURATION</i> <i class ='delimiter'>=</i> <i class ='float'>2.0</i>
+
+<i class ='variable'>BANDWIDTH_</i><i class ='variable'>PACKET_</i><i class ='variable'>SIZE</i> <i class ='delimiter'>=</i> <i class ='integer'>1024</i>
+<i class ='variable'>BANDWIDTH_</i><i class ='variable'>DURATION</i> <i class ='delimiter'>=</i> <i class ='float'>2.0</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>task_</i><i class ='variable'>pidigits</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Pi calculation (Python)&quot;&quot;&quot;</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>map</i> <i class ='delimiter'>=</i> <i class ='variable'>map</i>
+    <i class ='hexadecimal'>_c</i><i class ='variable'>ount</i> <i class ='delimiter'>=</i> <i class ='variable'>itertools</i><i class ='delimiter'>.</i><i class ='variable'>count</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>islice</i> <i class ='delimiter'>=</i> <i class ='variable'>itertools</i><i class ='delimiter'>.</i><i class ='variable'>islice</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>calc_</i><i class ='variable'>ndigits</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># From http://shootout.alioth.debian.org/</i>
+        <i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='hexadecimal'>_</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='keyword'>lambda</i> <i class ='variable'>k</i><i class ='delimiter'>:</i> <i class ='delimiter'>(</i><i class ='variable'>k</i><i class ='delimiter'>,</i> <i class ='integer'>4</i><i class ='operator'>*</i><i class ='variable'>k</i> <i class ='operator'>+</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='operator'>*</i><i class ='variable'>k</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>_c</i><i class ='variable'>ount</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>def</i> <i class ='variable'>compose</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>aq</i><i class ='delimiter'>,</i> <i class ='variable'>ar</i><i class ='delimiter'>,</i> <i class ='variable'>as_</i><i class ='delimiter'>,</i> <i class ='variable'>at</i> <i class ='delimiter'>=</i> <i class ='variable'>a</i>
+            <i class ='variable'>bq</i><i class ='delimiter'>,</i> <i class ='variable'>br</i><i class ='delimiter'>,</i> <i class ='variable'>bs</i><i class ='delimiter'>,</i> <i class ='variable'>bt</i> <i class ='delimiter'>=</i> <i class ='variable'>b</i>
+            <i class ='keyword'>return</i> <i class ='delimiter'>(</i><i class ='variable'>aq</i> <i class ='operator'>*</i> <i class ='variable'>bq</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>aq</i> <i class ='operator'>*</i> <i class ='variable'>br</i> <i class ='operator'>+</i> <i class ='variable'>ar</i> <i class ='operator'>*</i> <i class ='variable'>bt</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>as_</i> <i class ='operator'>*</i> <i class ='variable'>bq</i> <i class ='operator'>+</i> <i class ='variable'>at</i> <i class ='operator'>*</i> <i class ='variable'>bs</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>as_</i> <i class ='operator'>*</i> <i class ='variable'>br</i> <i class ='operator'>+</i> <i class ='variable'>at</i> <i class ='operator'>*</i> <i class ='variable'>bt</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>def</i> <i class ='variable'>extract</i><i class ='delimiter'>(</i><i class ='variable'>z</i><i class ='delimiter'>,</i> <i class ='variable'>j</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>q</i><i class ='delimiter'>,</i> <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>t</i> <i class ='delimiter'>=</i> <i class ='variable'>z</i>
+            <i class ='keyword'>return</i> <i class ='delimiter'>(</i><i class ='variable'>q</i><i class ='operator'>*</i><i class ='variable'>j</i> <i class ='operator'>+</i> <i class ='variable'>r</i><i class ='delimiter'>)</i> <i class ='operator'>//</i> <i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='operator'>*</i><i class ='variable'>j</i> <i class ='operator'>+</i> <i class ='variable'>t</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>def</i> <i class ='variable'>pi_</i><i class ='variable'>digits</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>z</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>gen_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+                <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>extract</i><i class ='delimiter'>(</i><i class ='variable'>z</i><i class ='delimiter'>,</i> <i class ='integer'>3</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>while</i> <i class ='variable'>y</i> <i class ='operator'>!=</i> <i class ='variable'>extract</i><i class ='delimiter'>(</i><i class ='variable'>z</i><i class ='delimiter'>,</i> <i class ='integer'>4</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>z</i> <i class ='delimiter'>=</i> <i class ='variable'>compose</i><i class ='delimiter'>(</i><i class ='variable'>z</i><i class ='delimiter'>,</i> <i class ='variable'>next</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>extract</i><i class ='delimiter'>(</i><i class ='variable'>z</i><i class ='delimiter'>,</i> <i class ='integer'>3</i><i class ='delimiter'>)</i>
+                <i class ='variable'>z</i> <i class ='delimiter'>=</i> <i class ='variable'>compose</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='integer'>10</i><i class ='delimiter'>,</i> <i class ='variable'>-10</i><i class ='operator'>*</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>z</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>yield</i> <i class ='variable'>y</i>
+
+        <i class ='keyword'>return</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='hexadecimal'>_</i><i class ='variable'>islice</i><i class ='delimiter'>(</i><i class ='variable'>pi_</i><i class ='variable'>digits</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>calc_</i><i class ='variable'>ndigits</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='integer'>50</i><i class ='delimiter'>,</i> <i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>task_</i><i class ='variable'>regex</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;regular expression (C)&quot;&quot;&quot;</i>
+    <i class ='comment'># XXX this task gives horrendous latency results.</i>
+    <i class ='keyword'>import</i> <i class ='variable'>re</i>
+    <i class ='comment'># Taken from the `inspect` module</i>
+    <i class ='variable'>pat</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;^(\s*def\s)|(.*(?&lt;!\w)lambda(:|\s))|^(\s*@)&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>arg</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>2000</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>pat</i><i class ='delimiter'>.</i><i class ='variable'>findall</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>task_</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;list sorting (C)&quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='variable'>list_</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='variable'>l</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='delimiter'>:</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>list_</i><i class ='variable'>sort</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1000</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>task_</i><i class ='variable'>compress_</i><i class ='variable'>zlib</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;zlib compression (C)&quot;&quot;&quot;</i>
+    <i class ='keyword'>import</i> <i class ='variable'>zlib</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>arg</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>5000</i><i class ='delimiter'>)</i> <i class ='operator'>*</i> <i class ='integer'>3</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>compress</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>zlib</i><i class ='delimiter'>.</i><i class ='variable'>decompress</i><i class ='delimiter'>(</i><i class ='variable'>zlib</i><i class ='delimiter'>.</i><i class ='variable'>compress</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='integer'>5</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>compress</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>task_</i><i class ='variable'>compress_</i><i class ='variable'>bz2</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;bz2 compression (C)&quot;&quot;&quot;</i>
+    <i class ='keyword'>import</i> <i class ='variable'>bz2</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>arg</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>3000</i><i class ='delimiter'>)</i> <i class ='operator'>*</i> <i class ='integer'>2</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>compress</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>bz2</i><i class ='delimiter'>.</i><i class ='variable'>compress</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>compress</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>task_</i><i class ='variable'>hashing</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;SHA1 hashing (C)&quot;&quot;&quot;</i>
+    <i class ='keyword'>import</i> <i class ='variable'>hashlib</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>arg</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>5000</i><i class ='delimiter'>)</i> <i class ='operator'>*</i> <i class ='integer'>30</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>compute</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>hashlib</i><i class ='delimiter'>.</i><i class ='variable'>sha1</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>digest</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>compute</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='delimiter'>)</i>
+
+
+<i class ='variable'>throughput_</i><i class ='variable'>tasks</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>task_</i><i class ='variable'>pidigits</i><i class ='delimiter'>,</i> <i class ='variable'>task_</i><i class ='variable'>regex</i><i class ='delimiter'>]</i>
+<i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39;bz2&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;hashlib&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>__</i><i class ='variable'>import__</i><i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+        <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+<i class ='comment'># For whatever reasons, zlib gives irregular results, so we prefer bz2 or</i>
+<i class ='comment'># hashlib if available.</i>
+<i class ='comment'># (NOTE: hashlib releases the GIL from 2.7 and 3.1 onwards)</i>
+<i class ='keyword'>if</i> <i class ='variable'>bz2</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>throughput_</i><i class ='variable'>tasks</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>task_</i><i class ='variable'>compress_</i><i class ='variable'>bz2</i><i class ='delimiter'>)</i>
+<i class ='keyword'>elif</i> <i class ='variable'>hashlib</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>throughput_</i><i class ='variable'>tasks</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>task_</i><i class ='variable'>hashing</i><i class ='delimiter'>)</i>
+<i class ='keyword'>else</i><i class ='delimiter'>:</i>
+    <i class ='variable'>throughput_</i><i class ='variable'>tasks</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>task_</i><i class ='variable'>compress_</i><i class ='variable'>zlib</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>latency_</i><i class ='variable'>tasks</i> <i class ='delimiter'>=</i> <i class ='variable'>throughput_</i><i class ='variable'>tasks</i>
+<i class ='variable'>bandwidth_</i><i class ='variable'>tasks</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>task_</i><i class ='variable'>pidigits</i><i class ='delimiter'>]</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>TimedLoop</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>func</i> <i class ='delimiter'>=</i> <i class ='variable'>func</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__ca</i><i class ='variable'>ll__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>start_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='variable'>min_</i><i class ='variable'>duration</i><i class ='delimiter'>,</i> <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>,</i> <i class ='variable'>do_</i><i class ='keyword'>yield</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>step</i> <i class ='delimiter'>=</i> <i class ='integer'>20</i>
+        <i class ='variable'>niters</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>duration</i> <i class ='delimiter'>=</i> <i class ='float'>0.0</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>sleep</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>sleep</i>
+        <i class ='hexadecimal'>_f</i><i class ='variable'>unc</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>func</i>
+        <i class ='hexadecimal'>_a</i><i class ='variable'>rgs</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>args</i>
+        <i class ='variable'>t1</i> <i class ='delimiter'>=</i> <i class ='variable'>start_</i><i class ='variable'>time</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>step</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='hexadecimal'>_f</i><i class ='variable'>unc</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='hexadecimal'>_a</i><i class ='variable'>rgs</i><i class ='delimiter'>)</i>
+            <i class ='variable'>t2</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='comment'># If another thread terminated, the current measurement is invalid</i>
+            <i class ='comment'># =&gt; return the previous one.</i>
+            <i class ='keyword'>if</i> <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='variable'>niters</i><i class ='delimiter'>,</i> <i class ='variable'>duration</i>
+            <i class ='variable'>niters</i> <i class ='delimiter'>+=</i> <i class ='variable'>step</i>
+            <i class ='variable'>duration</i> <i class ='delimiter'>=</i> <i class ='variable'>t2</i> <i class ='variable'>-</i> <i class ='variable'>start_</i><i class ='variable'>time</i>
+            <i class ='keyword'>if</i> <i class ='variable'>duration</i> <i class ='operator'>&gt;=</i> <i class ='variable'>min_</i><i class ='variable'>duration</i><i class ='delimiter'>:</i>
+                <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='keyword'>None</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='variable'>niters</i><i class ='delimiter'>,</i> <i class ='variable'>duration</i>
+            <i class ='keyword'>if</i> <i class ='variable'>t2</i> <i class ='variable'>-</i> <i class ='variable'>t1</i> <i class ='operator'>&lt;</i> <i class ='float'>0.01</i><i class ='delimiter'>:</i>
+                <i class ='comment'># Minimize interference of measurement on overall runtime</i>
+                <i class ='variable'>step</i> <i class ='delimiter'>=</i> <i class ='variable'>step</i> <i class ='operator'>*</i> <i class ='integer'>3</i> <i class ='operator'>//</i> <i class ='integer'>2</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>do_</i><i class ='keyword'>yield</i><i class ='delimiter'>:</i>
+                <i class ='comment'># OS scheduling of Python threads is sometimes so bad that we</i>
+                <i class ='comment'># have to force thread switching ourselves, otherwise we get</i>
+                <i class ='comment'># completely useless results.</i>
+                <i class ='hexadecimal'>_</i><i class ='variable'>sleep</i><i class ='delimiter'>(</i><i class ='float'>0.0001</i><i class ='delimiter'>)</i>
+            <i class ='variable'>t1</i> <i class ='delimiter'>=</i> <i class ='variable'>t2</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>throughput_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>nthreads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>assert</i> <i class ='variable'>nthreads</i> <i class ='operator'>&gt;=</i> <i class ='integer'>1</i>
+
+    <i class ='comment'># Warm up</i>
+    <i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>loop</i> <i class ='delimiter'>=</i> <i class ='variable'>TimedLoop</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i>
+    <i class ='variable'>end_</i><i class ='variable'>event</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>nthreads</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Pure single-threaded performance, without any switching or</i>
+        <i class ='comment'># synchronization overhead.</i>
+        <i class ='variable'>start_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>results</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>loop</i><i class ='delimiter'>(</i><i class ='variable'>start_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='variable'>THROUGHPUT_</i><i class ='variable'>DURATION</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>,</i> <i class ='variable'>do_</i><i class ='keyword'>yield</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>results</i>
+
+    <i class ='variable'>started</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+    <i class ='variable'>ready_</i><i class ='variable'>cond</i> <i class ='delimiter'>=</i> <i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Condition</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>start_</i><i class ='variable'>cond</i> <i class ='delimiter'>=</i> <i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Condition</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>ready</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ready</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='keyword'>None</i><i class ='delimiter'>)</i>
+            <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>notify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>with</i> <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>while</i> <i class ='keyword'>not</i> <i class ='variable'>started</i><i class ='delimiter'>:</i>
+                <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>wait</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>results</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>loop</i><i class ='delimiter'>(</i><i class ='variable'>start_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='variable'>THROUGHPUT_</i><i class ='variable'>DURATION</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>,</i> <i class ='variable'>do_</i><i class ='keyword'>yield</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>threads</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>threads</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Thread</i><i class ='delimiter'>(</i><i class ='variable'>target</i><i class ='delimiter'>=</i><i class ='variable'>run</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>threads</i><i class ='delimiter'>:</i>
+        <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>daemon</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+        <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='comment'># We don&#39;t want measurements to include thread startup overhead,</i>
+    <i class ='comment'># so we arrange for timing to start after all threads are ready.</i>
+    <i class ='keyword'>with</i> <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>while</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>ready</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='variable'>nthreads</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>wait</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+        <i class ='variable'>start_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>started</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+        <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>notify</i><i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>threads</i><i class ='delimiter'>:</i>
+        <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>results</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>throughput_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>max_</i><i class ='variable'>threads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>task</i> <i class ='keyword'>in</i> <i class ='variable'>throughput_</i><i class ='variable'>tasks</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>task</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>task</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>nthreads</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>while</i> <i class ='variable'>nthreads</i> <i class ='operator'>&lt;=</i> <i class ='variable'>max_</i><i class ='variable'>threads</i><i class ='delimiter'>:</i>
+            <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='variable'>run_</i><i class ='variable'>throughput_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+            <i class ='comment'># Taking the max duration rather than average gives pessimistic</i>
+            <i class ='comment'># results rather than optimistic.</i>
+            <i class ='variable'>speed</i> <i class ='delimiter'>=</i> <i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='keyword'>for</i> <i class ='variable'>r</i> <i class ='keyword'>in</i> <i class ='variable'>results</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='keyword'>for</i> <i class ='variable'>r</i> <i class ='keyword'>in</i> <i class ='variable'>results</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;threads=%d: %d&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>,</i> <i class ='variable'>speed</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot; iterations/s.&quot;</i><i class ='delimiter'>)</i>
+                <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='delimiter'>=</i> <i class ='variable'>speed</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot; ( %d %%)&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>speed</i> <i class ='operator'>/</i> <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='operator'>*</i> <i class ='integer'>100</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>nthreads</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>LAT_</i><i class ='variable'>END</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;END&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>sendto</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>addr</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>sendto</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>encode</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;ascii&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>addr</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;ascii&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>latency_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='variable'>addr</i><i class ='delimiter'>,</i> <i class ='variable'>nb_</i><i class ='variable'>pings</i><i class ='delimiter'>,</i> <i class ='variable'>interval</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sock</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>socket</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SOCK_</i><i class ='variable'>DGRAM</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>sleep</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>sleep</i>
+        <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>ping</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='hexadecimal'>_</i><i class ='variable'>sendto</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='string'>&quot;%r\n&quot;</i> <i class ='operator'>%</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>addr</i><i class ='delimiter'>)</i>
+        <i class ='comment'># The first ping signals the parent process that we are ready.</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>ping</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='comment'># We give the parent a bit of time to notice.</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>sleep</i><i class ='delimiter'>(</i><i class ='float'>1.0</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>nb_</i><i class ='variable'>pings</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='hexadecimal'>_</i><i class ='variable'>sleep</i><i class ='delimiter'>(</i><i class ='variable'>interval</i><i class ='delimiter'>)</i>
+            <i class ='hexadecimal'>_</i><i class ='variable'>ping</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>sendto</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='variable'>LAT_</i><i class ='variable'>END</i> <i class ='operator'>+</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>addr</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>latency_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>cmd_</i><i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-E&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>abspath</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>cmd_</i><i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;--latclient&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>Popen</i><i class ='delimiter'>(</i><i class ='variable'>cmd_</i><i class ='variable'>line</i><i class ='delimiter'>)</i> <i class ='comment'>#, stdin=subprocess.PIPE,</i>
+                            <i class ='comment'>#stdout=subprocess.PIPE, stderr=subprocess.STDOUT)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>latency_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>nthreads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Create a listening socket to receive the pings. We use UDP which should</i>
+    <i class ='comment'># be painlessly cross-platform.</i>
+    <i class ='variable'>sock</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>socket</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SOCK_</i><i class ='variable'>DGRAM</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='string'>&quot;127.0.0.1&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>addr</i> <i class ='delimiter'>=</i> <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>getsockname</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>interval</i> <i class ='delimiter'>=</i> <i class ='variable'>LATENCY_</i><i class ='variable'>PING_</i><i class ='variable'>INTERVAL</i>
+    <i class ='variable'>duration</i> <i class ='delimiter'>=</i> <i class ='variable'>LATENCY_</i><i class ='variable'>DURATION</i>
+    <i class ='variable'>nb_</i><i class ='variable'>pings</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>duration</i> <i class ='operator'>/</i> <i class ='variable'>interval</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>threads</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>end_</i><i class ='variable'>event</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>start_</i><i class ='variable'>cond</i> <i class ='delimiter'>=</i> <i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Condition</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>started</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+    <i class ='keyword'>if</i> <i class ='variable'>nthreads</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Warm up</i>
+        <i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>loop</i> <i class ='delimiter'>=</i> <i class ='variable'>TimedLoop</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i>
+        <i class ='variable'>ready</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>ready_</i><i class ='variable'>cond</i> <i class ='delimiter'>=</i> <i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Condition</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>def</i> <i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ready</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='keyword'>None</i><i class ='delimiter'>)</i>
+                <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>notify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>with</i> <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>while</i> <i class ='keyword'>not</i> <i class ='variable'>started</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>wait</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>loop</i><i class ='delimiter'>(</i><i class ='variable'>start_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='variable'>duration</i> <i class ='operator'>*</i> <i class ='float'>1.5</i><i class ='delimiter'>,</i> <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>,</i> <i class ='variable'>do_</i><i class ='keyword'>yield</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>threads</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Thread</i><i class ='delimiter'>(</i><i class ='variable'>target</i><i class ='delimiter'>=</i><i class ='variable'>run</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>threads</i><i class ='delimiter'>:</i>
+            <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>daemon</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+            <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Wait for threads to be ready</i>
+        <i class ='keyword'>with</i> <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>while</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>ready</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='variable'>nthreads</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>wait</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Run the client and wait for the first ping(s) to arrive before</i>
+    <i class ='comment'># unblocking the background threads.</i>
+    <i class ='variable'>chunks</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>process</i> <i class ='delimiter'>=</i> <i class ='variable'>run_</i><i class ='variable'>latency_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='variable'>addr</i><i class ='delimiter'>=</i><i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>getsockname</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                                 <i class ='variable'>nb_</i><i class ='variable'>pings</i><i class ='delimiter'>=</i><i class ='variable'>nb_</i><i class ='variable'>pings</i><i class ='delimiter'>,</i> <i class ='variable'>interval</i><i class ='delimiter'>=</i><i class ='variable'>interval</i><i class ='delimiter'>)</i>
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='integer'>4096</i><i class ='delimiter'>)</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+        <i class ='variable'>start_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>started</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+        <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>notify</i><i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>while</i> <i class ='variable'>LAT_</i><i class ='variable'>END</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='integer'>4096</i><i class ='delimiter'>)</i>
+        <i class ='variable'>t</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>chunks</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>t</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Tell the background threads to stop.</i>
+    <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='keyword'>None</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>threads</i><i class ='delimiter'>:</i>
+        <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>process</i><i class ='delimiter'>.</i><i class ='variable'>wait</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>recv_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='variable'>chunk</i> <i class ='keyword'>in</i> <i class ='variable'>chunks</i><i class ='delimiter'>:</i>
+        <i class ='comment'># NOTE: it is assumed that a line sent by a client wasn&#39;t received</i>
+        <i class ='comment'># in two chunks because the lines are very small.</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>chunk</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i> <i class ='keyword'>and</i> <i class ='variable'>line</i> <i class ='operator'>!=</i> <i class ='variable'>LAT_</i><i class ='variable'>END</i><i class ='delimiter'>:</i>
+                <i class ='variable'>send_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>assert</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>send_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='datatype'>float</i><i class ='delimiter'>)</i>
+                <i class ='variable'>results</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>send_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='variable'>recv_</i><i class ='variable'>time</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>results</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>latency_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>max_</i><i class ='variable'>threads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>task</i> <i class ='keyword'>in</i> <i class ='variable'>latency_</i><i class ='variable'>tasks</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Background CPU task:&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>task</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>task</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>nthreads</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>while</i> <i class ='variable'>nthreads</i> <i class ='operator'>&lt;=</i> <i class ='variable'>max_</i><i class ='variable'>threads</i><i class ='delimiter'>:</i>
+            <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='variable'>run_</i><i class ='variable'>latency_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+            <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>results</i><i class ='delimiter'>)</i>
+            <i class ='comment'># We print out milliseconds</i>
+            <i class ='variable'>lats</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='integer'>1000</i> <i class ='operator'>*</i> <i class ='delimiter'>(</i><i class ='variable'>t2</i> <i class ='variable'>-</i> <i class ='variable'>t1</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>t1</i><i class ='delimiter'>,</i> <i class ='variable'>t2</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>results</i><i class ='delimiter'>]</i>
+            <i class ='comment'>#print(list(map(int, lats)))</i>
+            <i class ='variable'>avg</i> <i class ='delimiter'>=</i> <i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='variable'>lats</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='variable'>n</i>
+            <i class ='variable'>dev</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>x</i> <i class ='variable'>-</i> <i class ='variable'>avg</i><i class ='delimiter'>)</i> <i class ='operator'>**</i> <i class ='integer'>2</i> <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>lats</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='variable'>n</i><i class ='delimiter'>)</i> <i class ='operator'>**</i> <i class ='float'>0.5</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;CPU threads=%d: %d ms. (std dev: %d ms.)&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>,</i> <i class ='variable'>avg</i><i class ='delimiter'>,</i> <i class ='variable'>dev</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='comment'>#print(&quot;    [... from %d samples]&quot; % n)</i>
+            <i class ='variable'>nthreads</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>BW_</i><i class ='variable'>END</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;END&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>bandwidth_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='variable'>addr</i><i class ='delimiter'>,</i> <i class ='variable'>packet_</i><i class ='variable'>size</i><i class ='delimiter'>,</i> <i class ='variable'>duration</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sock</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>socket</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SOCK_</i><i class ='variable'>DGRAM</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='string'>&quot;127.0.0.1&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>local_</i><i class ='variable'>addr</i> <i class ='delimiter'>=</i> <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>getsockname</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>sleep</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>sleep</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>send_</i><i class ='variable'>chunk</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>sendto</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='string'>&quot;%r#%s\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>local_</i><i class ='variable'>addr</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>rjust</i><i class ='delimiter'>(</i><i class ='variable'>packet_</i><i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>addr</i><i class ='delimiter'>)</i>
+    <i class ='comment'># We give the parent some time to be ready.</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>sleep</i><i class ='delimiter'>(</i><i class ='float'>1.0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>start_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>end_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>start_</i><i class ='variable'>time</i> <i class ='operator'>+</i> <i class ='variable'>duration</i> <i class ='operator'>*</i> <i class ='float'>2.0</i>
+        <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>while</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='variable'>end_</i><i class ='variable'>time</i><i class ='delimiter'>:</i>
+            <i class ='hexadecimal'>_</i><i class ='variable'>send_</i><i class ='variable'>chunk</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='variable'>packet_</i><i class ='variable'>size</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>assert</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>packet_</i><i class ='variable'>size</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>send_</i><i class ='variable'>chunk</i><i class ='delimiter'>(</i><i class ='variable'>BW_</i><i class ='variable'>END</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>bandwidth_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>cmd_</i><i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-E&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>abspath</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>cmd_</i><i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;--bwclient&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>Popen</i><i class ='delimiter'>(</i><i class ='variable'>cmd_</i><i class ='variable'>line</i><i class ='delimiter'>)</i> <i class ='comment'>#, stdin=subprocess.PIPE,</i>
+                            <i class ='comment'>#stdout=subprocess.PIPE, stderr=subprocess.STDOUT)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>bandwidth_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>nthreads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Create a listening socket to receive the packets. We use UDP which should</i>
+    <i class ='comment'># be painlessly cross-platform.</i>
+    <i class ='keyword'>with</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>socket</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SOCK_</i><i class ='variable'>DGRAM</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>sock</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='string'>&quot;127.0.0.1&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>addr</i> <i class ='delimiter'>=</i> <i class ='variable'>sock</i><i class ='delimiter'>.</i><i class ='variable'>getsockname</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>duration</i> <i class ='delimiter'>=</i> <i class ='variable'>BANDWIDTH_</i><i class ='variable'>DURATION</i>
+        <i class ='variable'>packet_</i><i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>BANDWIDTH_</i><i class ='variable'>PACKET_</i><i class ='variable'>SIZE</i>
+
+        <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>threads</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>end_</i><i class ='variable'>event</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>start_</i><i class ='variable'>cond</i> <i class ='delimiter'>=</i> <i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Condition</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>started</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+        <i class ='keyword'>if</i> <i class ='variable'>nthreads</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Warm up</i>
+            <i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+            <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+            <i class ='variable'>loop</i> <i class ='delimiter'>=</i> <i class ='variable'>TimedLoop</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i>
+            <i class ='variable'>ready</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+            <i class ='variable'>ready_</i><i class ='variable'>cond</i> <i class ='delimiter'>=</i> <i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Condition</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+            <i class ='keyword'>def</i> <i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>with</i> <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>ready</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='keyword'>None</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>notify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>with</i> <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>while</i> <i class ='keyword'>not</i> <i class ='variable'>started</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>wait</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='variable'>loop</i><i class ='delimiter'>(</i><i class ='variable'>start_</i><i class ='variable'>time</i><i class ='delimiter'>,</i> <i class ='variable'>duration</i> <i class ='operator'>*</i> <i class ='float'>1.5</i><i class ='delimiter'>,</i> <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>,</i> <i class ='variable'>do_</i><i class ='keyword'>yield</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+
+            <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>threads</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>Thread</i><i class ='delimiter'>(</i><i class ='variable'>target</i><i class ='delimiter'>=</i><i class ='variable'>run</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>threads</i><i class ='delimiter'>:</i>
+                <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>daemon</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+                <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='comment'># Wait for threads to be ready</i>
+            <i class ='keyword'>with</i> <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>while</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>ready</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='variable'>nthreads</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>ready_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>wait</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Run the client and wait for the first packet to arrive before</i>
+        <i class ='comment'># unblocking the background threads.</i>
+        <i class ='variable'>process</i> <i class ='delimiter'>=</i> <i class ='variable'>run_</i><i class ='variable'>bandwidth_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='variable'>addr</i><i class ='delimiter'>=</i><i class ='variable'>addr</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>packet_</i><i class ='variable'>size</i><i class ='delimiter'>=</i><i class ='variable'>packet_</i><i class ='variable'>size</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>duration</i><i class ='delimiter'>=</i><i class ='variable'>duration</i><i class ='delimiter'>)</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i>
+        <i class ='comment'># This will also wait for the parent to be ready</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='variable'>packet_</i><i class ='variable'>size</i><i class ='delimiter'>)</i>
+        <i class ='variable'>remote_</i><i class ='variable'>addr</i> <i class ='delimiter'>=</i> <i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>partition</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>with</i> <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>:</i>
+            <i class ='variable'>start_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>started</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+            <i class ='variable'>start_</i><i class ='variable'>cond</i><i class ='delimiter'>.</i><i class ='variable'>notify</i><i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>first_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>not</i> <i class ='variable'>end_</i><i class ='variable'>event</i> <i class ='keyword'>and</i> <i class ='variable'>BW_</i><i class ='variable'>END</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+            <i class ='hexadecimal'>_</i><i class ='variable'>sendto</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>remote_</i><i class ='variable'>addr</i><i class ='delimiter'>)</i>
+            <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>sock</i><i class ='delimiter'>,</i> <i class ='variable'>packet_</i><i class ='variable'>size</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>first_</i><i class ='variable'>time</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>first_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>n</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='variable'>end_</i><i class ='variable'>time</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>end_</i><i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='keyword'>None</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>threads</i><i class ='delimiter'>:</i>
+        <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>process</i><i class ='delimiter'>.</i><i class ='variable'>kill</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='delimiter'>(</i><i class ='variable'>n</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='delimiter'>(</i><i class ='variable'>end_</i><i class ='variable'>time</i> <i class ='variable'>-</i> <i class ='variable'>first_</i><i class ='variable'>time</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>bandwidth_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>max_</i><i class ='variable'>threads</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>task</i> <i class ='keyword'>in</i> <i class ='variable'>bandwidth_</i><i class ='variable'>tasks</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Background CPU task:&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>task</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>task</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>nthreads</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>while</i> <i class ='variable'>nthreads</i> <i class ='operator'>&lt;=</i> <i class ='variable'>max_</i><i class ='variable'>threads</i><i class ='delimiter'>:</i>
+            <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='variable'>run_</i><i class ='variable'>bandwidth_</i><i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+            <i class ='variable'>speed</i> <i class ='delimiter'>=</i> <i class ='variable'>results</i>
+            <i class ='comment'>#speed = len(results) * 1.0 / results[-1][0]</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;CPU threads=%d: %.1f&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>nthreads</i><i class ='delimiter'>,</i> <i class ='variable'>speed</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot; packets/s.&quot;</i><i class ='delimiter'>)</i>
+                <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='delimiter'>=</i> <i class ='variable'>speed</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot; ( %d %%)&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>speed</i> <i class ='operator'>/</i> <i class ='variable'>baseline_</i><i class ='variable'>speed</i> <i class ='operator'>*</i> <i class ='integer'>100</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>nthreads</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>usage</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;usage: %prog [-h|--help] [options]&quot;</i>
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>OptionParser</i><i class ='delimiter'>(</i><i class ='variable'>usage</i><i class ='delimiter'>=</i><i class ='variable'>usage</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-t&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--throughput&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;throughput&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run throughput tests&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-l&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--latency&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;latency&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run latency tests&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-b&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--bandwidth&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;bandwidth&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run I/O bandwidth tests&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-i&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--interval&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='string'>&quot;int&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;check_interval&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;sys.setcheckinterval() value &quot;</i>
+                           <i class ='string'>&quot;(Python 3.8 and older)&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-I&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--switch-interval&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='string'>&quot;float&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;switch_interval&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;sys.setswitchinterval() value &quot;</i>
+                           <i class ='string'>&quot;(Python 3.2 and newer)&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;-n&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--num-threads&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='string'>&quot;int&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;nthreads&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='integer'>4</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;max number of threads in tests&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Hidden option to run the pinging and bandwidth clients</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--latclient&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;latclient&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='variable'>SUPPRESS_</i><i class ='variable'>HELP</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>option</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--bwclient&quot;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;bwclient&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='variable'>SUPPRESS_</i><i class ='variable'>HELP</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>options</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='string'>&quot;unexpected arguments&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>latclient</i><i class ='delimiter'>:</i>
+        <i class ='variable'>kwargs</i> <i class ='delimiter'>=</i> <i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>latclient</i><i class ='delimiter'>)</i>
+        <i class ='variable'>latency_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>bwclient</i><i class ='delimiter'>:</i>
+        <i class ='variable'>kwargs</i> <i class ='delimiter'>=</i> <i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>bwclient</i><i class ='delimiter'>)</i>
+        <i class ='variable'>bandwidth_</i><i class ='variable'>client</i><i class ='delimiter'>(</i><i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>throughput</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>latency</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>bandwidth</i><i class ='delimiter'>:</i>
+        <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>throughput</i> <i class ='delimiter'>=</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>latency</i> <i class ='delimiter'>=</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>bandwidth</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>interval</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>setcheckinterval</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>interval</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>switch_</i><i class ='variable'>interval</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>setswitchinterval</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>switch_</i><i class ='variable'>interval</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;== %s %s (%s) ==&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+        <i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>python_</i><i class ='variable'>implementation</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+        <i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>python_</i><i class ='variable'>version</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+        <i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>python_</i><i class ='variable'>build</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Processor identification often has repeated spaces</i>
+    <i class ='variable'>cpu</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>processor</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;== %s %s on &#39;%s&#39; ==&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+        <i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>machine</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+        <i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>system</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+        <i class ='variable'>cpu</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>throughput</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;--- Throughput ---&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>throughput_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>latency</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;--- Latency ---&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>latency_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>bandwidth</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;--- I/O bandwidth ---&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>run_</i><i class ='variable'>bandwidth_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>nthreads</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

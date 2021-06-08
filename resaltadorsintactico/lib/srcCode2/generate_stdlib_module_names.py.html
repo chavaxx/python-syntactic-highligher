@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'># This script lists the names of standard library modules</i>
+<i class ='comment'># to update Python/stdlib_mod_names.h</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>subprocess</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>sysconfig</i>
+
+
+<i class ='variable'>SRC_</i><i class ='variable'>DIR</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>STDLIB_</i><i class ='variable'>PATH</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRC_</i><i class ='variable'>DIR</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Lib&#39;</i><i class ='delimiter'>)</i>
+<i class ='variable'>MODULES_</i><i class ='variable'>SETUP</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRC_</i><i class ='variable'>DIR</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Setup&#39;</i><i class ='delimiter'>)</i>
+<i class ='variable'>SETUP_</i><i class ='variable'>PY</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRC_</i><i class ='variable'>DIR</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;setup.py&#39;</i><i class ='delimiter'>)</i>
+<i class ='variable'>TEST_</i><i class ='variable'>EMBED</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRC_</i><i class ='variable'>DIR</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Programs&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_testembed&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>IGNORE</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+    <i class ='charlist'>&#39;__init__&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;__pycache__&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;site-packages&#39;</i><i class ='delimiter'>,</i>
+
+    <i class ='comment'># Test modules and packages</i>
+    <i class ='charlist'>&#39;__hello__&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;__phello__&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_ctypes_test&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_testbuffer&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_testcapi&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_testconsole&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_testimportmultiple&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_testinternalcapi&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_testmultiphase&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_xxsubinterpreters&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_xxtestfuzz&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;distutils.tests&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;idlelib.idle_test&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;lib2to3.tests&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;test&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;xxlimited&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;xxlimited_35&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;xxsubtype&#39;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>}</i>
+
+<i class ='comment'># Windows extension modules</i>
+<i class ='variable'>WINDOWS_</i><i class ='variable'>MODULES</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;_msi&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_overlapped&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_testconsole&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;_winapi&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;msvcrt&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;nt&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;winreg&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;winsound&#39;</i>
+<i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Pure Python modules (Lib/*.py)</i>
+<i class ='keyword'>def</i> <i class ='variable'>list_</i><i class ='variable'>python_</i><i class ='variable'>modules</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>STDLIB_</i><i class ='variable'>PATH</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>removesuffix</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Packages in Lib/</i>
+<i class ='keyword'>def</i> <i class ='variable'>list_</i><i class ='variable'>packages</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>STDLIB_</i><i class ='variable'>PATH</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>IGNORE</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>package_</i><i class ='variable'>path</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>STDLIB_</i><i class ='variable'>PATH</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>any</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>file</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i>
+               <i class ='keyword'>for</i> <i class ='variable'>package_</i><i class ='variable'>file</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Extension modules built by setup.py</i>
+<i class ='keyword'>def</i> <i class ='variable'>list_</i><i class ='variable'>setup_</i><i class ='variable'>extensions</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='variable'>SETUP_</i><i class ='variable'>PY</i><i class ='delimiter'>,</i> <i class ='string'>&quot;-q&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;build&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--list-module-names&quot;</i><i class ='delimiter'>]</i>
+    <i class ='variable'>output</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i>
+    <i class ='variable'>output</i> <i class ='delimiter'>=</i> <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='string'>&quot;utf8&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>extensions</i> <i class ='delimiter'>=</i> <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>names</i> <i class ='operator'>|</i><i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>extensions</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Built-in and extension modules built by Modules/Setup</i>
+<i class ='keyword'>def</i> <i class ='variable'>list_</i><i class ='variable'>modules_</i><i class ='variable'>setup_</i><i class ='variable'>extensions</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>assign_</i><i class ='variable'>var</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='string'>&quot;^[A-Z]+=&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>MODULES_</i><i class ='variable'>SETUP</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='string'>&quot;utf-8&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>modules_</i><i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>modules_</i><i class ='variable'>fp</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Strip comment</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>partition</i><i class ='delimiter'>(</i><i class ='string'>&quot;#&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>if</i> <i class ='variable'>assign_</i><i class ='variable'>var</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='comment'># Ignore &quot;VAR=VALUE&quot;</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;*disabled*&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;*shared*&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='variable'>parts</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>parts</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='comment'># &quot;errno errnomodule.c&quot; =&gt; write &quot;errno&quot;</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>parts</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+            <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).</i>
+<i class ='comment'># Use the &quot;./Programs/_testembed list_frozen&quot; command.</i>
+<i class ='keyword'>def</i> <i class ='variable'>list_</i><i class ='variable'>frozen</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>TEST_</i><i class ='variable'>EMBED</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;list_frozen&#39;</i><i class ='delimiter'>]</i>
+    <i class ='variable'>proc</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>stdout</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>PIPE</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+    <i class ='variable'>exitcode</i> <i class ='delimiter'>=</i> <i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>returncode</i>
+    <i class ='keyword'>if</i> <i class ='variable'>exitcode</i><i class ='delimiter'>:</i>
+        <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;{cmd} failed with exitcode {exitcode}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>exitcode</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>list_</i><i class ='variable'>modules</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>builtin_</i><i class ='variable'>module_</i><i class ='variable'>names</i><i class ='delimiter'>)</i> <i class ='operator'>|</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>WINDOWS_</i><i class ='variable'>MODULES</i><i class ='delimiter'>)</i>
+    <i class ='variable'>list_</i><i class ='variable'>modules_</i><i class ='variable'>setup_</i><i class ='variable'>extensions</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i>
+    <i class ='variable'>list_</i><i class ='variable'>setup_</i><i class ='variable'>extensions</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i>
+    <i class ='variable'>list_</i><i class ='variable'>packages</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i>
+    <i class ='variable'>list_</i><i class ='variable'>python_</i><i class ='variable'>modules</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i>
+    <i class ='variable'>list_</i><i class ='variable'>frozen</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Remove ignored packages and modules</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>package_</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='comment'># package_name can be equal to name</i>
+        <i class ='keyword'>if</i> <i class ='variable'>package_</i><i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>IGNORE</i><i class ='delimiter'>:</i>
+            <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>discard</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>names</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='string'>&quot;.&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>name</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;sub-modules must not be listed&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>names</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>write_</i><i class ='variable'>modules</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;// Auto-generated by Tools/scripts/generate_stdlib_module_names.py.&quot;</i><i class ='delimiter'>,</i>
+          <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;// List used to create sys.stdlib_module_names.&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;static const char* _Py_stdlib_module_names[] = {&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;&quot;{name}&quot;,&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;};&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>is_</i><i class ='variable'>python_</i><i class ='variable'>build</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;ERROR: {sys.executable} is not a Python build&quot;</i><i class ='delimiter'>,</i>
+              <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i>
+    <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='variable'>list_</i><i class ='variable'>modules</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write_</i><i class ='variable'>modules</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>names</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

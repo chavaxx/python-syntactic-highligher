@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'># Check for a module in a set of extension directories.</i>
+<i class ='comment'># An extension directory should contain a Setup file</i>
+<i class ='comment'># and one or more .o files or a lib.a file.</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>parsesetup</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>checkextensions</i><i class ='delimiter'>(</i><i class ='variable'>unknown</i><i class ='delimiter'>,</i> <i class ='variable'>extensions</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>modules</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>edict</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>e</i> <i class ='keyword'>in</i> <i class ='variable'>extensions</i><i class ='delimiter'>:</i>
+        <i class ='variable'>setup</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Setup&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>liba</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;lib.a&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>liba</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>liba</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>edict</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>parsesetup</i><i class ='delimiter'>.</i><i class ='variable'>getsetupinfo</i><i class ='delimiter'>(</i><i class ='variable'>setup</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>liba</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>unknown</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>e</i> <i class ='keyword'>in</i> <i class ='variable'>extensions</i><i class ='delimiter'>:</i>
+            <i class ='delimiter'>(</i><i class ='variable'>mods</i><i class ='delimiter'>,</i> <i class ='variable'>vars</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>liba</i> <i class ='delimiter'>=</i> <i class ='variable'>edict</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>if</i> <i class ='variable'>mod</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>mods</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='variable'>modules</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>liba</i><i class ='delimiter'>:</i>
+                <i class ='comment'># If we find a lib.a, use it, ignore the</i>
+                <i class ='comment'># .o files, and use *all* libraries for</i>
+                <i class ='comment'># *all* modules in the Setup file</i>
+                <i class ='keyword'>if</i> <i class ='variable'>liba</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>break</i>
+                <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>liba</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>for</i> <i class ='variable'>m</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>mods</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='variable'>files</i> <i class ='operator'>+</i> <i class ='variable'>select</i><i class ='delimiter'>(</i><i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>mods</i><i class ='delimiter'>,</i> <i class ='variable'>vars</i><i class ='delimiter'>,</i>
+                                           <i class ='variable'>m</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='variable'>files</i> <i class ='operator'>+</i> <i class ='variable'>select</i><i class ='delimiter'>(</i><i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>mods</i><i class ='delimiter'>,</i> <i class ='variable'>vars</i><i class ='delimiter'>,</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>break</i>
+    <i class ='keyword'>return</i> <i class ='variable'>files</i><i class ='delimiter'>,</i> <i class ='variable'>modules</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>select</i><i class ='delimiter'>(</i><i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>mods</i><i class ='delimiter'>,</i> <i class ='variable'>vars</i><i class ='delimiter'>,</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>skipofiles</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>w</i> <i class ='keyword'>in</i> <i class ='variable'>mods</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>treatword</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>w</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>expandvars</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>,</i> <i class ='variable'>vars</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>w</i> <i class ='keyword'>in</i> <i class ='variable'>w</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>skipofiles</i> <i class ='keyword'>and</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='variable'>-2</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;.o&#39;</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='comment'># Assume $var expands to absolute pathname</i>
+            <i class ='keyword'>if</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;$&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='variable'>-2</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;.o&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.a&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-L&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-R&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>:</i><i class ='integer'>3</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;$&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+            <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>files</i>
+
+<i class ='variable'>cc_</i><i class ='variable'>flags</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;-I&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-D&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-U&#39;</i><i class ='delimiter'>]</i>
+<i class ='variable'>cc_</i><i class ='variable'>exts</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;.c&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.C&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.cc&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.c++&#39;</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>treatword</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='keyword'>in</i> <i class ='variable'>cc_</i><i class ='variable'>flags</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>if</i> <i class ='variable'>w</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>w</i> <i class ='comment'># Assume loader flag</i>
+    <i class ='variable'>head</i><i class ='delimiter'>,</i> <i class ='variable'>tail</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>)</i>
+    <i class ='variable'>base</i><i class ='delimiter'>,</i> <i class ='variable'>ext</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>splitext</i><i class ='delimiter'>(</i><i class ='variable'>tail</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>cc_</i><i class ='variable'>exts</i><i class ='delimiter'>:</i>
+        <i class ='variable'>tail</i> <i class ='delimiter'>=</i> <i class ='variable'>base</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;.o&#39;</i>
+        <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>head</i><i class ='delimiter'>,</i> <i class ='variable'>tail</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>w</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>expandvars</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>vars</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>while</i> <i class ='variable'>i</i> <i class ='operator'>&lt;</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>k</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;$&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>i</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+        <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i>
+        <i class ='variable'>var</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+        <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>var</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;(&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>j</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;)&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>i</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>j</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>var</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>j</i><i class ='delimiter'>]</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>j</i><i class ='operator'>+</i><i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>var</i> <i class ='keyword'>in</i> <i class ='variable'>vars</i><i class ='delimiter'>:</i>
+            <i class ='datatype'>str</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>k</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>vars</i><i class ='delimiter'>[</i><i class ='variable'>var</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='datatype'>str</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>k</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>str</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

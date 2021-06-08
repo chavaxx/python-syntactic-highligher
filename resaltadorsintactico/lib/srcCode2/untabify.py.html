@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='string'>&quot;Replace tabs with spaces in argument files.  Print names of changed files.&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+<i class ='keyword'>import</i> <i class ='variable'>tokenize</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>tabsize</i> <i class ='delimiter'>=</i> <i class ='integer'>8</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='string'>&quot;t:&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='string'>&quot;At least one file argument required&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;usage:&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='string'>&quot;[-t tabwidth] file ...&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='keyword'>for</i> <i class ='variable'>optname</i><i class ='delimiter'>,</i> <i class ='variable'>optvalue</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>optname</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-t&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>tabsize</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>optvalue</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>tabsize</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>tabsize</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>encoding</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>encoding</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%r: I/O error: %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='variable'>newtext</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>expandtabs</i><i class ='delimiter'>(</i><i class ='variable'>tabsize</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>newtext</i> <i class ='operator'>==</i> <i class ='variable'>text</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i>
+    <i class ='variable'>backup</i> <i class ='delimiter'>=</i> <i class ='variable'>filename</i> <i class ='operator'>+</i> <i class ='string'>&quot;~&quot;</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>unlink</i><i class ='delimiter'>(</i><i class ='variable'>backup</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>OSError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>rename</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>backup</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>OSError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='variable'>encoding</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>newtext</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

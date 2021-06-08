@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='multilineComment'>&quot;&quot;&quot;Check proposed changes for common issues.&quot;&quot;&quot;</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>shutil</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i>
+<i class ='keyword'>import</i> <i class ='variable'>subprocess</i>
+<i class ='keyword'>import</i> <i class ='variable'>sysconfig</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>reindent</i>
+<i class ='keyword'>import</i> <i class ='variable'>untabify</i>
+
+
+<i class ='comment'># Excluded directories which are copies of external libraries:</i>
+<i class ='comment'># don&#39;t check their coding style</i>
+<i class ='variable'>EXCLUDE_</i><i class ='variable'>DIRS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_ctypes&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;libffi_osx&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_ctypes&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;libffi_msvc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_decimal&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;libmpdec&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;expat&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;zlib&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+<i class ='variable'>SRCDIR</i> <i class ='delimiter'>=</i> <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>config_</i><i class ='variable'>var</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;srcdir&#39;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>n_</i><i class ='variable'>files_</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>count</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Return &#39;N file(s)&#39; with the proper plurality on &#39;file&#39;.&quot;&quot;&quot;</i>
+    <i class ='keyword'>return</i> <i class ='string'>&quot;{} file{}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>count</i><i class ='delimiter'>,</i> <i class ='string'>&quot;s&quot;</i> <i class ='keyword'>if</i> <i class ='variable'>count</i> <i class ='operator'>!=</i> <i class ='integer'>1</i> <i class ='keyword'>else</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='variable'>message</i><i class ='delimiter'>,</i> <i class ='variable'>modal</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i> <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Decorator to output status info to stdout.&quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='variable'>decorated_</i><i class ='variable'>fxn</i><i class ='delimiter'>(</i><i class ='variable'>fxn</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>def</i> <i class ='variable'>call_</i><i class ='variable'>fxn</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>message</i> <i class ='operator'>+</i> <i class ='charlist'>&#39; ... &#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>flush</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='variable'>fxn</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>modal</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>info</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;done&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>info</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='variable'>result</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;yes&quot;</i> <i class ='keyword'>if</i> <i class ='variable'>result</i> <i class ='keyword'>else</i> <i class ='string'>&quot;NO&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i> <i class ='variable'>result</i>
+        <i class ='keyword'>return</i> <i class ='variable'>call_</i><i class ='variable'>fxn</i>
+    <i class ='keyword'>return</i> <i class ='variable'>decorated_</i><i class ='variable'>fxn</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>git_</i><i class ='variable'>branch</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Get the symbolic name for the current git branch&quot;&quot;&quot;</i>
+    <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;git rev-parse --abbrev-ref HEAD&quot;</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>stderr</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>DEVNULL</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;UTF-8&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>CalledProcessError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>git_</i><i class ='variable'>upstream_</i><i class ='variable'>remote</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;Get the remote name to use for upstream branches
+
+    Uses &quot;</i><i class ='variable'>upstream</i><i class ='string'>&quot; if it exists, &quot;</i><i class ='variable'>origin</i><i class ='string'>&quot; otherwise
+    &quot;</i><i class ='string'>&quot;&quot;</i>
+    <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;git remote get-url upstream&quot;</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i>
+                                <i class ='variable'>stderr</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>DEVNULL</i><i class ='delimiter'>,</i>
+                                <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i>
+                                <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;UTF-8&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>CalledProcessError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;origin&quot;</i>
+    <i class ='keyword'>return</i> <i class ='string'>&quot;upstream&quot;</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>git_</i><i class ='variable'>remote_</i><i class ='variable'>default_</i><i class ='variable'>branch</i><i class ='delimiter'>(</i><i class ='variable'>remote_</i><i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Get the name of the default branch for the given remote
+
+    It is typically called &#39;main&#39;, but may differ
+    &quot;&quot;&quot;</i>
+    <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;git remote show {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>remote_</i><i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>env</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>.</i><i class ='variable'>copy</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>env</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;LANG&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;C&#39;</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>remote_</i><i class ='variable'>info</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i>
+                                              <i class ='variable'>stderr</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>DEVNULL</i><i class ='delimiter'>,</i>
+                                              <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i>
+                                              <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;UTF-8&#39;</i><i class ='delimiter'>,</i>
+                                              <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='variable'>env</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>CalledProcessError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>remote_</i><i class ='variable'>info</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='string'>&quot;HEAD branch:&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+            <i class ='variable'>base_</i><i class ='variable'>branch</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot;:&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i> <i class ='variable'>base_</i><i class ='variable'>branch</i>
+    <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Getting base branch for PR&quot;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='keyword'>lambda</i> <i class ='variable'>x</i><i class ='delimiter'>:</i> <i class ='variable'>x</i> <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i> <i class ='keyword'>else</i> <i class ='string'>&quot;not a PR branch&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>exists</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.git&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Not a git checkout, so there&#39;s no base branch</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+    <i class ='variable'>upstream_</i><i class ='variable'>remote</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>git_</i><i class ='variable'>upstream_</i><i class ='variable'>remote</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>version</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i>
+    <i class ='keyword'>if</i> <i class ='variable'>version</i><i class ='delimiter'>.</i><i class ='variable'>releaselevel</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;alpha&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>base_</i><i class ='variable'>branch</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>git_</i><i class ='variable'>remote_</i><i class ='variable'>default_</i><i class ='variable'>branch</i><i class ='delimiter'>(</i><i class ='variable'>upstream_</i><i class ='variable'>remote</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>base_</i><i class ='variable'>branch</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;{0.major}.{0.minor}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+    <i class ='variable'>this_</i><i class ='variable'>branch</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>git_</i><i class ='variable'>branch</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>this_</i><i class ='variable'>branch</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>or</i> <i class ='variable'>this_</i><i class ='variable'>branch</i> <i class ='operator'>==</i> <i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Not on a git PR branch, so there&#39;s no base branch</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>return</i> <i class ='variable'>upstream_</i><i class ='variable'>remote</i> <i class ='operator'>+</i> <i class ='string'>&quot;/&quot;</i> <i class ='operator'>+</i> <i class ='variable'>base_</i><i class ='variable'>branch</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Getting the list of files that have been added/changed&quot;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='keyword'>lambda</i> <i class ='variable'>x</i><i class ='delimiter'>:</i> <i class ='variable'>n_</i><i class ='variable'>files_</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>changed_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Get the list of changed or added files from git.&quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>exists</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.git&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># We just use an existence check here as:</i>
+        <i class ='comment'>#  directory = normal git checkout/clone</i>
+        <i class ='comment'>#  file = git worktree directory</i>
+        <i class ='keyword'>if</i> <i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;git diff --name-status &#39;</i> <i class ='operator'>+</i> <i class ='variable'>base_</i><i class ='variable'>branch</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;git status --porcelain&#39;</i>
+        <i class ='variable'>filenames</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>with</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>Popen</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                              <i class ='variable'>stdout</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>PIPE</i><i class ='delimiter'>,</i>
+                              <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>st</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>st</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>:</i>
+                <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='variable'>status_</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>maxsplit</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+                <i class ='variable'>status</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>status_</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+                <i class ='comment'># modified, added or unmerged files</i>
+                <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>status</i><i class ='delimiter'>.</i><i class ='variable'>intersection</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;MAU&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>continue</i>
+                <i class ='keyword'>if</i> <i class ='charlist'>&#39; -&gt; &#39;</i> <i class ='keyword'>in</i> <i class ='variable'>filename</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># file is renamed</i>
+                    <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39; -&gt; &#39;</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='variable'>filenames</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;need a git checkout to get modified files&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>filenames2</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>filenames</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Normalize the path to be able to match using .startswith()</i>
+        <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>normpath</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>any</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='variable'>EXCLUDE_</i><i class ='variable'>DIRS</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Exclude the file</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>filenames2</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>filenames2</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>report_</i><i class ='variable'>modified_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>count</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>count</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>n_</i><i class ='variable'>files_</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>count</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='string'>&quot;{}:&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>n_</i><i class ='variable'>files_</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>count</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>:</i>
+            <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;  {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>lines</i><i class ='delimiter'>)</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Fixing Python file whitespace&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='variable'>report_</i><i class ='variable'>modified_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>normalize_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Make sure that the whitespace for .py files have been normalized.&quot;&quot;&quot;</i>
+    <i class ='variable'>reindent</i><i class ='delimiter'>.</i><i class ='variable'>makebackup</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>  <i class ='comment'># No need to create backups.</i>
+    <i class ='variable'>fixed</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>path</i> <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.py&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i>
+             <i class ='variable'>reindent</i><i class ='delimiter'>.</i><i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i> <i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>return</i> <i class ='variable'>fixed</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Fixing C file whitespace&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='variable'>report_</i><i class ='variable'>modified_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>normalize_</i><i class ='variable'>c_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Report if any C files &quot;&quot;&quot;</i>
+    <i class ='variable'>fixed</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>:</i>
+        <i class ='variable'>abspath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i> <i class ='variable'>path</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>abspath</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;r&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='charlist'>&#39;\t&#39;</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+        <i class ='variable'>untabify</i><i class ='delimiter'>.</i><i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>abspath</i><i class ='delimiter'>,</i> <i class ='integer'>8</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+        <i class ='variable'>fixed</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>fixed</i>
+
+
+<i class ='variable'>ws_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>br</i><i class ='charlist'>&#39;\s+(\r?\n)$&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Fixing docs whitespace&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='variable'>report_</i><i class ='variable'>modified_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>normalize_</i><i class ='variable'>docs_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>fixed</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>:</i>
+        <i class ='variable'>abspath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>SRCDIR</i><i class ='delimiter'>,</i> <i class ='variable'>path</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>abspath</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>new_</i><i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>ws_</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>sub</i><i class ='delimiter'>(</i><i class ='variable'>br</i><i class ='charlist'>&#39;\1&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>lines</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>if</i> <i class ='variable'>new_</i><i class ='variable'>lines</i> <i class ='operator'>!=</i> <i class ='variable'>lines</i><i class ='delimiter'>:</i>
+                <i class ='variable'>shutil</i><i class ='delimiter'>.</i><i class ='variable'>copyfile</i><i class ='delimiter'>(</i><i class ='variable'>abspath</i><i class ='delimiter'>,</i> <i class ='variable'>abspath</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;.bak&#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>abspath</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;wb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>writelines</i><i class ='delimiter'>(</i><i class ='variable'>new_</i><i class ='variable'>lines</i><i class ='delimiter'>)</i>
+                <i class ='variable'>fixed</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>Exception</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Cannot fix %s: %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>fixed</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Docs modified&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>modal</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>docs_</i><i class ='variable'>modified</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Report if any file in the Doc directory has been changed.&quot;&quot;&quot;</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>bool</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Misc/ACKS updated&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>modal</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>credit_</i><i class ='variable'>given</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Check if Misc/ACKS has been changed.&quot;&quot;&quot;</i>
+    <i class ='keyword'>return</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Misc&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ACKS&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;Misc/NEWS.d updated with `blurb`&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>modal</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>reported_</i><i class ='variable'>news</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Check if Misc/NEWS.d has been changed.&quot;&quot;&quot;</i>
+    <i class ='keyword'>return</i> <i class ='variable'>any</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Misc&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;NEWS.d&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;next&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+               <i class ='keyword'>for</i> <i class ='variable'>p</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;configure regenerated&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>modal</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='datatype'>str</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>regenerated_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Check if configure has been regenerated.&quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='charlist'>&#39;configure.ac&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;yes&quot;</i> <i class ='keyword'>if</i> <i class ='charlist'>&#39;configure&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>else</i> <i class ='string'>&quot;no&quot;</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;not needed&quot;</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='string'>&quot;pyconfig.h.in regenerated&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>modal</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>info</i><i class ='delimiter'>=</i><i class ='datatype'>str</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>regenerated_</i><i class ='variable'>pyconfig_</i><i class ='variable'>h_</i><i class ='keyword'>in</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Check if pyconfig.h.in has been regenerated.&quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='charlist'>&#39;configure.ac&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;yes&quot;</i> <i class ='keyword'>if</i> <i class ='charlist'>&#39;pyconfig.h.in&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>else</i> <i class ='string'>&quot;no&quot;</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;not needed&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>travis</i><i class ='delimiter'>(</i><i class ='variable'>pull_</i><i class ='variable'>request</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>pull_</i><i class ='variable'>request</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;false&#39;</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Not a pull request; skipping&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='variable'>base_</i><i class ='variable'>branch</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='delimiter'>=</i> <i class ='variable'>changed_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>)</i>
+    <i class ='variable'>python_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>fn</i> <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.py&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>c_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>fn</i> <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.c&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.h&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>doc_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>fn</i> <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Doc&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i>
+                 <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.rst&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.inc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>fixed</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>fixed</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>normalize_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>python_</i><i class ='variable'>files</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>fixed</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>normalize_</i><i class ='variable'>c_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>c_</i><i class ='variable'>files</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>fixed</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>normalize_</i><i class ='variable'>docs_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>doc_</i><i class ='variable'>files</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>fixed</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;No whitespace issues found&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;Please fix the {len(fixed)} file(s) with whitespace issues&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;(on UNIX you can run `make patchcheck` to make the fixes)&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>base_</i><i class ='variable'>branch</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='delimiter'>=</i> <i class ='variable'>changed_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='variable'>base_</i><i class ='variable'>branch</i><i class ='delimiter'>)</i>
+    <i class ='variable'>python_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>fn</i> <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.py&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>c_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>fn</i> <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.c&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.h&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>doc_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>fn</i> <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Doc&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i>
+                 <i class ='variable'>fn</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.rst&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.inc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>misc_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>p</i> <i class ='keyword'>for</i> <i class ='variable'>p</i> <i class ='keyword'>in</i> <i class ='variable'>file_</i><i class ='variable'>paths</i> <i class ='keyword'>if</i> <i class ='variable'>p</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Misc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>}</i>
+    <i class ='comment'># PEP 8 whitespace rules enforcement.</i>
+    <i class ='variable'>normalize_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>python_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+    <i class ='comment'># C rules enforcement.</i>
+    <i class ='variable'>normalize_</i><i class ='variable'>c_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>c_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Doc whitespace enforcement.</i>
+    <i class ='variable'>normalize_</i><i class ='variable'>docs_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>doc_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Docs updated.</i>
+    <i class ='variable'>docs_</i><i class ='variable'>modified</i><i class ='delimiter'>(</i><i class ='variable'>doc_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Misc/ACKS changed.</i>
+    <i class ='variable'>credit_</i><i class ='variable'>given</i><i class ='delimiter'>(</i><i class ='variable'>misc_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Misc/NEWS changed.</i>
+    <i class ='variable'>reported_</i><i class ='variable'>news</i><i class ='delimiter'>(</i><i class ='variable'>misc_</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Regenerated configure, if necessary.</i>
+    <i class ='variable'>regenerated_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Regenerated pyconfig.h.in, if necessary.</i>
+    <i class ='variable'>regenerated_</i><i class ='variable'>pyconfig_</i><i class ='variable'>h_</i><i class ='keyword'>in</i><i class ='delimiter'>(</i><i class ='variable'>file_</i><i class ='variable'>paths</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Test suite run and passed.</i>
+    <i class ='keyword'>if</i> <i class ='variable'>python_</i><i class ='variable'>files</i> <i class ='keyword'>or</i> <i class ='variable'>c_</i><i class ='variable'>files</i><i class ='delimiter'>:</i>
+        <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='string'>&quot; and check for refleaks?&quot;</i> <i class ='keyword'>if</i> <i class ='variable'>c_</i><i class ='variable'>files</i> <i class ='keyword'>else</i> <i class ='string'>&quot;?&quot;</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Did you run the test suite&quot;</i> <i class ='operator'>+</i> <i class ='variable'>end</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i><i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--travis&#39;</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Perform pass/fail checks&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>travis</i><i class ='delimiter'>:</i>
+        <i class ='variable'>travis</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>travis</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

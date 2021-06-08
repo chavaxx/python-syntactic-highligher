@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;Check the stable ABI manifest or generate files from it
+
+By default, the tool only checks existing files/libraries.
+Pass --generate to recreate auto-generated files instead.
+
+For actions that take a FILENAME, the filename can be left out to use a default
+(relative to the manifest file, as they appear in the CPython codebase).
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>functools</i> <i class ='keyword'>import</i> <i class ='variable'>partial</i>
+<i class ='keyword'>from</i> <i class ='variable'>pathlib</i> <i class ='keyword'>import</i> <i class ='variable'>Path</i>
+<i class ='keyword'>import</i> <i class ='variable'>dataclasses</i>
+<i class ='keyword'>import</i> <i class ='variable'>subprocess</i>
+<i class ='keyword'>import</i> <i class ='variable'>sysconfig</i>
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>import</i> <i class ='variable'>textwrap</i>
+<i class ='keyword'>import</i> <i class ='variable'>difflib</i>
+<i class ='keyword'>import</i> <i class ='variable'>shutil</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i>
+<i class ='keyword'>import</i> <i class ='variable'>io</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>csv</i>
+
+<i class ='variable'>MISSING</i> <i class ='delimiter'>=</i> <i class ='variable'>object</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>EXCLUDED_</i><i class ='variable'>HEADERS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+    <i class ='string'>&quot;bytes_methods.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;cellobject.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;classobject.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;code.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;compile.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;datetime.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;dtoa.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;frameobject.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;funcobject.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;genobject.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;longintrepr.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;parsetok.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;pyatomic.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;pytime.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;token.h&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;ucnhash.h&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>}</i>
+<i class ='variable'>MACOS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>platform</i> <i class ='operator'>==</i> <i class ='string'>&quot;darwin&quot;</i><i class ='delimiter'>)</i>
+<i class ='variable'>UNIXY</i> <i class ='delimiter'>=</i> <i class ='variable'>MACOS</i> <i class ='keyword'>or</i> <i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>platform</i> <i class ='operator'>==</i> <i class ='string'>&quot;linux&quot;</i><i class ='delimiter'>)</i>  <i class ='comment'># XXX should this be &quot;not Windows&quot;?</i>
+
+<i class ='variable'>IFDEF_</i><i class ='variable'>DOC_</i><i class ='variable'>NOTES</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+    <i class ='charlist'>&#39;MS_WINDOWS&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;on Windows&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;HAVE_FORK&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;on platforms with fork()&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;USE_STACKCHECK&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;on platforms with USE_STACKCHECK&#39;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>}</i>
+
+<i class ='comment'># The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the</i>
+<i class ='comment'># following dataclasses.</i>
+<i class ='comment'># Feel free to change its syntax (and the `parse_manifest` function)</i>
+<i class ='comment'># to better serve that purpose (while keeping it human-readable).</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>dataclasses</i><i class ='delimiter'>.</i><i class ='variable'>dataclass</i>
+<i class ='keyword'>class</i> <i class ='variable'>Manifest</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Collection of `ABIItem`s forming the stable ABI/limited API.&quot;&quot;&quot;</i>
+
+    <i class ='variable'>kind</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;manifest&#39;</i>
+    <i class ='variable'>contents</i><i class ='delimiter'>:</i> <i class ='datatype'>dict</i> <i class ='delimiter'>=</i> <i class ='variable'>dataclasses</i><i class ='delimiter'>.</i><i class ='variable'>field</i><i class ='delimiter'>(</i><i class ='variable'>default_</i><i class ='variable'>factory</i><i class ='delimiter'>=</i><i class ='datatype'>dict</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>contents</i><i class ='delimiter'>:</i>
+            <i class ='comment'># We assume that stable ABI items do not share names,</i>
+            <i class ='comment'># even if they&#39;re diferent kinds (e.g. function vs. macro).</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;duplicate ABI item {item.name}&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>contents</i><i class ='delimiter'>[</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>item</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>feature_</i><i class ='variable'>defines</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Return all feature defines which affect what&#39;s available
+
+        These are e.g. HAVE_FORK and MS_WINDOWS.
+        &quot;&quot;&quot;</i>
+        <i class ='keyword'>return</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>ifdef</i> <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>contents</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='delimiter'>{</i><i class ='keyword'>None</i><i class ='delimiter'>}</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>select</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>kinds</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='delimiter'>,</i> <i class ='variable'>include_</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>ifdef</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Yield selected items of the manifest
+
+        kinds: set of requested kinds, e.g. {&#39;function&#39;, &#39;macro&#39;}
+        include_abi_only: if True (default), include all items of the
+            stable ABI.
+            If False, include only items from the limited API
+            (i.e. items people should use today)
+        ifdef: set of feature defines (e.g. {&#39;HAVE_FORK&#39;, &#39;MS_WINDOWS&#39;}).
+            If None (default), items are not filtered by this. (This is
+            different from the empty set, which filters out all such
+            conditional items.)
+        &quot;&quot;&quot;</i>
+        <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>contents</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>kind</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>kinds</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>if</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>abi_</i><i class ='variable'>only</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>include_</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>ifdef</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i>
+                    <i class ='keyword'>and</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>ifdef</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i>
+                    <i class ='keyword'>and</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>ifdef</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>ifdef</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>yield</i> <i class ='variable'>item</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Yield lines to recreate the manifest file (sans comments/newlines)&quot;&quot;&quot;</i>
+        <i class ='comment'># Recursive in preparation for struct member &amp; function argument nodes</i>
+        <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>contents</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='keyword'>from</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='variable'>indent</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>dataclasses</i><i class ='delimiter'>.</i><i class ='variable'>dataclass</i>
+<i class ='keyword'>class</i> <i class ='variable'>ABIItem</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Information on one item (function, macro, struct, etc.)&quot;&quot;&quot;</i>
+
+    <i class ='variable'>kind</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i>
+    <i class ='variable'>name</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i>
+    <i class ='variable'>added</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>contents</i><i class ='delimiter'>:</i> <i class ='datatype'>list</i> <i class ='delimiter'>=</i> <i class ='variable'>dataclasses</i><i class ='delimiter'>.</i><i class ='variable'>field</i><i class ='delimiter'>(</i><i class ='variable'>default_</i><i class ='variable'>factory</i><i class ='delimiter'>=</i><i class ='datatype'>list</i><i class ='delimiter'>)</i>
+    <i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+    <i class ='variable'>ifdef</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='variable'>KINDS</i> <i class ='delimiter'>=</i> <i class ='datatype'>frozenset</i><i class ='delimiter'>(</i><i class ='delimiter'>{</i>
+        <i class ='charlist'>&#39;struct&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;function&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;macro&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;data&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;const&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;typedef&#39;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>indent</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='fstring'>f&quot;{&#39;    &#39; * indent}{self.kind} {self.name}&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>added</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='fstring'>f&quot;{&#39;    &#39; * (indent+1)}added {self.added}&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ifdef</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='fstring'>f&quot;{&#39;    &#39; * (indent+1)}ifdef {self.ifdef}&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='fstring'>f&quot;{&#39;    &#39; * (indent+1)}abi_only&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>manifest</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Parse the given file (iterable of lines) to a Manifest&quot;&quot;&quot;</i>
+
+    <i class ='variable'>LINE_</i><i class ='variable'>RE</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;(?P&lt;indent&gt;[ ]*)(?P&lt;kind&gt;[^ ]+)[ ]*(?P&lt;content&gt;.*)&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>manifest</i> <i class ='delimiter'>=</i> <i class ='variable'>Manifest</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># parents of currently processed line, each with its indentation level</i>
+    <i class ='variable'>levels</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>raise_</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>SyntaxError</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;line {lineno}: {msg}&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>lineno</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>start</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>line</i><i class ='delimiter'>,</i> <i class ='variable'>sep</i><i class ='delimiter'>,</i> <i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>partition</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>match</i> <i class ='delimiter'>=</i> <i class ='variable'>LINE_</i><i class ='variable'>RE</i><i class ='delimiter'>.</i><i class ='variable'>fullmatch</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>match</i><i class ='delimiter'>:</i>
+            <i class ='variable'>raise_</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;invalid syntax: {line}&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>level</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>match</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;indent&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>kind</i> <i class ='delimiter'>=</i> <i class ='variable'>match</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;kind&#39;</i><i class ='delimiter'>]</i>
+        <i class ='variable'>content</i> <i class ='delimiter'>=</i> <i class ='variable'>match</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;content&#39;</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>while</i> <i class ='variable'>level</i> <i class ='operator'>&lt;=</i> <i class ='variable'>levels</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='variable'>levels</i><i class ='delimiter'>.</i><i class ='variable'>pop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>parent</i> <i class ='delimiter'>=</i> <i class ='variable'>levels</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='variable'>entry</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>if</i> <i class ='variable'>kind</i> <i class ='keyword'>in</i> <i class ='variable'>ABIItem</i><i class ='delimiter'>.</i><i class ='variable'>KINDS</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>parent</i><i class ='delimiter'>.</i><i class ='variable'>kind</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;manifest&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>:</i>
+                <i class ='variable'>raise_</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;{kind} cannot go in {parent.kind}&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>entry</i> <i class ='delimiter'>=</i> <i class ='variable'>ABIItem</i><i class ='delimiter'>(</i><i class ='variable'>kind</i><i class ='delimiter'>,</i> <i class ='variable'>content</i><i class ='delimiter'>)</i>
+            <i class ='variable'>parent</i><i class ='delimiter'>.</i><i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>entry</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>kind</i> <i class ='keyword'>in</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;added&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ifdef&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>parent</i><i class ='delimiter'>.</i><i class ='variable'>kind</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>ABIItem</i><i class ='delimiter'>.</i><i class ='variable'>KINDS</i><i class ='delimiter'>:</i>
+                <i class ='variable'>raise_</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;{kind} cannot go in {parent.kind}&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>setattr</i><i class ='delimiter'>(</i><i class ='variable'>parent</i><i class ='delimiter'>,</i> <i class ='variable'>kind</i><i class ='delimiter'>,</i> <i class ='variable'>content</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>kind</i> <i class ='keyword'>in</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;abi_only&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>parent</i><i class ='delimiter'>.</i><i class ='variable'>kind</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;function&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;data&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>:</i>
+                <i class ='variable'>raise_</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;{kind} cannot go in {parent.kind}&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>parent</i><i class ='delimiter'>.</i><i class ='variable'>abi_</i><i class ='variable'>only</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>raise_</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;unknown kind {kind!r}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>levels</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>entry</i><i class ='delimiter'>,</i> <i class ='variable'>level</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>manifest</i>
+
+<i class ='comment'># The tool can run individual &quot;actions&quot;.</i>
+<i class ='comment'># Most actions are &quot;generators&quot;, which generate a single file from the</i>
+<i class ='comment'># manifest. (Checking works by generating a temp file &amp; comparing.)</i>
+<i class ='comment'># Other actions, like &quot;--unixy-check&quot;, don&#39;t work on a single file.</i>
+
+<i class ='variable'>generators</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+<i class ='keyword'>def</i> <i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>var_</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>default_</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Decorates a file generator: function that writes to a file&quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_dec</i><i class ='variable'>orator</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>func</i><i class ='delimiter'>.</i><i class ='variable'>var_</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>var_</i><i class ='variable'>name</i>
+        <i class ='variable'>func</i><i class ='delimiter'>.</i><i class ='variable'>arg_</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;--&#39;</i> <i class ='operator'>+</i> <i class ='variable'>var_</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;_&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>func</i><i class ='delimiter'>.</i><i class ='variable'>default_</i><i class ='variable'>path</i> <i class ='delimiter'>=</i> <i class ='variable'>default_</i><i class ='variable'>path</i>
+        <i class ='variable'>generators</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>func</i>
+    <i class ='keyword'>return</i> <i class ='hexadecimal'>_dec</i><i class ='variable'>orator</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='string'>&quot;python3dll&quot;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;PC/python3dll.c&#39;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>python3</i><i class ='variable'>dll</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>outfile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Generate/check the source for the Windows stable ABI library&quot;&quot;&quot;</i>
+    <i class ='variable'>write</i> <i class ='delimiter'>=</i> <i class ='variable'>partial</i><i class ='delimiter'>(</i><i class ='print'>print</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>outfile</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>textwrap</i><i class ='delimiter'>.</i><i class ='variable'>dedent</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;&quot;</i><i class ='string'>&quot;
+        /* Re-export stable Python ABI */
+
+        /* Generated by Tools/scripts/stable_abi.py */
+
+        #ifdef _M_IX86
+        #define DECORATE &quot;</i><i class ='hexadecimal'>_</i><i class ='string'>&quot;
+        #else
+        #define DECORATE
+        #endif
+
+        #define EXPORT_FUNC(name) \
+            __pragma(comment(linker, &quot;</i><i class ='operator'>/</i><i class ='variable'>EXPORT</i><i class ='delimiter'>:</i><i class ='string'>&quot; DECORATE #name &quot;</i><i class ='delimiter'>=</i><i class ='string'>&quot; PYTHON_DLL_NAME &quot;</i><i class ='delimiter'>.</i><i class ='string'>&quot; #name))
+        #define EXPORT_DATA(name) \
+            __pragma(comment(linker, &quot;</i><i class ='operator'>/</i><i class ='variable'>EXPORT</i><i class ='delimiter'>:</i><i class ='string'>&quot; DECORATE #name &quot;</i><i class ='delimiter'>=</i><i class ='string'>&quot; PYTHON_DLL_NAME &quot;</i><i class ='delimiter'>.</i><i class ='string'>&quot; #name &quot;</i><i class ='delimiter'>,</i><i class ='variable'>DATA</i><i class ='string'>&quot;))
+    &quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>sort_</i><i class ='variable'>key</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i>
+            <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>select</i><i class ='delimiter'>(</i>
+                <i class ='delimiter'>{</i><i class ='charlist'>&#39;function&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='variable'>include_</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>ifdef</i><i class ='delimiter'>=</i><i class ='delimiter'>{</i><i class ='charlist'>&#39;MS_WINDOWS&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>key</i><i class ='delimiter'>=</i><i class ='variable'>sort_</i><i class ='variable'>key</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;EXPORT_FUNC({item.name})&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i>
+            <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>select</i><i class ='delimiter'>(</i>
+                <i class ='delimiter'>{</i><i class ='charlist'>&#39;data&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='variable'>include_</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>ifdef</i><i class ='delimiter'>=</i><i class ='delimiter'>{</i><i class ='charlist'>&#39;MS_WINDOWS&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>key</i><i class ='delimiter'>=</i><i class ='variable'>sort_</i><i class ='variable'>key</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;EXPORT_DATA({item.name})&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>REST_</i><i class ='variable'>ROLES</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+    <i class ='charlist'>&#39;function&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;function&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;data&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;var&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;struct&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;type&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;macro&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;macro&#39;</i><i class ='delimiter'>,</i>
+    <i class ='comment'># &#39;const&#39;: &#39;const&#39;,  # all undocumented</i>
+    <i class ='charlist'>&#39;typedef&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;type&#39;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>}</i>
+
+<i class ='delimiter'>@</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='string'>&quot;doc_list&quot;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Doc/data/stable_abi.dat&#39;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>doc_</i><i class ='variable'>annotations</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>outfile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Generate/check the stable ABI list for documentation annotations&quot;&quot;&quot;</i>
+    <i class ='variable'>writer</i> <i class ='delimiter'>=</i> <i class ='variable'>csv</i><i class ='delimiter'>.</i><i class ='variable'>DictWriter</i><i class ='delimiter'>(</i>
+        <i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;role&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;name&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;added&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ifdef_note&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>lineterminator</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>writeheader</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>select</i><i class ='delimiter'>(</i><i class ='variable'>REST_</i><i class ='variable'>ROLES</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>include_</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>ifdef</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ifdef_</i><i class ='variable'>note</i> <i class ='delimiter'>=</i> <i class ='variable'>IFDEF_</i><i class ='variable'>DOC_</i><i class ='variable'>NOTES</i><i class ='delimiter'>[</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>ifdef</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ifdef_</i><i class ='variable'>note</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>writerow</i><i class ='delimiter'>(</i><i class ='delimiter'>{</i>
+            <i class ='charlist'>&#39;role&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>REST_</i><i class ='variable'>ROLES</i><i class ='delimiter'>[</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>kind</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;name&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;added&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>added</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;ifdef_note&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>ifdef_</i><i class ='variable'>note</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>generate_</i><i class ='variable'>or_</i><i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>path</i><i class ='delimiter'>,</i> <i class ='variable'>func</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Generate/check a file with a single generator
+
+    Return True if successful; False if a comparison failed.
+    &quot;&quot;&quot;</i>
+
+    <i class ='variable'>outfile</i> <i class ='delimiter'>=</i> <i class ='variable'>io</i><i class ='delimiter'>.</i><i class ='variable'>StringIO</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>outfile</i><i class ='delimiter'>)</i>
+    <i class ='variable'>generated</i> <i class ='delimiter'>=</i> <i class ='variable'>outfile</i><i class ='delimiter'>.</i><i class ='variable'>getvalue</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>existing</i> <i class ='delimiter'>=</i> <i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>read_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>generated</i> <i class ='operator'>!=</i> <i class ='variable'>existing</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>:</i>
+            <i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>write_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='variable'>generated</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;File {path} differs from expected!&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>diff</i> <i class ='delimiter'>=</i> <i class ='variable'>difflib</i><i class ='delimiter'>.</i><i class ='variable'>unified_</i><i class ='variable'>diff</i><i class ='delimiter'>(</i>
+                <i class ='variable'>generated</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>existing</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;&lt;expected&gt;&#39;</i><i class ='delimiter'>,</i>
+                <i class ='variable'>lineterm</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i>
+            <i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>diff</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+    <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>do_</i><i class ='variable'>unixy_</i><i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;Check headers &amp; library using &quot;</i><i class ='variable'>Unixy</i><i class ='string'>&quot; tools (GCC/clang, binutils)&quot;</i><i class ='string'>&quot;&quot;</i>
+    <i class ='variable'>okay</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+
+    <i class ='comment'># Get all macros first: we&#39;ll need feature macros like HAVE_FORK and</i>
+    <i class ='comment'># MS_WINDOWS for everything else</i>
+    <i class ='variable'>present_</i><i class ='variable'>macros</i> <i class ='delimiter'>=</i> <i class ='variable'>gcc_</i><i class ='variable'>get_</i><i class ='variable'>limited_</i><i class ='variable'>api_</i><i class ='variable'>macros</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;Include/Python.h&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>feature_</i><i class ='variable'>defines</i> <i class ='delimiter'>=</i> <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>feature_</i><i class ='variable'>defines</i> <i class ='operator'>&amp;</i> <i class ='variable'>present_</i><i class ='variable'>macros</i>
+
+    <i class ='comment'># Check that we have all neded macros</i>
+    <i class ='variable'>expected_</i><i class ='variable'>macros</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i>
+        <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>select</i><i class ='delimiter'>(</i><i class ='delimiter'>{</i><i class ='charlist'>&#39;macro&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>missing_</i><i class ='variable'>macros</i> <i class ='delimiter'>=</i> <i class ='variable'>expected_</i><i class ='variable'>macros</i> <i class ='variable'>-</i> <i class ='variable'>present_</i><i class ='variable'>macros</i>
+    <i class ='variable'>okay</i> <i class ='delimiter'>&amp;=</i> <i class ='hexadecimal'>_</i><i class ='variable'>report_</i><i class ='variable'>unexpected_</i><i class ='variable'>items</i><i class ='delimiter'>(</i>
+        <i class ='variable'>missing_</i><i class ='variable'>macros</i><i class ='delimiter'>,</i>
+        <i class ='charlist'>&#39;Some macros from are not defined from &quot;Include/Python.h&quot;&#39;</i>
+        <i class ='operator'>+</i> <i class ='charlist'>&#39;with Py_LIMITED_API:&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>expected_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>select</i><i class ='delimiter'>(</i>
+        <i class ='delimiter'>{</i><i class ='charlist'>&#39;function&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;data&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='variable'>include_</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>ifdef</i><i class ='delimiter'>=</i><i class ='variable'>feature_</i><i class ='variable'>defines</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Check the static library (*.a)</i>
+    <i class ='variable'>LIBRARY</i> <i class ='delimiter'>=</i> <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>config_</i><i class ='variable'>var</i><i class ='delimiter'>(</i><i class ='string'>&quot;LIBRARY&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>LIBRARY</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;failed to get LIBRARY variable from sysconfig&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>exists</i><i class ='delimiter'>(</i><i class ='variable'>LIBRARY</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>okay</i> <i class ='delimiter'>&amp;=</i> <i class ='variable'>binutils_</i><i class ='variable'>check_</i><i class ='variable'>library</i><i class ='delimiter'>(</i>
+            <i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>LIBRARY</i><i class ='delimiter'>,</i> <i class ='variable'>expected_</i><i class ='variable'>symbols</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Check the dynamic library (*.so)</i>
+    <i class ='variable'>LDLIBRARY</i> <i class ='delimiter'>=</i> <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>config_</i><i class ='variable'>var</i><i class ='delimiter'>(</i><i class ='string'>&quot;LDLIBRARY&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>LDLIBRARY</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;failed to get LDLIBRARY variable from sysconfig&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>okay</i> <i class ='delimiter'>&amp;=</i> <i class ='variable'>binutils_</i><i class ='variable'>check_</i><i class ='variable'>library</i><i class ='delimiter'>(</i>
+            <i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>LDLIBRARY</i><i class ='delimiter'>,</i> <i class ='variable'>expected_</i><i class ='variable'>symbols</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Check definitions in the header files</i>
+    <i class ='variable'>expected_</i><i class ='variable'>defs</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>select</i><i class ='delimiter'>(</i>
+        <i class ='delimiter'>{</i><i class ='charlist'>&#39;function&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;data&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='variable'>include_</i><i class ='variable'>abi_</i><i class ='variable'>only</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i> <i class ='variable'>ifdef</i><i class ='delimiter'>=</i><i class ='variable'>feature_</i><i class ='variable'>defines</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>found_</i><i class ='variable'>defs</i> <i class ='delimiter'>=</i> <i class ='variable'>gcc_</i><i class ='variable'>get_</i><i class ='variable'>limited_</i><i class ='variable'>api_</i><i class ='variable'>definitions</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;Include/Python.h&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>missing_</i><i class ='variable'>defs</i> <i class ='delimiter'>=</i> <i class ='variable'>expected_</i><i class ='variable'>defs</i> <i class ='variable'>-</i> <i class ='variable'>found_</i><i class ='variable'>defs</i>
+    <i class ='variable'>okay</i> <i class ='delimiter'>&amp;=</i> <i class ='hexadecimal'>_</i><i class ='variable'>report_</i><i class ='variable'>unexpected_</i><i class ='variable'>items</i><i class ='delimiter'>(</i>
+        <i class ='variable'>missing_</i><i class ='variable'>defs</i><i class ='delimiter'>,</i>
+        <i class ='charlist'>&#39;Some expected declarations were not declared in &#39;</i>
+        <i class ='operator'>+</i> <i class ='charlist'>&#39;&quot;Include/Python.h&quot; with Py_LIMITED_API:&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Some Limited API macros are defined in terms of private symbols.</i>
+    <i class ='comment'># These are not part of Limited API (even though they&#39;re defined with</i>
+    <i class ='comment'># Py_LIMITED_API). They must be part of the Stable ABI, though.</i>
+    <i class ='variable'>private_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>n</i> <i class ='keyword'>for</i> <i class ='variable'>n</i> <i class ='keyword'>in</i> <i class ='variable'>expected_</i><i class ='variable'>symbols</i> <i class ='keyword'>if</i> <i class ='variable'>n</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;_&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>}</i>
+    <i class ='variable'>extra_</i><i class ='variable'>defs</i> <i class ='delimiter'>=</i> <i class ='variable'>found_</i><i class ='variable'>defs</i> <i class ='variable'>-</i> <i class ='variable'>expected_</i><i class ='variable'>defs</i> <i class ='variable'>-</i> <i class ='variable'>private_</i><i class ='variable'>symbols</i>
+    <i class ='variable'>okay</i> <i class ='delimiter'>&amp;=</i> <i class ='hexadecimal'>_</i><i class ='variable'>report_</i><i class ='variable'>unexpected_</i><i class ='variable'>items</i><i class ='delimiter'>(</i>
+        <i class ='variable'>extra_</i><i class ='variable'>defs</i><i class ='delimiter'>,</i>
+        <i class ='charlist'>&#39;Some extra declarations were found in &quot;Include/Python.h&quot; &#39;</i>
+        <i class ='operator'>+</i> <i class ='charlist'>&#39;with Py_LIMITED_API:&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>okay</i>
+
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>report_</i><i class ='variable'>unexpected_</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='variable'>items</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;If there are any `items`, report them using &quot;</i><i class ='variable'>msg</i><i class ='string'>&quot; and return false&quot;</i><i class ='string'>&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>items</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>items</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39; -&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+    <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>binutils_</i><i class ='variable'>get_</i><i class ='variable'>exported_</i><i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>library</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Retrieve exported symbols using the nm(1) tool from binutils&quot;&quot;&quot;</i>
+    <i class ='comment'># Only look at dynamic symbols</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='string'>&quot;nm&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--no-sort&quot;</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>dynamic</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;--dynamic&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>library</i><i class ='delimiter'>)</i>
+    <i class ='variable'>proc</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>stdout</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>PIPE</i><i class ='delimiter'>,</i> <i class ='variable'>universal_</i><i class ='variable'>newlines</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>returncode</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>returncode</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>stdout</i> <i class ='delimiter'>=</i> <i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>stdout</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;command output is empty&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Split line &#39;0000000000001b80 D PyTextIOWrapper_Type&#39;</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='variable'>parts</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>maxsplit</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>parts</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>3</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='variable'>symbol</i> <i class ='delimiter'>=</i> <i class ='variable'>parts</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>MACOS</i> <i class ='keyword'>and</i> <i class ='variable'>symbol</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;_&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='variable'>symbol</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='variable'>symbol</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>binutils_</i><i class ='variable'>check_</i><i class ='variable'>library</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>library</i><i class ='delimiter'>,</i> <i class ='variable'>expected_</i><i class ='variable'>symbols</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Check that library exports all expected_symbols&quot;&quot;&quot;</i>
+    <i class ='variable'>available_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>binutils_</i><i class ='variable'>get_</i><i class ='variable'>exported_</i><i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>library</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>missing_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='variable'>expected_</i><i class ='variable'>symbols</i> <i class ='variable'>-</i> <i class ='variable'>available_</i><i class ='variable'>symbols</i>
+    <i class ='keyword'>if</i> <i class ='variable'>missing_</i><i class ='variable'>symbols</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>textwrap</i><i class ='delimiter'>.</i><i class ='variable'>dedent</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;&quot;</i><i class ='string'>&quot;\
+            Some symbols from the limited API are missing from {library}:
+                {&#39;, &#39;.join(missing_symbols)}
+
+            This error means that there are some missing symbols among the
+            ones exported in the library.
+            This normally means that some symbol, function implementation or
+            a prototype belonging to a symbol in the limited API has been
+            deleted or is missing.
+        &quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+    <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>gcc_</i><i class ='variable'>get_</i><i class ='variable'>limited_</i><i class ='variable'>api_</i><i class ='variable'>macros</i><i class ='delimiter'>(</i><i class ='variable'>headers</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;Get all limited API macros from headers.
+
+    Runs the preprocesor over all the header files in &quot;</i><i class ='variable'>Include</i><i class ='string'>&quot; setting
+    &quot;</i><i class ='variable'>-DPy_</i><i class ='variable'>LIMITED_</i><i class ='variable'>API</i><i class ='string'>&quot; to the correct value for the running version of the
+    interpreter and extracting all macro definitions (via adding -dM to the
+    compiler arguments).
+
+    Requires Python built with a GCC-compatible compiler. (clang might work)
+    &quot;</i><i class ='string'>&quot;&quot;</i>
+
+    <i class ='variable'>api_</i><i class ='variable'>hexversion</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i><i class ='delimiter'>.</i><i class ='variable'>major</i> <i class ='operator'>&lt;&lt;</i> <i class ='integer'>24</i> <i class ='operator'>|</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i><i class ='delimiter'>.</i><i class ='variable'>minor</i> <i class ='operator'>&lt;&lt;</i> <i class ='integer'>16</i>
+
+    <i class ='variable'>preprocesor_</i><i class ='variable'>output_</i><i class ='variable'>with_</i><i class ='variable'>macros</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>output</i><i class ='delimiter'>(</i>
+        <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>config_</i><i class ='variable'>var</i><i class ='delimiter'>(</i><i class ='string'>&quot;CC&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='operator'>+</i> <i class ='delimiter'>[</i>
+            <i class ='comment'># Prevent the expansion of the exported macros so we can</i>
+            <i class ='comment'># capture them later</i>
+            <i class ='string'>&quot;-DSIZEOF_WCHAR_T=4&quot;</i><i class ='delimiter'>,</i>  <i class ='comment'># The actual value is not important</i>
+            <i class ='fstring'>f&quot;-DPy_LIMITED_API={api_hexversion}&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-I.&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-I./Include&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-dM&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-E&quot;</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>]</i>
+        <i class ='operator'>+</i> <i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>file</i> <i class ='keyword'>in</i> <i class ='variable'>headers</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+        <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='delimiter'>{</i>
+        <i class ='variable'>target</i>
+        <i class ='keyword'>for</i> <i class ='variable'>target</i> <i class ='keyword'>in</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>findall</i><i class ='delimiter'>(</i>
+            <i class ='rstring'>r&quot;#define (\w+)&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>preprocesor_</i><i class ='variable'>output_</i><i class ='variable'>with_</i><i class ='variable'>macros</i>
+        <i class ='delimiter'>)</i>
+    <i class ='delimiter'>}</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>gcc_</i><i class ='variable'>get_</i><i class ='variable'>limited_</i><i class ='variable'>api_</i><i class ='variable'>definitions</i><i class ='delimiter'>(</i><i class ='variable'>headers</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;Get all limited API definitions from headers.
+
+    Run the preprocesor over all the header files in &quot;</i><i class ='variable'>Include</i><i class ='string'>&quot; setting
+    &quot;</i><i class ='variable'>-DPy_</i><i class ='variable'>LIMITED_</i><i class ='variable'>API</i><i class ='string'>&quot; to the correct value for the running version of the
+    interpreter.
+
+    The limited API symbols will be extracted from the output of this command
+    as it includes the prototypes and definitions of all the exported symbols
+    that are in the limited api.
+
+    This function does *NOT* extract the macros defined on the limited API
+
+    Requires Python built with a GCC-compatible compiler. (clang might work)
+    &quot;</i><i class ='string'>&quot;&quot;</i>
+    <i class ='variable'>api_</i><i class ='variable'>hexversion</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i><i class ='delimiter'>.</i><i class ='variable'>major</i> <i class ='operator'>&lt;&lt;</i> <i class ='integer'>24</i> <i class ='operator'>|</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i><i class ='delimiter'>.</i><i class ='variable'>minor</i> <i class ='operator'>&lt;&lt;</i> <i class ='integer'>16</i>
+    <i class ='variable'>preprocesor_</i><i class ='variable'>output</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>output</i><i class ='delimiter'>(</i>
+        <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>config_</i><i class ='variable'>var</i><i class ='delimiter'>(</i><i class ='string'>&quot;CC&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='operator'>+</i> <i class ='delimiter'>[</i>
+            <i class ='comment'># Prevent the expansion of the exported macros so we can capture</i>
+            <i class ='comment'># them later</i>
+            <i class ='string'>&quot;-DPyAPI_FUNC=__PyAPI_FUNC&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-DPyAPI_DATA=__PyAPI_DATA&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-DEXPORT_DATA=__EXPORT_DATA&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-D_Py_NO_RETURN=&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-DSIZEOF_WCHAR_T=4&quot;</i><i class ='delimiter'>,</i>  <i class ='comment'># The actual value is not important</i>
+            <i class ='fstring'>f&quot;-DPy_LIMITED_API={api_hexversion}&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-I.&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-I./Include&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;-E&quot;</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>]</i>
+        <i class ='operator'>+</i> <i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>file</i> <i class ='keyword'>in</i> <i class ='variable'>headers</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+        <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i>
+        <i class ='variable'>stderr</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>DEVNULL</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>stable_</i><i class ='variable'>functions</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i>
+        <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>findall</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;__PyAPI_FUNC\(.*?\)\s*(.*?)\s*\(&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>preprocesor_</i><i class ='variable'>output</i><i class ='delimiter'>)</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>stable_</i><i class ='variable'>exported_</i><i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i>
+        <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>findall</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;__EXPORT_DATA\((.*?)\)&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>preprocesor_</i><i class ='variable'>output</i><i class ='delimiter'>)</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>stable_</i><i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i>
+        <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>findall</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;__PyAPI_DATA\(.*?\)[\s\*\(]*([^);]*)\)?.*;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>preprocesor_</i><i class ='variable'>output</i><i class ='delimiter'>)</i>
+    <i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>stable_</i><i class ='variable'>data</i> <i class ='operator'>|</i> <i class ='variable'>stable_</i><i class ='variable'>exported_</i><i class ='variable'>data</i> <i class ='operator'>|</i> <i class ='variable'>stable_</i><i class ='variable'>functions</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i>
+        <i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>,</i>
+        <i class ='variable'>formatter_</i><i class ='keyword'>class</i><i class ='delimiter'>=</i><i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>RawDescriptionHelpFormatter</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;file&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='variable'>Path</i><i class ='delimiter'>,</i> <i class ='variable'>metavar</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;FILE&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;file with the stable abi manifest&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;--generate&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;generate file(s), rather than just checking them&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;--generate-all&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;as --generate, but generate all file(s) using default filenames.&quot;</i>
+            <i class ='operator'>+</i> <i class ='string'>&quot; (unlike --all, does not run any extra checks)&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;-a&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--all&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;run all available checks using default filenames&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;-l&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--list&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;list available generators and their default filenames; then exit&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;--dump&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;dump the manifest contents (used for debugging the parser)&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+
+    <i class ='variable'>actions_</i><i class ='variable'>group</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument_</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;actions&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>gen</i> <i class ='keyword'>in</i> <i class ='variable'>generators</i><i class ='delimiter'>:</i>
+        <i class ='variable'>actions_</i><i class ='variable'>group</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+            <i class ='variable'>gen</i><i class ='delimiter'>.</i><i class ='variable'>arg_</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='variable'>gen</i><i class ='delimiter'>.</i><i class ='variable'>var_</i><i class ='variable'>name</i><i class ='delimiter'>,</i>
+            <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>nargs</i><i class ='delimiter'>=</i><i class ='string'>&quot;?&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='variable'>MISSING</i><i class ='delimiter'>,</i>
+            <i class ='variable'>metavar</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;FILENAME&#39;</i><i class ='delimiter'>,</i>
+            <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='variable'>gen</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>)</i>
+    <i class ='variable'>actions_</i><i class ='variable'>group</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+        <i class ='charlist'>&#39;--unixy-check&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='variable'>do_</i><i class ='variable'>unixy_</i><i class ='variable'>check</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>base_</i><i class ='variable'>path</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>file</i><i class ='delimiter'>.</i><i class ='variable'>parent</i><i class ='delimiter'>.</i><i class ='variable'>parent</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='datatype'>list</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>gen</i> <i class ='keyword'>in</i> <i class ='variable'>generators</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;{gen.arg_name}: {base_path / gen.default_path}&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>run_</i><i class ='variable'>all_</i><i class ='variable'>generators</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>generate_</i><i class ='variable'>all</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>generate_</i><i class ='variable'>all</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>generate</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>all</i><i class ='delimiter'>:</i>
+        <i class ='variable'>run_</i><i class ='variable'>all_</i><i class ='variable'>generators</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>unixy_</i><i class ='variable'>check</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>file</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>file</i><i class ='delimiter'>:</i>
+        <i class ='variable'>manifest</i> <i class ='delimiter'>=</i> <i class ='variable'>parse_</i><i class ='variable'>manifest</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Remember results of all actions (as booleans).</i>
+    <i class ='comment'># At the end we&#39;ll check that at least one action was run,</i>
+    <i class ='comment'># and also fail if any are false.</i>
+    <i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>dump</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>manifest</i><i class ='delimiter'>.</i><i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='variable'>results</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;dump&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>gen</i> <i class ='keyword'>in</i> <i class ='variable'>generators</i><i class ='delimiter'>:</i>
+        <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>gen</i><i class ='delimiter'>.</i><i class ='variable'>var_</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>filename</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>or</i> <i class ='delimiter'>(</i><i class ='variable'>run_</i><i class ='variable'>all_</i><i class ='variable'>generators</i> <i class ='keyword'>and</i> <i class ='variable'>filename</i> <i class ='keyword'>is</i> <i class ='variable'>MISSING</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>base_</i><i class ='variable'>path</i> <i class ='operator'>/</i> <i class ='variable'>gen</i><i class ='delimiter'>.</i><i class ='variable'>default_</i><i class ='variable'>path</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>filename</i> <i class ='keyword'>is</i> <i class ='variable'>MISSING</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='variable'>results</i><i class ='delimiter'>[</i><i class ='variable'>gen</i><i class ='delimiter'>.</i><i class ='variable'>var_</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>generate_</i><i class ='variable'>or_</i><i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>gen</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>unixy_</i><i class ='variable'>check</i><i class ='delimiter'>:</i>
+        <i class ='variable'>results</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;unixy_check&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>do_</i><i class ='variable'>unixy_</i><i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>manifest</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>results</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>:</i>
+            <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;No file specified. Use --help for usage.&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;No check specified. Use --help for usage.&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>failed_</i><i class ='variable'>results</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>name</i> <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>result</i> <i class ='keyword'>in</i> <i class ='variable'>results</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>result</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>failed_</i><i class ='variable'>results</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;&quot;</i><i class ='string'>&quot;
+        These checks related to the stable ABI did not succeed:
+            {&#39;, &#39;.join(failed_results)}
+
+        If you see diffs in the output, files derived from the stable
+        ABI manifest the were not regenerated.
+        Run `make regen-limited-abi` to fix this.
+
+        Otherwise, see the error(s) above.
+
+        The stable ABI manifest is at: {args.file}
+        Note that there is a process to follow when modifying it.
+
+        You can read more about the limited API and its contracts at:
+
+        https://docs.python.org/3/c-api/stable.html
+
+        And in PEP 384:
+
+        https://www.python.org/dev/peps/pep-0384/
+        &quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

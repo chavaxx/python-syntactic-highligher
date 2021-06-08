@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+<i class ='multilineComment'>&quot;&quot;&quot;nm2def.py
+
+Helpers to extract symbols from Unix libs and auto-generate
+Windows definition files from them. Depends on nm(1). Tested
+on Linux and Solaris only (-p option to nm is for Solaris only).
+
+By Marc-Andre Lemburg, Aug 1998.
+
+Additional notes: the output of nm is supposed to look like this:
+
+acceler.o:
+000001fd T PyGrammar_AddAccelerators
+         U PyGrammar_FindDFA
+00000237 T PyGrammar_RemoveAccelerators
+         U _IO_stderr_
+         U exit
+         U fprintf
+         U free
+         U malloc
+         U printf
+
+grammar1.o:
+00000000 T PyGrammar_FindDFA
+00000034 T PyGrammar_LabelRepr
+         U _PyParser_TokenNames
+         U abort
+         U printf
+         U sprintf
+
+...
+
+Even if this isn&#39;t the default output of your nm, there is generally an
+option to produce this format (since it is the original v7 Unix format).
+
+&quot;&quot;&quot;</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i>
+
+<i class ='variable'>PYTHONLIB</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;libpython%d.%d.a&#39;</i> <i class ='operator'>%</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i>
+<i class ='variable'>PC_</i><i class ='variable'>PYTHONLIB</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;Python%d%d.dll&#39;</i> <i class ='operator'>%</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i>
+<i class ='variable'>NM</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;nm -p -g %s&#39;</i>                      <i class ='comment'># For Linux, use &quot;nm -g %s&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>lib</i><i class ='delimiter'>=</i><i class ='variable'>PYTHONLIB</i><i class ='delimiter'>,</i><i class ='variable'>types</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;T&#39;</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;C&#39;</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;D&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>popen</i><i class ='delimiter'>(</i><i class ='variable'>NM</i> <i class ='operator'>%</i> <i class ='variable'>lib</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>pipe</i><i class ='delimiter'>:</i>
+        <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='variable'>pipe</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>s</i> <i class ='keyword'>in</i> <i class ='variable'>lines</i><i class ='delimiter'>]</i>
+    <i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>lines</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='charlist'>&#39;:&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>items</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>items</i><i class ='delimiter'>)</i> <i class ='operator'>!=</i> <i class ='integer'>3</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>address</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>items</i>
+        <i class ='keyword'>if</i> <i class ='variable'>type</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>types</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>symbols</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>address</i><i class ='delimiter'>,</i><i class ='variable'>type</i>
+    <i class ='keyword'>return</i> <i class ='variable'>symbols</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>export_</i><i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>symbols</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='delimiter'>(</i><i class ='variable'>addr</i><i class ='delimiter'>,</i><i class ='variable'>type</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>symbols</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>type</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;C&#39;</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;D&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>data</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t&#39;</i><i class ='operator'>+</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>code</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t&#39;</i><i class ='operator'>+</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='variable'>data</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>data</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>code</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='charlist'>&#39; DATA\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i><i class ='operator'>+</i><i class ='charlist'>&#39;\n&#39;</i><i class ='operator'>+</i><i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Definition file template</i>
+<i class ='variable'>DEF_</i><i class ='variable'>TEMPLATE</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+EXPORTS
+%s
+&quot;&quot;&quot;</i>
+
+<i class ='comment'># Special symbols that have to be included even though they don&#39;t</i>
+<i class ='comment'># pass the filter</i>
+<i class ='variable'>SPECIALS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i>
+    <i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>filter_</i><i class ='variable'>Python</i><i class ='delimiter'>(</i><i class ='variable'>symbols</i><i class ='delimiter'>,</i><i class ='variable'>specials</i><i class ='delimiter'>=</i><i class ='variable'>SPECIALS</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>symbols</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>name</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;Py&#39;</i> <i class ='keyword'>or</i> <i class ='variable'>name</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>3</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;_Py&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>pass</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>name</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>specials</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>del</i> <i class ='variable'>symbols</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>PYTHONLIB</i><i class ='delimiter'>)</i>
+    <i class ='variable'>filter_</i><i class ='variable'>Python</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i>
+    <i class ='variable'>exports</i> <i class ='delimiter'>=</i> <i class ='variable'>export_</i><i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i>
+    <i class ='variable'>f</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i> <i class ='comment'># open(&#39;PC/python_nt.def&#39;,&#39;w&#39;)</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>DEF_</i><i class ='variable'>TEMPLATE</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>exports</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='comment'># f.close()</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

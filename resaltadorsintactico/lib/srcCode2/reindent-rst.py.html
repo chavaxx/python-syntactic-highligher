@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='comment'># Make a reST file compliant to our pre-commit hook.</i>
+<i class ='comment'># Currently just remove trailing whitespace.</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>patchcheck</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>argv</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>patchcheck</i><i class ='delimiter'>.</i><i class ='variable'>normalize_</i><i class ='variable'>docs_</i><i class ='variable'>whitespace</i><i class ='delimiter'>(</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

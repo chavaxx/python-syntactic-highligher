@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='comment'># pdeps</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Find dependencies between a bunch of Python modules.</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Usage:</i>
+<i class ='comment'>#       pdeps file1.py file2.py ...</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Output:</i>
+<i class ='comment'># Four tables separated by lines like &#39;--- Closure ---&#39;:</i>
+<i class ='comment'># 1) Direct dependencies, listing which module imports which other modules</i>
+<i class ='comment'># 2) The inverse of (1)</i>
+<i class ='comment'># 3) Indirect dependencies, or the closure of the above</i>
+<i class ='comment'># 4) The inverse of (3)</i>
+<i class ='comment'>#</i>
+<i class ='comment'># To do:</i>
+<i class ='comment'># - command line options to select output type</i>
+<i class ='comment'># - option to automatically scan the Python library for referenced modules</i>
+<i class ='comment'># - option to limit output to particular modules</i>
+
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+
+
+<i class ='comment'># Main program</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;usage: pdeps file.py file.py ...&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>2</i>
+    <i class ='comment'>#</i>
+    <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='variable'>table</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--- Uses ---&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>printresults</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--- Used By ---&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>inv</i> <i class ='delimiter'>=</i> <i class ='variable'>inverse</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i>
+    <i class ='variable'>printresults</i><i class ='delimiter'>(</i><i class ='variable'>inv</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--- Closure of Uses ---&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>reach</i> <i class ='delimiter'>=</i> <i class ='variable'>closure</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i>
+    <i class ='variable'>printresults</i><i class ='delimiter'>(</i><i class ='variable'>reach</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--- Closure of Used By ---&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>invreach</i> <i class ='delimiter'>=</i> <i class ='variable'>inverse</i><i class ='delimiter'>(</i><i class ='variable'>reach</i><i class ='delimiter'>)</i>
+    <i class ='variable'>printresults</i><i class ='delimiter'>(</i><i class ='variable'>invreach</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+
+<i class ='comment'># Compiled regular expressions to search for import statements</i>
+<i class ='comment'>#</i>
+<i class ='variable'>m_</i><i class ='keyword'>import</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^[ \t]*from[ \t]+([^ \t]+)[ \t]+&#39;</i><i class ='delimiter'>)</i>
+<i class ='variable'>m_</i><i class ='keyword'>from</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^[ \t]*import[ \t]+([^#]+)&#39;</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Collect data from one file</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>table</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;utf-8&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='variable'>mod</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>basename</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mod</i><i class ='delimiter'>[</i><i class ='variable'>-3</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;.py&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>mod</i> <i class ='delimiter'>=</i> <i class ='variable'>mod</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-3</i><i class ='delimiter'>]</i>
+        <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i> <i class ='keyword'>break</i>
+            <i class ='keyword'>while</i> <i class ='variable'>line</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;\\&#39;:
+                nextline = fp.readline()
+                if not nextline: break
+                line = line[:-1] + nextline
+            m_found = m_import.match(line) or m_from.match(line)
+            if m_found:
+                (a, b), (a1, b1) = m_found.regs[:2]
+            else: continue
+            words = line[a1:b1].split(&#39;</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;)
+            # print &#39;</i><i class ='comment'>#&#39;, line, words</i>
+            <i class ='keyword'>for</i> <i class ='variable'>word</i> <i class ='keyword'>in</i> <i class ='variable'>words</i><i class ='delimiter'>:</i>
+                <i class ='variable'>word</i> <i class ='delimiter'>=</i> <i class ='variable'>word</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>word</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>:</i>
+                    <i class ='datatype'>list</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>word</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Compute closure (this is in fact totally general)</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>closure</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>modules</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='comment'># Initialize reach with a copy of table</i>
+    <i class ='comment'>#</i>
+    <i class ='variable'>reach</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+        <i class ='variable'>reach</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='comment'>#</i>
+    <i class ='comment'># Iterate until no more change</i>
+    <i class ='comment'>#</i>
+    <i class ='variable'>change</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>while</i> <i class ='variable'>change</i><i class ='delimiter'>:</i>
+        <i class ='variable'>change</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>mo</i> <i class ='keyword'>in</i> <i class ='variable'>reach</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>mo</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>for</i> <i class ='variable'>m</i> <i class ='keyword'>in</i> <i class ='variable'>reach</i><i class ='delimiter'>[</i><i class ='variable'>mo</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+                        <i class ='keyword'>if</i> <i class ='variable'>m</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>reach</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+                            <i class ='variable'>reach</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>)</i>
+                            <i class ='variable'>change</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='comment'>#</i>
+    <i class ='keyword'>return</i> <i class ='variable'>reach</i>
+
+
+<i class ='comment'># Invert a table (this is again totally general).</i>
+<i class ='comment'># All keys of the original table are made keys of the inverse,</i>
+<i class ='comment'># so there may be empty lists in the inverse.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>inverse</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>inv</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>key</i> <i class ='keyword'>in</i> <i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>key</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>inv</i><i class ='delimiter'>:</i>
+            <i class ='variable'>inv</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='variable'>inv</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>key</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>inv</i>
+
+
+<i class ='comment'># Store &quot;item&quot; in &quot;dict&quot; under &quot;key&quot;.</i>
+<i class ='comment'># The dictionary maps keys to lists of items.</i>
+<i class ='comment'># If there is no list for the key yet, it is created.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='datatype'>dict</i><i class ='delimiter'>,</i> <i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>key</i> <i class ='keyword'>in</i> <i class ='datatype'>dict</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>dict</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>dict</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>item</i><i class ='delimiter'>]</i>
+
+
+<i class ='comment'># Tabulate results neatly</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>printresults</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>modules</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>maxlen</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i> <i class ='variable'>maxlen</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>maxlen</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>list</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>.</i><i class ='variable'>ljust</i><i class ='delimiter'>(</i><i class ='variable'>maxlen</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;(*)&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ref</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>ref</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Call main and honor exit status</i>
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>KeyboardInterrupt</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;Run Python&#39;s test suite in a fast, rigorous way.
+
+The defaults are meant to be reasonably thorough, while skipping certain
+tests that can be time-consuming or resource-intensive (e.g. largefile),
+or distracting (e.g. audio and gui). These defaults can be overridden by
+simply passing a -u option to this script.
+
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>test</i><i class ='delimiter'>.</i><i class ='variable'>support</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>is_</i><i class ='variable'>multiprocess_</i><i class ='variable'>flag</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>arg</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-j&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='variable'>arg</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--multiprocess&#39;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>is_</i><i class ='variable'>resource_</i><i class ='variable'>use_</i><i class ='variable'>flag</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>arg</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-u&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='variable'>arg</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--use&#39;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>regrtest_</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;-u&#39;</i><i class ='delimiter'>,</i>                 <i class ='comment'># Unbuffered stdout and stderr</i>
+            <i class ='charlist'>&#39;-W&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;default&#39;</i><i class ='delimiter'>,</i>      <i class ='comment'># Warnings set to &#39;default&#39;</i>
+            <i class ='charlist'>&#39;-bb&#39;</i><i class ='delimiter'>,</i>                <i class ='comment'># Warnings about bytes/bytearray</i>
+            <i class ='charlist'>&#39;-E&#39;</i><i class ='delimiter'>,</i>                 <i class ='comment'># Ignore environment variables</i>
+            <i class ='delimiter'>]</i>
+
+    <i class ='comment'># Allow user-specified interpreter options to override our defaults.</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>.</i><i class ='variable'>support</i><i class ='delimiter'>.</i><i class ='variable'>args_</i><i class ='variable'>from_</i><i class ='variable'>interpreter_</i><i class ='variable'>flags</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;-m&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;test&#39;</i><i class ='delimiter'>,</i>    <i class ='comment'># Run the test suite</i>
+                 <i class ='charlist'>&#39;-r&#39;</i><i class ='delimiter'>,</i>            <i class ='comment'># Randomize test order</i>
+                 <i class ='charlist'>&#39;-w&#39;</i><i class ='delimiter'>,</i>            <i class ='comment'># Re-run failed tests in verbose mode</i>
+                 <i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>platform</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;win32&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-n&#39;</i><i class ='delimiter'>)</i>         <i class ='comment'># Silence alerts under Windows</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>any</i><i class ='delimiter'>(</i><i class ='variable'>is_</i><i class ='variable'>multiprocess_</i><i class ='variable'>flag</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>regrtest_</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;-j&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;0&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>  <i class ='comment'># Use all CPU cores</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>any</i><i class ='delimiter'>(</i><i class ='variable'>is_</i><i class ='variable'>resource_</i><i class ='variable'>use_</i><i class ='variable'>flag</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>regrtest_</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;-u&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;all,-largefile,-audio,-gui&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>regrtest_</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>platform</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;win32&#39;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>from</i> <i class ='variable'>subprocess</i> <i class ='keyword'>import</i> <i class ='variable'>call</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>execv</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

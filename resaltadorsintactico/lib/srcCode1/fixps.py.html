@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='comment'># Fix Python script(s) to reference the interpreter via /usr/bin/env python.</i>
+<i class ='comment'># Warning: this overwrites the file without making a backup.</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>f</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;r&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;: can\&#39;t open :&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>with</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^#! */usr/local/bin/python&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;: not a /usr/local/bin/python script&#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>continue</i>
+            <i class ='variable'>rest</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>sub</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/usr/local/bin/python&#39;</i><i class ='delimiter'>,</i>
+                      <i class ='charlist'>&#39;/usr/bin/env python&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>rest</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

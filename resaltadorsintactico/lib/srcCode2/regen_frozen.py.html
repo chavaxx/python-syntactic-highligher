@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>marshal</i>
+
+
+<i class ='variable'>DIR</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+<i class ='comment'># source code for module to freeze</i>
+<i class ='variable'>FILE</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>DIR</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;flag.py&#39;</i><i class ='delimiter'>)</i>
+<i class ='comment'># C symbol to use for array holding frozen bytes</i>
+<i class ='variable'>SYMBOL</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;M___hello__&#39;</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>module_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Compile &#39;filename&#39; and return the module code as a marshalled byte
+    string.
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;r&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='variable'>src</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>co</i> <i class ='delimiter'>=</i> <i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>src</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;none&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;exec&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>co_</i><i class ='datatype'>bytes</i> <i class ='delimiter'>=</i> <i class ='variable'>marshal</i><i class ='delimiter'>.</i><i class ='variable'>dumps</i><i class ='delimiter'>(</i><i class ='variable'>co</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>co_</i><i class ='datatype'>bytes</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>c_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>co_</i><i class ='datatype'>bytes</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Generate C code for the module code in &#39;co_bytes&#39;, write it to &#39;fp&#39;.
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/* Generated with Tools/freeze/regen_frozen.py */&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;static unsigned char %s[] = {&#39;</i> <i class ='operator'>%</i> <i class ='variable'>SYMBOL</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>bytes_</i><i class ='variable'>per_</i><i class ='variable'>row</i> <i class ='delimiter'>=</i> <i class ='integer'>13</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>opcode</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>co_</i><i class ='datatype'>bytes</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>i</i> <i class ='operator'>%</i> <i class ='variable'>bytes_</i><i class ='variable'>per_</i><i class ='variable'>row</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='comment'># start a new row</i>
+            <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    &#39;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%d,&#39;</i> <i class ='operator'>%</i> <i class ='variable'>opcode</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;};&#39;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>out_</i><i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='variable'>co_</i><i class ='datatype'>bytes</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>module_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>FILE</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>out_</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='variable'>gen_</i><i class ='variable'>c_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>co_</i><i class ='datatype'>bytes</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

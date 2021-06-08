@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3.8</i>
+<i class ='multilineComment'>&quot;&quot;&quot;Find the maximum amount of nesting for an expression that can be parsed
+without causing a parse error.
+
+Starting at the INITIAL_NESTING_DEPTH, an expression containing n parenthesis
+around a 0 is generated then tested with both the C and Python parsers. We
+continue incrementing the number of parenthesis by 10 until both parsers have
+failed. As soon as a single parser fails, we stop testing that parser.
+
+The grammar file, initial nesting size, and amount by which the nested size is
+incremented on each success can be controlled by changing the GRAMMAR_FILE,
+INITIAL_NESTING_DEPTH, or NESTED_INCR_AMT variables.
+
+Usage: python -m scripts.find_max_nesting
+&quot;&quot;&quot;</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>ast</i>
+
+<i class ='variable'>GRAMMAR_</i><i class ='variable'>FILE</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;data/python.gram&quot;</i>
+<i class ='variable'>INITIAL_</i><i class ='variable'>NESTING_</i><i class ='variable'>DEPTH</i> <i class ='delimiter'>=</i> <i class ='integer'>10</i>
+<i class ='variable'>NESTED_</i><i class ='variable'>INCR_</i><i class ='variable'>AMT</i> <i class ='delimiter'>=</i> <i class ='integer'>10</i>
+
+
+<i class ='variable'>FAIL</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;\033[91m&quot;</i>
+<i class ='variable'>ENDC</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;\033[0m&quot;</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>check_</i><i class ='variable'>nested_</i><i class ='variable'>expr</i><i class ='delimiter'>(</i><i class ='variable'>nesting_</i><i class ='variable'>depth</i><i class ='delimiter'>:</i> <i class ='datatype'>int</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+    <i class ='variable'>expr</i> <i class ='delimiter'>=</i> <i class ='fstring'>f&quot;{&#39;(&#39; * nesting_depth}0{&#39;)&#39; * nesting_depth}&quot;</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>ast</i><i class ='delimiter'>.</i><i class ='variable'>parse</i><i class ='delimiter'>(</i><i class ='variable'>expr</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Nesting depth of {nesting_depth} is successful&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+    <i class ='keyword'>except</i> <i class ='variable'>Exception</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;{FAIL}(Failed with nesting depth of {nesting_depth}{ENDC}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;{FAIL}\t{err}{ENDC}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Testing {GRAMMAR_FILE} starting at nesting depth of {INITIAL_NESTING_DEPTH}...&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>nesting_</i><i class ='variable'>depth</i> <i class ='delimiter'>=</i> <i class ='variable'>INITIAL_</i><i class ='variable'>NESTING_</i><i class ='variable'>DEPTH</i>
+    <i class ='variable'>succeeded</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+    <i class ='keyword'>while</i> <i class ='variable'>succeeded</i><i class ='delimiter'>:</i>
+        <i class ='variable'>expr</i> <i class ='delimiter'>=</i> <i class ='fstring'>f&quot;{&#39;(&#39; * nesting_depth}0{&#39;)&#39; * nesting_depth}&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>succeeded</i><i class ='delimiter'>:</i>
+            <i class ='variable'>succeeded</i> <i class ='delimiter'>=</i> <i class ='variable'>check_</i><i class ='variable'>nested_</i><i class ='variable'>expr</i><i class ='delimiter'>(</i><i class ='variable'>nesting_</i><i class ='variable'>depth</i><i class ='delimiter'>)</i>
+        <i class ='variable'>nesting_</i><i class ='variable'>depth</i> <i class ='delimiter'>+=</i> <i class ='variable'>NESTED_</i><i class ='variable'>INCR_</i><i class ='variable'>AMT</i>
+
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

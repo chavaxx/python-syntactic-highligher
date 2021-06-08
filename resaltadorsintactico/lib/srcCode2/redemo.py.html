@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;Basic regular expression demonstration facility (Perl style syntax).&quot;&quot;&quot;</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='operator'>*</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>ReDemo</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i> <i class ='delimiter'>=</i> <i class ='variable'>master</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>promptdisplay</i> <i class ='delimiter'>=</i> <i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>,</i>
+                <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Enter a Perl-style regular expression:&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>promptdisplay</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>TOP</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>regexdisplay</i> <i class ='delimiter'>=</i> <i class ='variable'>Entry</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>regexdisplay</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>regexdisplay</i><i class ='delimiter'>.</i><i class ='variable'>focus_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addoptions</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusdisplay</i> <i class ='delimiter'>=</i> <i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusdisplay</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>TOP</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>labeldisplay</i> <i class ='delimiter'>=</i> <i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>,</i>
+                <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Enter a string to search:&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>labeldisplay</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>labeldisplay</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showframe</i> <i class ='delimiter'>=</i> <i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showframe</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showvar</i> <i class ='delimiter'>=</i> <i class ='variable'>StringVar</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showvar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='string'>&quot;first&quot;</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showfirstradio</i> <i class ='delimiter'>=</i> <i class ='variable'>Radiobutton</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showframe</i><i class ='delimiter'>,</i>
+                                         <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Highlight first match&quot;</i><i class ='delimiter'>,</i>
+                                          <i class ='variable'>variable</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showvar</i><i class ='delimiter'>,</i>
+                                          <i class ='variable'>value</i><i class ='delimiter'>=</i><i class ='string'>&quot;first&quot;</i><i class ='delimiter'>,</i>
+                                          <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>recompile</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showfirstradio</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>LEFT</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showallradio</i> <i class ='delimiter'>=</i> <i class ='variable'>Radiobutton</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showframe</i><i class ='delimiter'>,</i>
+                                        <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Highlight all matches&quot;</i><i class ='delimiter'>,</i>
+                                        <i class ='variable'>variable</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showvar</i><i class ='delimiter'>,</i>
+                                        <i class ='variable'>value</i><i class ='delimiter'>=</i><i class ='string'>&quot;all&quot;</i><i class ='delimiter'>,</i>
+                                        <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>recompile</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showallradio</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>LEFT</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i> <i class ='delimiter'>=</i> <i class ='variable'>Text</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>width</i><i class ='delimiter'>=</i><i class ='integer'>60</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='delimiter'>=</i><i class ='integer'>4</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>BOTH</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>tag_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='string'>&quot;hit&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>background</i><i class ='delimiter'>=</i><i class ='string'>&quot;yellow&quot;</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>grouplabel</i> <i class ='delimiter'>=</i> <i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Groups:&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>grouplabel</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>grouplist</i> <i class ='delimiter'>=</i> <i class ='variable'>Listbox</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>grouplist</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>BOTH</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>regexdisplay</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Key&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>recompile</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Key&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>reevaluate</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compiled</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>recompile</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>btags</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>regexdisplay</i><i class ='delimiter'>.</i><i class ='variable'>bindtags</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>regexdisplay</i><i class ='delimiter'>.</i><i class ='variable'>bindtags</i><i class ='delimiter'>(</i><i class ='variable'>btags</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>btags</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>btags</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>bindtags</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>bindtags</i><i class ='delimiter'>(</i><i class ='variable'>btags</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>btags</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>addoptions</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>frames</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>boxes</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>vars</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;IGNORECASE&#39;</i><i class ='delimiter'>,</i>
+                     <i class ='charlist'>&#39;MULTILINE&#39;</i><i class ='delimiter'>,</i>
+                     <i class ='charlist'>&#39;DOTALL&#39;</i><i class ='delimiter'>,</i>
+                     <i class ='charlist'>&#39;VERBOSE&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>boxes</i><i class ='delimiter'>)</i> <i class ='operator'>%</i> <i class ='integer'>3</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>frame</i> <i class ='delimiter'>=</i> <i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>master</i><i class ='delimiter'>)</i>
+                <i class ='variable'>frame</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>frames</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>frame</i><i class ='delimiter'>)</i>
+            <i class ='variable'>val</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+            <i class ='variable'>var</i> <i class ='delimiter'>=</i> <i class ='variable'>IntVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>box</i> <i class ='delimiter'>=</i> <i class ='variable'>Checkbutton</i><i class ='delimiter'>(</i><i class ='variable'>frame</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>variable</i><i class ='delimiter'>=</i><i class ='variable'>var</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>name</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>offvalue</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>onvalue</i><i class ='delimiter'>=</i><i class ='variable'>val</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>recompile</i><i class ='delimiter'>)</i>
+            <i class ='variable'>box</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>LEFT</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>boxes</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>box</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>vars</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>var</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>getflags</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>flags</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>for</i> <i class ='variable'>var</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>vars</i><i class ='delimiter'>:</i>
+            <i class ='variable'>flags</i> <i class ='delimiter'>=</i> <i class ='variable'>flags</i> <i class ='operator'>|</i> <i class ='variable'>var</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>flags</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>recompile</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compiled</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>regexdisplay</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>getflags</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>bg</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>promptdisplay</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;background&#39;</i><i class ='delimiter'>]</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusdisplay</i><i class ='delimiter'>.</i><i class ='variable'>config</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>background</i><i class ='delimiter'>=</i><i class ='variable'>bg</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compiled</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusdisplay</i><i class ='delimiter'>.</i><i class ='variable'>config</i><i class ='delimiter'>(</i>
+                    <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;re.error: %s&quot;</i> <i class ='operator'>%</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>background</i><i class ='delimiter'>=</i><i class ='string'>&quot;red&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>reevaluate</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>reevaluate</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>tag_</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='string'>&quot;hit&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;1.0&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>END</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>TclError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>pass</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>tag_</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='string'>&quot;hit0&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;1.0&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>END</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>TclError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>pass</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>grouplist</i><i class ='delimiter'>.</i><i class ='variable'>delete</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>END</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compiled</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>tag_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='string'>&quot;hit&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>background</i><i class ='delimiter'>=</i><i class ='string'>&quot;yellow&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>tag_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='string'>&quot;hit0&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>background</i><i class ='delimiter'>=</i><i class ='string'>&quot;orange&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='string'>&quot;1.0&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>END</i><i class ='delimiter'>)</i>
+        <i class ='variable'>last</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>nmatches</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>while</i> <i class ='variable'>last</i> <i class ='operator'>&lt;=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compiled</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>last</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>m</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>first</i><i class ='delimiter'>,</i> <i class ='variable'>last</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>span</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>last</i> <i class ='operator'>==</i> <i class ='variable'>first</i><i class ='delimiter'>:</i>
+                <i class ='variable'>last</i> <i class ='delimiter'>=</i> <i class ='variable'>first</i><i class ='operator'>+</i><i class ='integer'>1</i>
+                <i class ='variable'>tag</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;hit0&quot;</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>tag</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;hit&quot;</i>
+            <i class ='variable'>pfirst</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;1.0 + %d chars&quot;</i> <i class ='operator'>%</i> <i class ='variable'>first</i>
+            <i class ='variable'>plast</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;1.0 + %d chars&quot;</i> <i class ='operator'>%</i> <i class ='variable'>last</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>tag_</i><i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>tag</i><i class ='delimiter'>,</i> <i class ='variable'>pfirst</i><i class ='delimiter'>,</i> <i class ='variable'>plast</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>nmatches</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stringdisplay</i><i class ='delimiter'>.</i><i class ='variable'>yview_</i><i class ='variable'>pickplace</i><i class ='delimiter'>(</i><i class ='variable'>pfirst</i><i class ='delimiter'>)</i>
+                <i class ='variable'>groups</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='variable'>groups</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>groups</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>g</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%2d: %r&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>groups</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>grouplist</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='variable'>END</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>)</i>
+            <i class ='variable'>nmatches</i> <i class ='delimiter'>=</i> <i class ='variable'>nmatches</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+            <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showvar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='string'>&quot;first&quot;</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+
+        <i class ='keyword'>if</i> <i class ='variable'>nmatches</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusdisplay</i><i class ='delimiter'>.</i><i class ='variable'>config</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;(no match)&quot;</i><i class ='delimiter'>,</i>
+                                      <i class ='variable'>background</i><i class ='delimiter'>=</i><i class ='string'>&quot;yellow&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusdisplay</i><i class ='delimiter'>.</i><i class ='variable'>config</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Main function, run when invoked as a stand-alone Python program.</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>demo</i> <i class ='delimiter'>=</i> <i class ='variable'>ReDemo</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>)</i>
+    <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>protocol</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;WM_DELETE_WINDOW&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>quit</i><i class ='delimiter'>)</i>
+    <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>mainloop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

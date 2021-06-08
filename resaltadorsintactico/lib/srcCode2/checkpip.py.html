@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='multilineComment'>&quot;&quot;&quot;
+Checks that the version of the projects bundled in ensurepip are the latest
+versions available.
+&quot;&quot;&quot;</i>
+<i class ='keyword'>import</i> <i class ='variable'>ensurepip</i>
+<i class ='keyword'>import</i> <i class ='variable'>json</i>
+<i class ='keyword'>import</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>request</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>outofdate</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>project</i><i class ='delimiter'>,</i> <i class ='variable'>version</i> <i class ='keyword'>in</i> <i class ='variable'>ensurepip</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>PROJECTS</i><i class ='delimiter'>:</i>
+        <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>json</i><i class ='delimiter'>.</i><i class ='variable'>loads</i><i class ='delimiter'>(</i><i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>request</i><i class ='delimiter'>.</i><i class ='variable'>urlopen</i><i class ='delimiter'>(</i>
+            <i class ='string'>&quot;https://pypi.org/pypi/{}/json&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>project</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>cadefault</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='string'>&quot;utf8&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>upstream_</i><i class ='variable'>version</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i><i class ='delimiter'>[</i><i class ='string'>&quot;info&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='string'>&quot;version&quot;</i><i class ='delimiter'>]</i>
+
+        <i class ='keyword'>if</i> <i class ='variable'>version</i> <i class ='operator'>!=</i> <i class ='variable'>upstream_</i><i class ='variable'>version</i><i class ='delimiter'>:</i>
+            <i class ='variable'>outofdate</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;The latest version of {} on PyPI is {}, but ensurepip &quot;</i>
+                  <i class ='string'>&quot;has {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>project</i><i class ='delimiter'>,</i> <i class ='variable'>upstream_</i><i class ='variable'>version</i><i class ='delimiter'>,</i> <i class ='variable'>version</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>outofdate</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

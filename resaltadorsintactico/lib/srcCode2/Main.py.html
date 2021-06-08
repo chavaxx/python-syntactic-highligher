@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;Pynche -- The PYthon Natural Color and Hue Editor.
+
+Contact: %(AUTHNAME)s
+Email:   %(AUTHEMAIL)s
+Version: %(__version__)s
+
+Pynche is based largely on a similar color editor I wrote years ago for the
+SunView window system.  That editor was called ICE: the Interactive Color
+Editor.  I&#39;d always wanted to port the editor to X but didn&#39;t feel like
+hacking X and C code to do it.  Fast forward many years, to where Python +
+Tkinter provides such a nice programming environment, with enough power, that
+I finally buckled down and implemented it.  I changed the name because these
+days, too many other systems have the acronym `ICE&#39;.
+
+This program currently requires Python 2.2 with Tkinter.
+
+Usage: %(PROGRAM)s [-d file] [-i file] [-X] [-v] [-h] [initialcolor]
+
+Where:
+    --database file
+    -d file
+        Alternate location of a color database file
+
+    --initfile file
+    -i file
+        Alternate location of the initialization file.  This file contains a
+        persistent database of the current Pynche options and color.  This
+        means that Pynche restores its option settings and current color when
+        it restarts, using this file (unless the -X option is used).  The
+        default is ~/.pynche
+
+    --ignore
+    -X
+        Ignore the initialization file when starting up.  Pynche will still
+        write the current option settings to this file when it quits.
+
+    --version
+    -v
+        print the version number and exit
+
+    --help
+    -h
+        print this message
+
+    initialcolor
+        initial color, as a color name or #RRGGBB format
+&quot;&quot;&quot;</i>
+
+<i class ='hexadecimal'>__</i><i class ='variable'>version__</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;1.4.1&#39;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+<i class ='keyword'>import</i> <i class ='variable'>ColorDB</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>PyncheWidget</i> <i class ='keyword'>import</i> <i class ='variable'>PyncheWidget</i>
+<i class ='keyword'>from</i> <i class ='variable'>Switchboard</i> <i class ='keyword'>import</i> <i class ='variable'>Switchboard</i>
+<i class ='keyword'>from</i> <i class ='variable'>StripViewer</i> <i class ='keyword'>import</i> <i class ='variable'>StripViewer</i>
+<i class ='keyword'>from</i> <i class ='variable'>ChipViewer</i> <i class ='keyword'>import</i> <i class ='variable'>ChipViewer</i>
+<i class ='keyword'>from</i> <i class ='variable'>TypeinViewer</i> <i class ='keyword'>import</i> <i class ='variable'>TypeinViewer</i>
+
+
+
+<i class ='variable'>PROGRAM</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='variable'>AUTHNAME</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;Barry Warsaw&#39;</i>
+<i class ='variable'>AUTHEMAIL</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;barry@python.org&#39;</i>
+
+<i class ='comment'># Default locations of rgb.txt or other textual color database</i>
+<i class ='variable'>RGB_</i><i class ='variable'>TXT</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='comment'># Solaris OpenWindows</i>
+    <i class ='charlist'>&#39;/usr/openwin/lib/rgb.txt&#39;</i><i class ='delimiter'>,</i>
+    <i class ='comment'># Linux</i>
+    <i class ='charlist'>&#39;/usr/lib/X11/rgb.txt&#39;</i><i class ='delimiter'>,</i>
+    <i class ='comment'># The X11R6.4 rgb.txt file</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;X/rgb.txt&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='comment'># add more here</i>
+    <i class ='delimiter'>]</i>
+
+
+
+<i class ='comment'># Do this because PyncheWidget.py wants to get at the interpolated docstring</i>
+<i class ='comment'># too, for its Help menu.</i>
+<i class ='keyword'>def</i> <i class ='variable'>docstring</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i> <i class ='operator'>%</i> <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>docstring</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+
+
+<i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>color</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>colordb</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># function called on every color</i>
+    <i class ='keyword'>def</i> <i class ='variable'>scan_</i><i class ='variable'>color</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>colordb</i><i class ='delimiter'>=</i><i class ='variable'>colordb</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>colordb</i><i class ='delimiter'>.</i><i class ='variable'>find_</i><i class ='variable'>byname</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>BadColor</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>rrggbb_</i><i class ='variable'>to_</i><i class ='variable'>triplet</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>except</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>BadColor</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>return</i> <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i>
+    <i class ='comment'>#</i>
+    <i class ='comment'># First try the passed in color</i>
+    <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>scan_</i><i class ='variable'>color</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>r</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='comment'># try the same color with &#39;#&#39; prepended, since some shells require</i>
+        <i class ='comment'># this to be escaped, which is a pain</i>
+        <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>scan_</i><i class ='variable'>color</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;#&#39;</i> <i class ='operator'>+</i> <i class ='variable'>s</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>r</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Bad initial color, using gray50:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>)</i>
+        <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>scan_</i><i class ='variable'>color</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;gray50&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>r</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Cannot find an initial color to use&#39;</i><i class ='delimiter'>)</i>
+        <i class ='comment'># does not return</i>
+    <i class ='keyword'>return</i> <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i>
+
+
+
+<i class ='keyword'>def</i> <i class ='variable'>build</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>initialcolor</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>initfile</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>ignore</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i>
+          <i class ='variable'>dbfile</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># create all output widgets</i>
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>Switchboard</i><i class ='delimiter'>(</i><i class ='keyword'>not</i> <i class ='variable'>ignore</i> <i class ='keyword'>and</i> <i class ='variable'>initfile</i><i class ='delimiter'>)</i>
+    <i class ='comment'># defer to the command line chosen color database, falling back to the one</i>
+    <i class ='comment'># in the .pynche file.</i>
+    <i class ='keyword'>if</i> <i class ='variable'>dbfile</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>dbfile</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>optiondb</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;DBFILE&#39;</i><i class ='delimiter'>)</i>
+    <i class ='comment'># find a parseable color database</i>
+    <i class ='variable'>colordb</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='variable'>RGB_</i><i class ='variable'>TXT</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>dbfile</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>dbfile</i> <i class ='delimiter'>=</i> <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>pop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>colordb</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>colordb</i> <i class ='delimiter'>=</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>colordb</i><i class ='delimiter'>(</i><i class ='variable'>dbfile</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>KeyError</i><i class ='delimiter'>,</i> <i class ='variable'>IOError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>pass</i>
+        <i class ='keyword'>if</i> <i class ='variable'>colordb</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>dbfile</i> <i class ='delimiter'>=</i> <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>pop</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>colordb</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;No color database file found, see the -d option.&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>set_</i><i class ='variable'>colordb</i><i class ='delimiter'>(</i><i class ='variable'>colordb</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># create the application window decorations</i>
+    <i class ='variable'>app</i> <i class ='delimiter'>=</i> <i class ='variable'>PyncheWidget</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__</i><i class ='variable'>version__</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>=</i><i class ='variable'>master</i><i class ='delimiter'>)</i>
+    <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>app</i><i class ='delimiter'>.</i><i class ='variable'>window</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># these built-in viewers live inside the main Pynche window</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>view</i><i class ='delimiter'>(</i><i class ='variable'>StripViewer</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>view</i><i class ='delimiter'>(</i><i class ='variable'>ChipViewer</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>view</i><i class ='delimiter'>(</i><i class ='variable'>TypeinViewer</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># get the initial color as components and set the color on all views.  if</i>
+    <i class ='comment'># there was no initial color given on the command line, use the one that&#39;s</i>
+    <i class ='comment'># stored in the option database</i>
+    <i class ='keyword'>if</i> <i class ='variable'>initialcolor</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>optiondb</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>optiondb</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>red</i> <i class ='delimiter'>=</i> <i class ='variable'>optiondb</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;RED&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>green</i> <i class ='delimiter'>=</i> <i class ='variable'>optiondb</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;GREEN&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>optiondb</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;BLUE&#39;</i><i class ='delimiter'>)</i>
+        <i class ='comment'># but if there wasn&#39;t any stored in the database, use grey50</i>
+        <i class ='keyword'>if</i> <i class ='variable'>red</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>or</i> <i class ='variable'>blue</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>or</i> <i class ='variable'>green</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>initial_</i><i class ='variable'>color</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;grey50&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>colordb</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>initial_</i><i class ='variable'>color</i><i class ='delimiter'>(</i><i class ='variable'>initialcolor</i><i class ='delimiter'>,</i> <i class ='variable'>colordb</i><i class ='delimiter'>)</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>views</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>app</i><i class ='delimiter'>,</i> <i class ='variable'>s</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>app</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>app</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>KeyboardInterrupt</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;hd:i:Xv&#39;</i><i class ='delimiter'>,</i>
+            <i class ='delimiter'>[</i><i class ='charlist'>&#39;database=&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;initfile=&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ignore&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;help&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;version&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='variable'>initialcolor</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>initialcolor</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>ignore</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+    <i class ='variable'>dbfile</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>initfile</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>expanduser</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;~/.pynche&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>opt</i><i class ='delimiter'>,</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-h&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--help&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-v&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--version&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;\
+Pynche -- The PYthon Natural Color and Hue Editor.
+Contact: %(AUTHNAME)s
+Email:   %(AUTHEMAIL)s
+Version: %(__version__)s&quot;&quot;&quot;</i> <i class ='operator'>%</i> <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-d&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--database&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>dbfile</i> <i class ='delimiter'>=</i> <i class ='variable'>arg</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-X&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--ignore&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ignore</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-i&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--initfile&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>initfile</i> <i class ='delimiter'>=</i> <i class ='variable'>arg</i>
+
+    <i class ='variable'>app</i><i class ='delimiter'>,</i> <i class ='variable'>sb</i> <i class ='delimiter'>=</i> <i class ='variable'>build</i><i class ='delimiter'>(</i><i class ='variable'>initialcolor</i><i class ='delimiter'>=</i><i class ='variable'>initialcolor</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>initfile</i><i class ='delimiter'>=</i><i class ='variable'>initfile</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>ignore</i><i class ='delimiter'>=</i><i class ='variable'>ignore</i><i class ='delimiter'>,</i>
+                    <i class ='variable'>dbfile</i><i class ='delimiter'>=</i><i class ='variable'>dbfile</i><i class ='delimiter'>)</i>
+    <i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>app</i><i class ='delimiter'>,</i> <i class ='variable'>sb</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>save_</i><i class ='variable'>views</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

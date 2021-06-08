@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>import</i> <i class ='variable'>hashlib</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>filenames</i><i class ='delimiter'>,</i> <i class ='variable'>hashes</i><i class ='delimiter'>,</i> <i class ='variable'>sizes</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>file</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>md5</i> <i class ='delimiter'>=</i> <i class ='variable'>hashlib</i><i class ='delimiter'>.</i><i class ='variable'>md5</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>md5</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+            <i class ='variable'>filenames</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+            <i class ='variable'>hashes</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>md5</i><i class ='delimiter'>.</i><i class ='variable'>hexdigest</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>sizes</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;{:40s}  {:&lt;32s}  {:&lt;9s}&#39;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;File&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;MD5&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Size&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>h</i><i class ='delimiter'>,</i> <i class ='variable'>s</i> <i class ='keyword'>in</i> <i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>filenames</i><i class ='delimiter'>,</i> <i class ='variable'>hashes</i><i class ='delimiter'>,</i> <i class ='variable'>sizes</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;{:40s}  {:&gt;32s}  {:&gt;9s}&#39;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>h</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

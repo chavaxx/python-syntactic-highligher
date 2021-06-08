@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+A curses-based version of Conway&#39;s Game of Life.
+
+An empty board will be displayed, and the following commands are available:
+ E : Erase the board
+ R : Fill the board randomly
+ S : Step for a single generation
+ C : Update continuously until a key is struck
+ Q : Quit
+ Cursor keys :  Move the cursor around the board
+ Space or Enter : Toggle the contents of the cursor&#39;s position
+
+Contributed by Andrew Kuchling, Mouse support and color by Dafydd Crosby.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>curses</i>
+<i class ='keyword'>import</i> <i class ='variable'>random</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>LifeBoard</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Encapsulates a Life board
+
+    Attributes:
+    X,Y : horizontal and vertical size of the board
+    state : dictionary mapping (x,y) to 0 or 1
+
+    Methods:
+    display(update_board) -- If update_board is true, compute the
+                             next generation.  Then display the state
+                             of the board and refresh the screen.
+    erase() -- clear the entire board
+    make_random() -- fill the board randomly
+    set(y,x) -- set the given cell to Live; doesn&#39;t refresh the screen
+    toggle(y,x) -- change the given cell from live to dead, or vice
+                   versa, and refresh the screen display
+
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>scr</i><i class ='delimiter'>,</i> <i class ='variable'>char</i><i class ='delimiter'>=</i><i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;*&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Create a new LifeBoard instance.
+
+        scr -- curses screen object to use for display
+        char -- character used to render live cells (default: &#39;*&#39;)
+        &quot;&quot;&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i> <i class ='delimiter'>=</i> <i class ='variable'>scr</i>
+        <i class ='variable'>Y</i><i class ='delimiter'>,</i> <i class ='variable'>X</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>getmaxyx</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>Y</i> <i class ='delimiter'>=</i> <i class ='variable'>X</i> <i class ='variable'>-</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>Y</i> <i class ='variable'>-</i> <i class ='integer'>2</i> <i class ='variable'>-</i> <i class ='integer'>1</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>char</i> <i class ='delimiter'>=</i> <i class ='variable'>char</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>clear</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Draw a border around the board</i>
+        <i class ='variable'>border_</i><i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;+&#39;</i> <i class ='operator'>+</i> <i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>X</i> <i class ='operator'>*</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;+&#39;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>border_</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>Y</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>border_</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>Y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;|&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>X</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;|&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>refresh</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Set a cell to the live state&quot;&quot;&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>X</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x</i> <i class ='keyword'>or</i> <i class ='variable'>y</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>Y</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='string'>&quot;Coordinates out of range %i,%i&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>toggle</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Toggle a cell&#39;s state between live and dead&quot;&quot;&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>X</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x</i> <i class ='keyword'>or</i> <i class ='variable'>y</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>Y</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='string'>&quot;Coordinates out of range %i,%i&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>del</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addch</i><i class ='delimiter'>(</i><i class ='variable'>y</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+            <i class ='keyword'>if</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>has_</i><i class ='variable'>colors</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='comment'># Let&#39;s pick a random color!</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>attrset</i><i class ='delimiter'>(</i><i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>color_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='variable'>random</i><i class ='delimiter'>.</i><i class ='variable'>randrange</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>7</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addch</i><i class ='delimiter'>(</i><i class ='variable'>y</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>char</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>attrset</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>refresh</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>erase</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Clear the entire board and update the board display&quot;&quot;&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='variable'>update_</i><i class ='variable'>board</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>update_</i><i class ='variable'>board</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Display the whole board, optionally computing one generation&quot;&quot;&quot;</i>
+        <i class ='variable'>M</i><i class ='delimiter'>,</i> <i class ='variable'>N</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>Y</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>update_</i><i class ='variable'>board</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>M</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>for</i> <i class ='variable'>j</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>N</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>j</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addch</i><i class ='delimiter'>(</i><i class ='variable'>j</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>i</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>char</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addch</i><i class ='delimiter'>(</i><i class ='variable'>j</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>i</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>refresh</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+
+        <i class ='variable'>d</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>boring</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>M</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>L</i> <i class ='delimiter'>=</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>i</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>min</i><i class ='delimiter'>(</i><i class ='variable'>M</i><i class ='delimiter'>,</i> <i class ='variable'>i</i> <i class ='operator'>+</i> <i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>j</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>N</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+                <i class ='variable'>live</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>j</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i>
+                <i class ='keyword'>for</i> <i class ='variable'>k</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>j</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>min</i><i class ='delimiter'>(</i><i class ='variable'>N</i><i class ='delimiter'>,</i> <i class ='variable'>j</i> <i class ='operator'>+</i> <i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>for</i> <i class ='variable'>l</i> <i class ='keyword'>in</i> <i class ='variable'>L</i><i class ='delimiter'>:</i>
+                        <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>,</i> <i class ='variable'>k</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i><i class ='delimiter'>:</i>
+                            <i class ='variable'>s</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+                <i class ='variable'>s</i> <i class ='delimiter'>-=</i> <i class ='variable'>live</i>
+                <i class ='keyword'>if</i> <i class ='variable'>s</i> <i class ='operator'>==</i> <i class ='integer'>3</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># Birth</i>
+                    <i class ='variable'>d</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>j</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>has_</i><i class ='variable'>colors</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                        <i class ='comment'># Let&#39;s pick a random color!</i>
+                        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>attrset</i><i class ='delimiter'>(</i><i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>color_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i>
+                            <i class ='variable'>random</i><i class ='delimiter'>.</i><i class ='variable'>randrange</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>7</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addch</i><i class ='delimiter'>(</i><i class ='variable'>j</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>i</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>char</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>attrset</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>live</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>boring</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+                <i class ='keyword'>elif</i> <i class ='variable'>s</i> <i class ='operator'>==</i> <i class ='integer'>2</i> <i class ='keyword'>and</i> <i class ='variable'>live</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># Survival</i>
+                    <i class ='variable'>d</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>j</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+                <i class ='keyword'>elif</i> <i class ='variable'>live</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># Death</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>addch</i><i class ='delimiter'>(</i><i class ='variable'>j</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>i</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>boring</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i> <i class ='delimiter'>=</i> <i class ='variable'>d</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>scr</i><i class ='delimiter'>.</i><i class ='variable'>refresh</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>random</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Fill the board with a random pattern&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>state</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>j</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>Y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>random</i><i class ='delimiter'>.</i><i class ='variable'>random</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='float'>0.5</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>j</i><i class ='delimiter'>,</i> <i class ='variable'>i</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>erase_</i><i class ='variable'>menu</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>,</i> <i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;Clear the space where the menu resides&quot;</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>clrtoeol</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='variable'>menu_</i><i class ='variable'>y</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>clrtoeol</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>display_</i><i class ='variable'>menu</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>,</i> <i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;Display the menu of possible keystroke commands&quot;</i>
+    <i class ='variable'>erase_</i><i class ='variable'>menu</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>,</i> <i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># If color, then light the menu up :-)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>has_</i><i class ='variable'>colors</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>attrset</i><i class ='delimiter'>(</i><i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>color_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='integer'>4</i><i class ='delimiter'>,</i>
+        <i class ='charlist'>&#39;Use the cursor keys to move, and space or Enter to toggle a cell.&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='variable'>menu_</i><i class ='variable'>y</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>4</i><i class ='delimiter'>,</i>
+        <i class ='charlist'>&#39;E)rase the board, R)andom fill, S)tep once or C)ontinuously, Q)uit&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>attrset</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>keyloop</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Clear the screen and display the menu of keys</i>
+    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>clear</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>stdscr_</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>stdscr_</i><i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>getmaxyx</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>menu_</i><i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>stdscr_</i><i class ='variable'>y</i> <i class ='variable'>-</i> <i class ='integer'>3</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='integer'>1</i>
+    <i class ='variable'>display_</i><i class ='variable'>menu</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>,</i> <i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># If color, then initialize the color pairs</i>
+    <i class ='keyword'>if</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>has_</i><i class ='variable'>colors</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>init_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>COLOR_</i><i class ='variable'>BLUE</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>init_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>COLOR_</i><i class ='variable'>CYAN</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>init_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>3</i><i class ='delimiter'>,</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>COLOR_</i><i class ='variable'>GREEN</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>init_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>4</i><i class ='delimiter'>,</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>COLOR_</i><i class ='variable'>MAGENTA</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>init_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>5</i><i class ='delimiter'>,</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>COLOR_</i><i class ='variable'>RED</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>init_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>6</i><i class ='delimiter'>,</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>COLOR_</i><i class ='variable'>YELLOW</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>init_</i><i class ='variable'>pair</i><i class ='delimiter'>(</i><i class ='integer'>7</i><i class ='delimiter'>,</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>COLOR_</i><i class ='variable'>WHITE</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Set up the mask to listen for mouse events</i>
+    <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>mousemask</i><i class ='delimiter'>(</i><i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>BUTTON1_</i><i class ='variable'>CLICKED</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Allocate a subwindow for the Life board and create the board object</i>
+    <i class ='variable'>subwin</i> <i class ='delimiter'>=</i> <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>subwin</i><i class ='delimiter'>(</i><i class ='variable'>stdscr_</i><i class ='variable'>y</i> <i class ='variable'>-</i> <i class ='integer'>3</i><i class ='delimiter'>,</i> <i class ='variable'>stdscr_</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='variable'>board</i> <i class ='delimiter'>=</i> <i class ='variable'>LifeBoard</i><i class ='delimiter'>(</i><i class ='variable'>subwin</i><i class ='delimiter'>,</i> <i class ='variable'>char</i><i class ='delimiter'>=</i><i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;*&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='variable'>update_</i><i class ='variable'>board</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># xpos, ypos are the cursor&#39;s position</i>
+    <i class ='variable'>xpos</i><i class ='delimiter'>,</i> <i class ='variable'>ypos</i> <i class ='delimiter'>=</i> <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>X</i> <i class ='operator'>//</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>Y</i> <i class ='operator'>//</i> <i class ='integer'>2</i>
+
+    <i class ='comment'># Main loop:</i>
+    <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+        <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>ypos</i><i class ='delimiter'>,</i> <i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>xpos</i><i class ='delimiter'>)</i>   <i class ='comment'># Move the cursor</i>
+        <i class ='variable'>c</i> <i class ='delimiter'>=</i> <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>getch</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>                <i class ='comment'># Get a keystroke</i>
+        <i class ='keyword'>if</i> <i class ='integer'>0</i> <i class ='operator'>&lt;</i> <i class ='variable'>c</i> <i class ='operator'>&lt;</i> <i class ='integer'>256</i><i class ='delimiter'>:</i>
+            <i class ='variable'>c</i> <i class ='delimiter'>=</i> <i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>c</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39; \n&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>toggle</i><i class ='delimiter'>(</i><i class ='variable'>ypos</i><i class ='delimiter'>,</i> <i class ='variable'>xpos</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39;Cc&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>erase_</i><i class ='variable'>menu</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>,</i> <i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>)</i>
+                <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='integer'>6</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39; Hit any key to stop continuously &#39;</i>
+                              <i class ='charlist'>&#39;updating the screen.&#39;</i><i class ='delimiter'>)</i>
+                <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>refresh</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='comment'># Activate nodelay mode; getch() will return -1</i>
+                <i class ='comment'># if no keystroke is available, instead of waiting.</i>
+                <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>nodelay</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>c</i> <i class ='delimiter'>=</i> <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>getch</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>c</i> <i class ='operator'>!=</i> <i class ='variable'>-1</i><i class ='delimiter'>:</i>
+                        <i class ='keyword'>break</i>
+                    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;/&#39;</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>refresh</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>addstr</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>refresh</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+                <i class ='variable'>stdscr</i><i class ='delimiter'>.</i><i class ='variable'>nodelay</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>       <i class ='comment'># Disable nodelay mode</i>
+                <i class ='variable'>display_</i><i class ='variable'>menu</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>,</i> <i class ='variable'>menu_</i><i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+            <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39;Ee&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>erase</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39;Qq&#39;</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39;Rr&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>make_</i><i class ='variable'>random</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='variable'>update_</i><i class ='variable'>board</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39;Ss&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='comment'># Ignore incorrect keys</i>
+                <i class ='keyword'>pass</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='operator'>==</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>KEY_</i><i class ='variable'>UP</i> <i class ='keyword'>and</i> <i class ='variable'>ypos</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ypos</i> <i class ='delimiter'>-=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='operator'>==</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>KEY_</i><i class ='variable'>DOWN</i> <i class ='keyword'>and</i> <i class ='variable'>ypos</i> <i class ='operator'>+</i> <i class ='integer'>1</i> <i class ='operator'>&lt;</i> <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>Y</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ypos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='operator'>==</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>KEY_</i><i class ='variable'>LEFT</i> <i class ='keyword'>and</i> <i class ='variable'>xpos</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>xpos</i> <i class ='delimiter'>-=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='operator'>==</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>KEY_</i><i class ='variable'>RIGHT</i> <i class ='keyword'>and</i> <i class ='variable'>xpos</i> <i class ='operator'>+</i> <i class ='integer'>1</i> <i class ='operator'>&lt;</i> <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>:</i>
+            <i class ='variable'>xpos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>c</i> <i class ='operator'>==</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>KEY_</i><i class ='variable'>MOUSE</i><i class ='delimiter'>:</i>
+            <i class ='variable'>mouse_</i><i class ='variable'>id</i><i class ='delimiter'>,</i> <i class ='variable'>mouse_</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>mouse_</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>mouse_</i><i class ='variable'>z</i><i class ='delimiter'>,</i> <i class ='variable'>button_</i><i class ='variable'>state</i> <i class ='delimiter'>=</i> <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>getmouse</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>mouse_</i><i class ='variable'>x</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>mouse_</i><i class ='variable'>x</i> <i class ='operator'>&lt;</i> <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>X</i> <i class ='operator'>+</i> <i class ='integer'>1</i> <i class ='keyword'>and</i>
+                <i class ='variable'>mouse_</i><i class ='variable'>y</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>mouse_</i><i class ='variable'>y</i> <i class ='operator'>&lt;</i> <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>Y</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>xpos</i> <i class ='delimiter'>=</i> <i class ='variable'>mouse_</i><i class ='variable'>x</i> <i class ='variable'>-</i> <i class ='integer'>1</i>
+                <i class ='variable'>ypos</i> <i class ='delimiter'>=</i> <i class ='variable'>mouse_</i><i class ='variable'>y</i> <i class ='variable'>-</i> <i class ='integer'>1</i>
+                <i class ='variable'>board</i><i class ='delimiter'>.</i><i class ='variable'>toggle</i><i class ='delimiter'>(</i><i class ='variable'>ypos</i><i class ='delimiter'>,</i> <i class ='variable'>xpos</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='comment'># They&#39;ve clicked outside the board</i>
+                <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>flash</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Ignore incorrect keys</i>
+            <i class ='keyword'>pass</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>keyloop</i><i class ='delimiter'>(</i><i class ='variable'>stdscr</i><i class ='delimiter'>)</i>                 <i class ='comment'># Enter the main loop</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>curses</i><i class ='delimiter'>.</i><i class ='variable'>wrapper</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

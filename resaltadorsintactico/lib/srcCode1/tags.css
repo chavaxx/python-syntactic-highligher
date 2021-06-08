@@ -1,0 +1,25 @@
+html, body {
+    background-color: #1e1b1b;
+}
+.integer{color:#4cf734}
+.keyword{color:#bd25ee}
+.datatype{color:#2ad8a8}
+.variable{color:#32cce7}
+.binary{color:#57bd4d}
+.octal{color:#57bd4d}
+.hexadecimal{color:#57bd4d}
+.float{color:#4cf734}
+.imaginaryliteral{color:#57bd4d}
+.delimiter{color:#ffff}
+.operator{color:#ffff}
+.charlist{color:#ff6609}
+.string{color:#ff6609}
+.comment{color:#17a21d}
+.multilineComment{color:#d0610b}
+.fstring{color:#ff6609}
+.ustring{color:#ff6609}
+.rstring{color:#ff6609}
+.frstring{color:#ff6609}
+.rfstring{color:#ff6609}
+.errorAscii{color:#ff0000}
+.print{color: #ffc57b}

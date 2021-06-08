@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3.8</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>json</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>typing</i> <i class ='keyword'>import</i> <i class ='variable'>Dict</i><i class ='delimiter'>,</i> <i class ='variable'>Any</i>
+<i class ='keyword'>from</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>request</i> <i class ='keyword'>import</i> <i class ='variable'>urlretrieve</i>
+
+<i class ='variable'>argparser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i>
+    <i class ='variable'>prog</i><i class ='delimiter'>=</i><i class ='string'>&quot;download_pypi_packages&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='string'>&quot;Helper program to download PyPI packages&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;-n&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--number&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='datatype'>int</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='integer'>100</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Number of packages to download&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;-a&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--all&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Download all packages listed in the json file&quot;</i>
+<i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>load_</i><i class ='variable'>json</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='variable'>Any</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='string'>&quot;data&quot;</i><i class ='delimiter'>,</i> <i class ='fstring'>f&quot;{filename}.json&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>j</i> <i class ='delimiter'>=</i> <i class ='variable'>json</i><i class ='delimiter'>.</i><i class ='variable'>loads</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>j</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>remove_</i><i class ='variable'>json</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>path</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='string'>&quot;data&quot;</i><i class ='delimiter'>,</i> <i class ='fstring'>f&quot;{filename}.json&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>download_</i><i class ='variable'>package_</i><i class ='variable'>json</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>name</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>url</i> <i class ='delimiter'>=</i> <i class ='fstring'>f&quot;https://pypi.org/pypi/{package_name}/json&quot;</i>
+    <i class ='variable'>urlretrieve</i><i class ='delimiter'>(</i><i class ='variable'>url</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='string'>&quot;data&quot;</i><i class ='delimiter'>,</i> <i class ='fstring'>f&quot;{package_name}.json&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>download_</i><i class ='variable'>package_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>package_</i><i class ='variable'>json</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='variable'>Any</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>source_</i><i class ='variable'>index</i> <i class ='delimiter'>=</i> <i class ='variable'>-1</i>
+    <i class ='keyword'>for</i> <i class ='variable'>idx</i><i class ='delimiter'>,</i> <i class ='variable'>url_</i><i class ='variable'>info</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>json</i><i class ='delimiter'>[</i><i class ='string'>&quot;urls&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>url_</i><i class ='variable'>info</i><i class ='delimiter'>[</i><i class ='string'>&quot;python_version&quot;</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='string'>&quot;source&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>source_</i><i class ='variable'>index</i> <i class ='delimiter'>=</i> <i class ='variable'>idx</i>
+            <i class ='keyword'>break</i>
+    <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>package_</i><i class ='variable'>json</i><i class ='delimiter'>[</i><i class ='string'>&quot;urls&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>source_</i><i class ='variable'>index</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='string'>&quot;filename&quot;</i><i class ='delimiter'>]</i>
+    <i class ='variable'>url</i> <i class ='delimiter'>=</i> <i class ='variable'>package_</i><i class ='variable'>json</i><i class ='delimiter'>[</i><i class ='string'>&quot;urls&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>source_</i><i class ='variable'>index</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='string'>&quot;url&quot;</i><i class ='delimiter'>]</i>
+    <i class ='variable'>urlretrieve</i><i class ='delimiter'>(</i><i class ='variable'>url</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='string'>&quot;data&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;pypi&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>number_</i><i class ='variable'>packages</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>number</i>
+    <i class ='variable'>all_</i><i class ='variable'>packages</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>all</i>
+
+    <i class ='variable'>top_</i><i class ='variable'>pypi_</i><i class ='variable'>packages</i> <i class ='delimiter'>=</i> <i class ='variable'>load_</i><i class ='variable'>json</i><i class ='delimiter'>(</i><i class ='string'>&quot;top-pypi-packages-365-days&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>all_</i><i class ='variable'>packages</i><i class ='delimiter'>:</i>
+        <i class ='variable'>top_</i><i class ='variable'>pypi_</i><i class ='variable'>packages</i> <i class ='delimiter'>=</i> <i class ='variable'>top_</i><i class ='variable'>pypi_</i><i class ='variable'>packages</i><i class ='delimiter'>[</i><i class ='string'>&quot;rows&quot;</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>number_</i><i class ='variable'>packages</i> <i class ='operator'>&gt;=</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>number_</i><i class ='variable'>packages</i> <i class ='operator'>&lt;=</i> <i class ='integer'>4000</i><i class ='delimiter'>:</i>
+        <i class ='variable'>top_</i><i class ='variable'>pypi_</i><i class ='variable'>packages</i> <i class ='delimiter'>=</i> <i class ='variable'>top_</i><i class ='variable'>pypi_</i><i class ='variable'>packages</i><i class ='delimiter'>[</i><i class ='string'>&quot;rows&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>number_</i><i class ='variable'>packages</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>AssertionError</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unknown value for NUMBER_OF_PACKAGES&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>mkdir</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='string'>&quot;data&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;pypi&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>FileExistsError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>package</i> <i class ='keyword'>in</i> <i class ='variable'>top_</i><i class ='variable'>pypi_</i><i class ='variable'>packages</i><i class ='delimiter'>:</i>
+        <i class ='variable'>package_</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>package</i><i class ='delimiter'>[</i><i class ='string'>&quot;project&quot;</i><i class ='delimiter'>]</i>
+
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Downloading JSON Data for {package_name}... &quot;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>download_</i><i class ='variable'>package_</i><i class ='variable'>json</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Done&quot;</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>package_</i><i class ='variable'>json</i> <i class ='delimiter'>=</i> <i class ='variable'>load_</i><i class ='variable'>json</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Dowloading and compressing package {package_name} ... &quot;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>download_</i><i class ='variable'>package_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>package_</i><i class ='variable'>json</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Done&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>IndexError</i><i class ='delimiter'>,</i> <i class ='variable'>KeyError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Could not locate source for {package_name}&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+            <i class ='variable'>remove_</i><i class ='variable'>json</i><i class ='delimiter'>(</i><i class ='variable'>package_</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

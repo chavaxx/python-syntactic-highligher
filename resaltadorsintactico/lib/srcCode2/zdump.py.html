@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>struct</i>
+<i class ='keyword'>from</i> <i class ='variable'>array</i> <i class ='keyword'>import</i> <i class ='variable'>array</i>
+<i class ='keyword'>from</i> <i class ='variable'>collections</i> <i class ='keyword'>import</i> <i class ='variable'>namedtuple</i>
+<i class ='keyword'>from</i> <i class ='variable'>datetime</i> <i class ='keyword'>import</i> <i class ='variable'>datetime</i>
+
+<i class ='variable'>ttinfo</i> <i class ='delimiter'>=</i> <i class ='variable'>namedtuple</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;ttinfo&#39;</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;tt_gmtoff&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tt_isdst&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tt_abbrind&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>TZInfo</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>transitions</i><i class ='delimiter'>,</i> <i class ='variable'>type_</i><i class ='variable'>indices</i><i class ='delimiter'>,</i> <i class ='variable'>ttis</i><i class ='delimiter'>,</i> <i class ='variable'>abbrs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>transitions</i> <i class ='delimiter'>=</i> <i class ='variable'>transitions</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>type_</i><i class ='variable'>indices</i> <i class ='delimiter'>=</i> <i class ='variable'>type_</i><i class ='variable'>indices</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ttis</i> <i class ='delimiter'>=</i> <i class ='variable'>ttis</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>abbrs</i> <i class ='delimiter'>=</i> <i class ='variable'>abbrs</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>classmethod</i>
+    <i class ='keyword'>def</i> <i class ='variable'>fromfile</i><i class ='delimiter'>(</i><i class ='variable'>cls</i><i class ='delimiter'>,</i> <i class ='variable'>fileobj</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>fileobj</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>4</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='operator'>!=</i> <i class ='string'>&quot;TZif&quot;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='string'>&quot;not a zoneinfo file&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>fileobj</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>20</i><i class ='delimiter'>)</i>
+        <i class ='variable'>header</i> <i class ='delimiter'>=</i> <i class ='variable'>fileobj</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>24</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tzh</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>tzh_</i><i class ='variable'>ttisgmtcnt</i><i class ='delimiter'>,</i> <i class ='variable'>tzh_</i><i class ='variable'>ttisstdcnt</i><i class ='delimiter'>,</i> <i class ='variable'>tzh_</i><i class ='variable'>leapcnt</i><i class ='delimiter'>,</i>
+               <i class ='variable'>tzh_</i><i class ='variable'>timecnt</i><i class ='delimiter'>,</i> <i class ='variable'>tzh_</i><i class ='variable'>typecnt</i><i class ='delimiter'>,</i> <i class ='variable'>tzh_</i><i class ='variable'>charcnt</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>struct</i><i class ='delimiter'>.</i><i class ='variable'>unpack</i><i class ='delimiter'>(</i><i class ='string'>&quot;&gt;6l&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>header</i><i class ='delimiter'>)</i>
+        <i class ='variable'>transitions</i> <i class ='delimiter'>=</i> <i class ='variable'>array</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;i&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>transitions</i><i class ='delimiter'>.</i><i class ='variable'>fromfile</i><i class ='delimiter'>(</i><i class ='variable'>fileobj</i><i class ='delimiter'>,</i> <i class ='variable'>tzh_</i><i class ='variable'>timecnt</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>byteorder</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;big&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>transitions</i><i class ='delimiter'>.</i><i class ='variable'>byteswap</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>type_</i><i class ='variable'>indices</i> <i class ='delimiter'>=</i> <i class ='variable'>array</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;B&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>type_</i><i class ='variable'>indices</i><i class ='delimiter'>.</i><i class ='variable'>fromfile</i><i class ='delimiter'>(</i><i class ='variable'>fileobj</i><i class ='delimiter'>,</i> <i class ='variable'>tzh_</i><i class ='variable'>timecnt</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>ttis</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>tzh_</i><i class ='variable'>typecnt</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ttis</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>ttinfo</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>make</i><i class ='delimiter'>(</i><i class ='variable'>struct</i><i class ='delimiter'>.</i><i class ='variable'>unpack</i><i class ='delimiter'>(</i><i class ='string'>&quot;&gt;lbb&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>fileobj</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>6</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>abbrs</i> <i class ='delimiter'>=</i> <i class ='variable'>fileobj</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='variable'>tzh_</i><i class ='variable'>charcnt</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i> <i class ='delimiter'>=</i> <i class ='variable'>cls</i><i class ='delimiter'>(</i><i class ='variable'>transitions</i><i class ='delimiter'>,</i> <i class ='variable'>type_</i><i class ='variable'>indices</i><i class ='delimiter'>,</i> <i class ='variable'>ttis</i><i class ='delimiter'>,</i> <i class ='variable'>abbrs</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tzh</i> <i class ='delimiter'>=</i> <i class ='variable'>tzh</i>
+
+        <i class ='keyword'>return</i> <i class ='variable'>self</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>stream</i><i class ='delimiter'>,</i> <i class ='variable'>start</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>j</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>trans</i><i class ='delimiter'>,</i> <i class ='variable'>i</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>transitions</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>type_</i><i class ='variable'>indices</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>utc</i> <i class ='delimiter'>=</i> <i class ='variable'>datetime</i><i class ='delimiter'>.</i><i class ='variable'>utcfromtimestamp</i><i class ='delimiter'>(</i><i class ='variable'>trans</i><i class ='delimiter'>)</i>
+            <i class ='variable'>tti</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ttis</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+            <i class ='variable'>lmt</i> <i class ='delimiter'>=</i> <i class ='variable'>datetime</i><i class ='delimiter'>.</i><i class ='variable'>utcfromtimestamp</i><i class ='delimiter'>(</i><i class ='variable'>trans</i> <i class ='operator'>+</i> <i class ='variable'>tti</i><i class ='delimiter'>.</i><i class ='variable'>tt_</i><i class ='variable'>gmtoff</i><i class ='delimiter'>)</i>
+            <i class ='variable'>abbrind</i> <i class ='delimiter'>=</i> <i class ='variable'>tti</i><i class ='delimiter'>.</i><i class ='variable'>tt_</i><i class ='variable'>abbrind</i>
+            <i class ='variable'>abbr</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>abbrs</i><i class ='delimiter'>[</i><i class ='variable'>abbrind</i><i class ='delimiter'>:</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>abbrs</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>abbrind</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>j</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>prev_</i><i class ='variable'>tti</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ttis</i><i class ='delimiter'>[</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>type_</i><i class ='variable'>indices</i><i class ='delimiter'>[</i><i class ='variable'>j</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i>
+                <i class ='variable'>shift</i> <i class ='delimiter'>=</i> <i class ='string'>&quot; %+g&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>tti</i><i class ='delimiter'>.</i><i class ='variable'>tt_</i><i class ='variable'>gmtoff</i> <i class ='variable'>-</i> <i class ='variable'>prev_</i><i class ='variable'>tti</i><i class ='delimiter'>.</i><i class ='variable'>tt_</i><i class ='variable'>gmtoff</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='integer'>3600</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>shift</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s UTC = %s %-5s isdst=%d&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>utc</i><i class ='delimiter'>,</i> <i class ='variable'>lmt</i><i class ='delimiter'>,</i> <i class ='variable'>abbr</i><i class ='delimiter'>,</i> <i class ='variable'>tti</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='variable'>shift</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>stream</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>classmethod</i>
+    <i class ='keyword'>def</i> <i class ='variable'>zonelist</i><i class ='delimiter'>(</i><i class ='variable'>cls</i><i class ='delimiter'>,</i> <i class ='variable'>zonedir</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;/usr/share/zoneinfo&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>zones</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>_</i><i class ='delimiter'>,</i> <i class ='variable'>files</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>walk</i><i class ='delimiter'>(</i><i class ='variable'>zonedir</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>f</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+                <i class ='variable'>p</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>f</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>o</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>magic</i> <i class ='delimiter'>=</i>  <i class ='variable'>o</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='integer'>4</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>magic</i> <i class ='operator'>==</i> <i class ='variable'>b</i><i class ='charlist'>&#39;TZif&#39;</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>zones</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>[</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>zonedir</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>zones</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+        <i class ='variable'>zones</i> <i class ='delimiter'>=</i> <i class ='variable'>TZInfo</i><i class ='delimiter'>.</i><i class ='variable'>zonelist</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>z</i> <i class ='keyword'>in</i> <i class ='variable'>zones</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>z</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>filepath</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>filepath</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>filepath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/usr/share/zoneinfo&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>filepath</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filepath</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fileobj</i><i class ='delimiter'>:</i>
+        <i class ='variable'>tzi</i> <i class ='delimiter'>=</i> <i class ='variable'>TZInfo</i><i class ='delimiter'>.</i><i class ='variable'>fromfile</i><i class ='delimiter'>(</i><i class ='variable'>fileobj</i><i class ='delimiter'>)</i>
+    <i class ='variable'>tzi</i><i class ='delimiter'>.</i><i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;Script to search with Google
+
+Usage:
+    python3 google.py [search terms]
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>parse</i>
+<i class ='keyword'>import</i> <i class ='variable'>webbrowser</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='variable'>quote</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='charlist'>&#39; &#39;</i> <i class ='keyword'>in</i> <i class ='variable'>arg</i><i class ='delimiter'>:</i>
+            <i class ='variable'>arg</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&quot;%s&quot;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>arg</i>
+        <i class ='keyword'>return</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>parse</i><i class ='delimiter'>.</i><i class ='variable'>quote_</i><i class ='variable'>plus</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>qstring</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>quote</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>)</i>
+    <i class ='variable'>url</i> <i class ='delimiter'>=</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>parse</i><i class ='delimiter'>.</i><i class ='variable'>urljoin</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;https://www.google.com/search&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;?q=&#39;</i> <i class ='operator'>+</i> <i class ='variable'>qstring</i><i class ='delimiter'>)</i>
+    <i class ='variable'>webbrowser</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>url</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

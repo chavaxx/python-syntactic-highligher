@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;Add Python to the search path on Windows
+
+This is a simple script to add Python to the Windows search path. It
+modifies the current user (HKCU) tree of the registry.
+
+Copyright (c) 2008 by Christian Heimes &lt;christian@cheimes.de&gt;
+Licensed to PSF under a Contributor Agreement.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>site</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>winreg</i>
+
+<i class ='variable'>HKCU</i> <i class ='delimiter'>=</i> <i class ='variable'>winreg</i><i class ='delimiter'>.</i><i class ='variable'>HKEY_</i><i class ='variable'>CURRENT_</i><i class ='variable'>USER</i>
+<i class ='variable'>ENV</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;Environment&quot;</i>
+<i class ='variable'>PATH</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;PATH&quot;</i>
+<i class ='variable'>DEFAULT</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%PATH%&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>modify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>pythonpath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>normpath</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>scripts</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>pythonpath</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Scripts&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>appdata</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>[</i><i class ='string'>&quot;APPDATA&quot;</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>site</i><i class ='delimiter'>,</i> <i class ='string'>&quot;USER_SITE&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usersite</i> <i class ='delimiter'>=</i> <i class ='variable'>site</i><i class ='delimiter'>.</i><i class ='variable'>USER_</i><i class ='variable'>SITE</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='variable'>appdata</i><i class ='delimiter'>,</i> <i class ='string'>&quot;%APPDATA%&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>userpath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>usersite</i><i class ='delimiter'>)</i>
+        <i class ='variable'>userscripts</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>userpath</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Scripts&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>userscripts</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>winreg</i><i class ='delimiter'>.</i><i class ='variable'>CreateKey</i><i class ='delimiter'>(</i><i class ='variable'>HKCU</i><i class ='delimiter'>,</i> <i class ='variable'>ENV</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>key</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>envpath</i> <i class ='delimiter'>=</i> <i class ='variable'>winreg</i><i class ='delimiter'>.</i><i class ='variable'>QueryValueEx</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>PATH</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>except</i> <i class ='variable'>OSError</i><i class ='delimiter'>:</i>
+            <i class ='variable'>envpath</i> <i class ='delimiter'>=</i> <i class ='variable'>DEFAULT</i>
+
+        <i class ='variable'>paths</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>envpath</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='variable'>pythonpath</i><i class ='delimiter'>,</i> <i class ='variable'>scripts</i><i class ='delimiter'>,</i> <i class ='variable'>userscripts</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>path</i> <i class ='keyword'>and</i> <i class ='variable'>path</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>envpath</i> <i class ='keyword'>and</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>paths</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>envpath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>pathsep</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>paths</i><i class ='delimiter'>)</i>
+        <i class ='variable'>winreg</i><i class ='delimiter'>.</i><i class ='variable'>SetValueEx</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>PATH</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>winreg</i><i class ='delimiter'>.</i><i class ='variable'>REG_</i><i class ='variable'>EXPAND_</i><i class ='variable'>SZ</i><i class ='delimiter'>,</i> <i class ='variable'>envpath</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>paths</i><i class ='delimiter'>,</i> <i class ='variable'>envpath</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>paths</i><i class ='delimiter'>,</i> <i class ='variable'>envpath</i> <i class ='delimiter'>=</i> <i class ='variable'>modify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>paths</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Path(s) added:&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>paths</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;No path was added&quot;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;\nPATH is now:\n%s\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>envpath</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Expanded:&quot;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>winreg</i><i class ='delimiter'>.</i><i class ='variable'>ExpandEnvironmentStrings</i><i class ='delimiter'>(</i><i class ='variable'>envpath</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

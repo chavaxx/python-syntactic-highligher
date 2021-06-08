@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='multilineComment'>&quot;&quot;&quot;Classes to parse mailer-daemon messages.&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>calendar</i>
+<i class ='keyword'>import</i> <i class ='variable'>email</i><i class ='delimiter'>.</i><i class ='variable'>message</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Unparseable</i><i class ='delimiter'>(</i><i class ='variable'>Exception</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>pass</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>ErrorMessage</i><i class ='delimiter'>(</i><i class ='variable'>email</i><i class ='delimiter'>.</i><i class ='variable'>message</i><i class ='delimiter'>.</i><i class ='variable'>Message</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>email</i><i class ='delimiter'>.</i><i class ='variable'>message</i><i class ='delimiter'>.</i><i class ='variable'>Message</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sub</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>is_</i><i class ='variable'>warning</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sub</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Subject&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>sub</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='integer'>0</i>
+        <i class ='variable'>sub</i> <i class ='delimiter'>=</i> <i class ='variable'>sub</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>sub</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;waiting mail&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='charlist'>&#39;warning&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>sub</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sub</i> <i class ='delimiter'>=</i> <i class ='variable'>sub</i>
+        <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>errors</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>p</i> <i class ='keyword'>in</i> <i class ='variable'>EMPARSERS</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rewindbody</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='variable'>p</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sub</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>except</i> <i class ='variable'>Unparseable</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>pass</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Unparseable</i>
+
+<i class ='comment'># List of re&#39;s or tuples of re&#39;s.</i>
+<i class ='comment'># If a re, it should contain at least a group (?P&lt;email&gt;...) which</i>
+<i class ='comment'># should refer to the email address.  The re can also contain a group</i>
+<i class ='comment'># (?P&lt;reason&gt;...) which should refer to the reason (error message).</i>
+<i class ='comment'># If no reason is present, the emparse_list_reason list is used to</i>
+<i class ='comment'># find a reason.</i>
+<i class ='comment'># If a tuple, the tuple should contain 2 re&#39;s.  The first re finds a</i>
+<i class ='comment'># location, the second re is repeated one or more times to find</i>
+<i class ='comment'># multiple email addresses.  The second re is matched (not searched)</i>
+<i class ='comment'># where the previous match ended.</i>
+<i class ='comment'># The re&#39;s are compiled using the re module.</i>
+<i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='datatype'>list</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='charlist'>&#39;error: (?P&lt;reason&gt;unresolvable): (?P&lt;email&gt;.+)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>(</i><i class ='charlist'>&#39;----- The following addresses had permanent fatal errors -----\n&#39;</i><i class ='delimiter'>,</i>
+     <i class ='charlist'>&#39;(?P&lt;email&gt;[^ \n].*)\n( .*\n)?&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;remote execution.*\n.*rmail (?P&lt;email&gt;.+)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>(</i><i class ='charlist'>&#39;The following recipients did not receive your message:\n\n&#39;</i><i class ='delimiter'>,</i>
+     <i class ='charlist'>&#39; +(?P&lt;email&gt;.*)\n(The following recipients did not receive your message:\n\n)?&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;------- Failure Reasons  --------\n\n(?P&lt;reason&gt;.*)\n(?P&lt;email&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^&lt;(?P&lt;email&gt;.*)&gt;:\n(?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^(?P&lt;reason&gt;User mailbox exceeds allowed size): (?P&lt;email&gt;.+)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^5\\d{2} &lt;(?P&lt;email&gt;[^\n&gt;]+)&gt;\\.\\.\\. (?P&lt;reason&gt;.+)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^Original-Recipient: rfc822;(?P&lt;email&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^did not reach the following recipient\\(s\\):\n\n(?P&lt;email&gt;.*) on .*\n +(?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^ &lt;(?P&lt;email&gt;[^\n&gt;]+)&gt; \\.\\.\\. (?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^Report on your message to: (?P&lt;email&gt;.*)\nReason: (?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^Your message was not delivered to +(?P&lt;email&gt;.*)\n +for the following reason:\n +(?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;^ was not +(?P&lt;email&gt;[^ \n].*?) *\n.*\n.*\n.*\n because:.*\n +(?P&lt;reason&gt;[^ \n].*?) *\n&#39;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>]</i>
+<i class ='comment'># compile the re&#39;s in the list and store them in-place.</i>
+<i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='datatype'>list</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='datatype'>list</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i> <i class ='keyword'>is</i> <i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>xl</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>x</i><i class ='delimiter'>:</i>
+            <i class ='variable'>xl</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='datatype'>tuple</i><i class ='delimiter'>(</i><i class ='variable'>xl</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>del</i> <i class ='variable'>xl</i>
+    <i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='datatype'>list</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>x</i>
+    <i class ='keyword'>del</i> <i class ='variable'>x</i>
+<i class ='keyword'>del</i> <i class ='variable'>i</i>
+
+<i class ='comment'># list of re&#39;s used to find reasons (error messages).</i>
+<i class ='comment'># if a string, &quot;&lt;&gt;&quot; is replaced by a copy of the email address.</i>
+<i class ='comment'># The expressions are searched for in order.  After the first match,</i>
+<i class ='comment'># no more expressions are searched for.  So, order is important.</i>
+<i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='variable'>reason</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='variable'>r</i><i class ='charlist'>&#39;^5\d{2} &lt;&gt;\.\.\. (?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>r</i><i class ='charlist'>&#39;&lt;&gt;\.\.\. (?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;^&lt;&lt;&lt; 5\d{2} (?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;===== stderr was =====\nrmail: (?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^Diagnostic-Code: (?P&lt;reason&gt;.*)&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>]</i>
+<i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='keyword'>from</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^From:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>IGNORECASE</i><i class ='operator'>|</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>emparse_</i><i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>sub</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='keyword'>from</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>res</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>from_</i><i class ='variable'>index</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>from_</i><i class ='variable'>index</i> <i class ='delimiter'>=</i> <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+    <i class ='variable'>errors</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>emails</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>reason</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>for</i> <i class ='variable'>regexp</i> <i class ='keyword'>in</i> <i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='datatype'>list</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='variable'>regexp</i><i class ='delimiter'>)</i> <i class ='keyword'>is</i> <i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='variable'>regexp</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>from_</i><i class ='variable'>index</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>res</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>reason</i> <i class ='delimiter'>=</i> <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;reason&#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>except</i> <i class ='variable'>IndexError</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>pass</i>
+                <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='variable'>regexp</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>,</i> <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>end</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>from_</i><i class ='variable'>index</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>res</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                        <i class ='keyword'>break</i>
+                    <i class ='variable'>emails</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;email&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>break</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='variable'>regexp</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>from_</i><i class ='variable'>index</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>res</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>emails</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;email&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>reason</i> <i class ='delimiter'>=</i> <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;reason&#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>except</i> <i class ='variable'>IndexError</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>pass</i>
+                <i class ='keyword'>break</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>emails</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Unparseable</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>reason</i><i class ='delimiter'>:</i>
+        <i class ='variable'>reason</i> <i class ='delimiter'>=</i> <i class ='variable'>sub</i>
+        <i class ='keyword'>if</i> <i class ='variable'>reason</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>15</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;returned mail: &#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>reason</i> <i class ='delimiter'>=</i> <i class ='variable'>reason</i><i class ='delimiter'>[</i><i class ='integer'>15</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>regexp</i> <i class ='keyword'>in</i> <i class ='variable'>emparse_</i><i class ='variable'>list_</i><i class ='variable'>reason</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='variable'>regexp</i><i class ='delimiter'>)</i> <i class ='keyword'>is</i> <i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>emails</i><i class ='delimiter'>)</i><i class ='variable'>-1</i><i class ='delimiter'>,</i><i class ='variable'>-1</i><i class ='delimiter'>,</i><i class ='variable'>-1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>email</i> <i class ='delimiter'>=</i> <i class ='variable'>emails</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+                    <i class ='variable'>exp</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>escape</i><i class ='delimiter'>(</i><i class ='variable'>email</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>regexp</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;&gt;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='variable'>exp</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>res</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>errors</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>email</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='operator'>+</i><i class ='charlist'>&#39;: &#39;</i><i class ='operator'>+</i><i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;reason&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                        <i class ='keyword'>del</i> <i class ='variable'>emails</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+                <i class ='keyword'>continue</i>
+            <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='variable'>regexp</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>res</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>reason</i> <i class ='delimiter'>=</i> <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;reason&#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>break</i>
+    <i class ='keyword'>for</i> <i class ='variable'>email</i> <i class ='keyword'>in</i> <i class ='variable'>emails</i><i class ='delimiter'>:</i>
+        <i class ='variable'>errors</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>email</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='operator'>+</i><i class ='charlist'>&#39;: &#39;</i><i class ='operator'>+</i><i class ='variable'>reason</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>errors</i>
+
+<i class ='variable'>EMPARSERS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>emparse_</i><i class ='datatype'>list</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>sort_</i><i class ='variable'>numeric</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>a</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>)</i>
+    <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>b</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>a</i> <i class ='operator'>&lt;</i> <i class ='variable'>b</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>-1</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>a</i> <i class ='operator'>&gt;</i> <i class ='variable'>b</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>parsedir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>modify</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>chdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+    <i class ='variable'>pat</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^[0-9]*$&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>errordict</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>errorfirst</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>errorlast</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>nok</i> <i class ='delimiter'>=</i> <i class ='variable'>nwarn</i> <i class ='delimiter'>=</i> <i class ='variable'>nbad</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+    <i class ='comment'># find all numeric file names and sort them</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>filter</i><i class ='delimiter'>(</i><i class ='keyword'>lambda</i> <i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>pat</i><i class ='delimiter'>=</i><i class ='variable'>pat</i><i class ='delimiter'>:</i> <i class ='variable'>pat</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>)</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='variable'>sort_</i><i class ='variable'>numeric</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Lets try to parse the file.</i>
+        <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>)</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>email</i><i class ='delimiter'>.</i><i class ='variable'>message_</i><i class ='variable'>from_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>_c</i><i class ='variable'>lass</i><i class ='delimiter'>=</i><i class ='variable'>ErrorMessage</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sender</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>getaddr</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;From&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s\t%-40s\t&#39;</i><i class ='operator'>%</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>sender</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>if</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>is_</i><i class ='variable'>warning</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;warning only&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>nwarn</i> <i class ='delimiter'>=</i> <i class ='variable'>nwarn</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+            <i class ='keyword'>if</i> <i class ='variable'>modify</i><i class ='delimiter'>:</i>
+                <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>rename</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;,&#39;</i><i class ='operator'>+</i><i class ='variable'>fn</i><i class ='delimiter'>)</i>
+<i class ='comment'>##              os.unlink(fn)</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>errors</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>errors</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>Unparseable</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;** Not parseable&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>nbad</i> <i class ='delimiter'>=</i> <i class ='variable'>nbad</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+            <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>errors</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;errors&#39;</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Remember them</i>
+        <i class ='keyword'>for</i> <i class ='variable'>e</i> <i class ='keyword'>in</i> <i class ='variable'>errors</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>mm</i><i class ='delimiter'>,</i> <i class ='variable'>dd</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>getdate</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;date&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='integer'>1</i><i class ='operator'>+</i><i class ='integer'>2</i><i class ='delimiter'>]</i>
+                <i class ='variable'>date</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;%s %02d&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>calendar</i><i class ='delimiter'>.</i><i class ='variable'>month_</i><i class ='variable'>abbr</i><i class ='delimiter'>[</i><i class ='variable'>mm</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>dd</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>except</i><i class ='delimiter'>:</i>
+                <i class ='variable'>date</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;??????&#39;</i>
+            <i class ='keyword'>if</i> <i class ='variable'>e</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>errordict</i><i class ='delimiter'>:</i>
+                <i class ='variable'>errordict</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+                <i class ='variable'>errorfirst</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;%s (%s)&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>date</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>errordict</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>errordict</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+            <i class ='variable'>errorlast</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;%s (%s)&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>date</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>nok</i> <i class ='delimiter'>=</i> <i class ='variable'>nok</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>modify</i><i class ='delimiter'>:</i>
+            <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>rename</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;,&#39;</i><i class ='operator'>+</i><i class ='variable'>fn</i><i class ='delimiter'>)</i>
+<i class ='comment'>##          os.unlink(fn)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--------------&#39;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>nok</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;files parsed,&#39;</i><i class ='delimiter'>,</i><i class ='variable'>nwarn</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;files warning-only,&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>nbad</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;files unparseable&#39;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--------------&#39;</i><i class ='delimiter'>)</i>
+    <i class ='datatype'>list</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>e</i> <i class ='keyword'>in</i> <i class ='variable'>errordict</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>list</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>errordict</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>errorfirst</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>errorlast</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='datatype'>list</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>num</i><i class ='delimiter'>,</i> <i class ='variable'>first</i><i class ='delimiter'>,</i> <i class ='variable'>last</i><i class ='delimiter'>,</i> <i class ='variable'>e</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%d %s - %s\t%s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>num</i><i class ='delimiter'>,</i> <i class ='variable'>first</i><i class ='delimiter'>,</i> <i class ='variable'>last</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>modify</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i> <i class ='keyword'>and</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-d&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>modify</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>del</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>folder</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='variable'>parsedir</i><i class ='delimiter'>(</i><i class ='variable'>folder</i><i class ='delimiter'>,</i> <i class ='variable'>modify</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>parsedir</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/ufs/jack/Mail/errorsinbox&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>modify</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i> <i class ='keyword'>or</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

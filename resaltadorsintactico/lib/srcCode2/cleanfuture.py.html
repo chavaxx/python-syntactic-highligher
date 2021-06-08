@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='string'>&quot;&quot;</i><i class ='string'>&quot;cleanfuture [-d][-r][-v] path ...
+
+-d  Dry run.  Analyze, but don&#39;t make any changes to, files.
+-r  Recurse.  Search for all .py files in subdirectories too.
+-v  Verbose.  Print informative msgs.
+
+Search Python (.py) files for future statements, and remove the features
+from such statements that are already mandatory in the version of Python
+you&#39;re using.
+
+Pass one or more file and/or directory paths.  When a directory path, all
+.py files within the directory will be examined, and, if the -r option is
+given, likewise recursively for subdirectories.
+
+Overwrites files in place, renaming the originals with a .bak extension. If
+cleanfuture finds nothing to change, the file is left alone.  If cleanfuture
+does change a file, the changed file is a fixed-point (i.e., running
+cleanfuture on the resulting .py file won&#39;t change it again, at least not
+until you try it again with a later Python release).
+
+Limitations:  You can do these things, but this tool won&#39;t help you then:
+
++ A future statement cannot be mixed with any other statement on the same
+  physical line (separated by semicolon).
+
++ A future statement cannot contain an &quot;</i><i class ='keyword'>as</i><i class ='string'>&quot; clause.
+
+Example:  Assuming you&#39;re using Python 2.2, if a file containing
+
+from __future__ import nested_scopes, generators
+
+is analyzed by cleanfuture, the line is rewritten to
+
+from __future__ import generators
+
+because nested_scopes is no longer optional in 2.2 but generators is.
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='hexadecimal'>__f</i><i class ='variable'>uture__</i>
+<i class ='keyword'>import</i> <i class ='variable'>tokenize</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='variable'>dryrun</i>  <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+<i class ='variable'>recurse</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+<i class ='variable'>verbose</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>errprint</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>strings</i> <i class ='delimiter'>=</i> <i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i>
+    <i class ='variable'>msg</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>strings</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>msg</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>msg</i> <i class ='delimiter'>+=</i> <i class ='charlist'>&#39;\n&#39;</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+    <i class ='keyword'>global</i> <i class ='variable'>verbose</i><i class ='delimiter'>,</i> <i class ='variable'>recurse</i><i class ='delimiter'>,</i> <i class ='variable'>dryrun</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='string'>&quot;drv&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>errprint</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='keyword'>for</i> <i class ='variable'>o</i><i class ='delimiter'>,</i> <i class ='variable'>a</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-d&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>dryrun</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-r&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>recurse</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-v&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>verbose</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>errprint</i><i class ='delimiter'>(</i><i class ='string'>&quot;Usage:&quot;</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>islink</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;listing directory&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+        <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>names</i><i class ='delimiter'>:</i>
+            <i class ='variable'>fullname</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>recurse</i> <i class ='keyword'>and</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>fullname</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i>
+                 <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>islink</i><i class ='delimiter'>(</i><i class ='variable'>fullname</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>or</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>check</i><i class ='delimiter'>(</i><i class ='variable'>fullname</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;checking&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='string'>&quot;...&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>errprint</i><i class ='delimiter'>(</i><i class ='string'>&quot;%r: I/O Error: %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>ff</i> <i class ='delimiter'>=</i> <i class ='variable'>FutureFinder</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+        <i class ='variable'>changed</i> <i class ='delimiter'>=</i> <i class ='variable'>ff</i><i class ='delimiter'>.</i><i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>changed</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ff</i><i class ='delimiter'>.</i><i class ='variable'>gettherest</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>changed</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;changed.&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>dryrun</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;But this is a dry run, so leaving it alone.&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>changed</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%r lines %d-%d&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>ff</i><i class ='delimiter'>.</i><i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;-- deleted&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;-- change to:&quot;</i><i class ='delimiter'>)</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>dryrun</i><i class ='delimiter'>:</i>
+            <i class ='variable'>bak</i> <i class ='delimiter'>=</i> <i class ='variable'>file</i> <i class ='operator'>+</i> <i class ='string'>&quot;.bak&quot;</i>
+            <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>exists</i><i class ='delimiter'>(</i><i class ='variable'>bak</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>bak</i><i class ='delimiter'>)</i>
+            <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>rename</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>bak</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;renamed&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='string'>&quot;to&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>bak</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>g</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ff</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>g</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;wrote new&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;unchanged.&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>FutureFinder</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>f</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fname</i> <i class ='delimiter'>=</i> <i class ='variable'>fname</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ateof</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i> <i class ='comment'># raw file lines</i>
+
+        <i class ='comment'># List of (start_index, end_index, new_line) triples.</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>changed</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='comment'># Line-getter for tokenize.</i>
+    <i class ='keyword'>def</i> <i class ='variable'>getline</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ateof</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='string'>&quot;&quot;</i>
+        <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>line</i> <i class ='operator'>==</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ateof</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>line</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>STRING</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>STRING</i>
+        <i class ='variable'>NL</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>NL</i>
+        <i class ='variable'>NEWLINE</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>NEWLINE</i>
+        <i class ='variable'>COMMENT</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>COMMENT</i>
+        <i class ='variable'>NAME</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>NAME</i>
+        <i class ='variable'>OP</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>OP</i>
+
+        <i class ='variable'>changed</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>changed</i>
+        <i class ='variable'>get</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>generate_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>getline</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>next__</i>
+        <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Chew up initial comments and blank lines (if any).</i>
+        <i class ='keyword'>while</i> <i class ='variable'>type</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='variable'>COMMENT</i><i class ='delimiter'>,</i> <i class ='variable'>NL</i><i class ='delimiter'>,</i> <i class ='variable'>NEWLINE</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Chew up docstring (if any -- and it may be implicitly catenated!).</i>
+        <i class ='keyword'>while</i> <i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='variable'>STRING</i><i class ='delimiter'>:</i>
+            <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Analyze the future stmts.</i>
+        <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Chew up comments and blank lines (if any).</i>
+            <i class ='keyword'>while</i> <i class ='variable'>type</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='variable'>COMMENT</i><i class ='delimiter'>,</i> <i class ='variable'>NL</i><i class ='delimiter'>,</i> <i class ='variable'>NEWLINE</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='delimiter'>(</i><i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='variable'>NAME</i> <i class ='keyword'>and</i> <i class ='variable'>token</i> <i class ='operator'>==</i> <i class ='string'>&quot;from&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>startline</i> <i class ='delimiter'>=</i> <i class ='variable'>srow</i> <i class ='variable'>-</i> <i class ='integer'>1</i>    <i class ='comment'># tokenize is one-based</i>
+            <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='delimiter'>(</i><i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='variable'>NAME</i> <i class ='keyword'>and</i> <i class ='variable'>token</i> <i class ='operator'>==</i> <i class ='string'>&quot;__future__&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='delimiter'>(</i><i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='variable'>NAME</i> <i class ='keyword'>and</i> <i class ='variable'>token</i> <i class ='operator'>==</i> <i class ='string'>&quot;import&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+            <i class ='comment'># Get the list of features.</i>
+            <i class ='variable'>features</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>while</i> <i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='variable'>NAME</i><i class ='delimiter'>:</i>
+                <i class ='variable'>features</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>token</i><i class ='delimiter'>)</i>
+                <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+                <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='delimiter'>(</i><i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='variable'>OP</i> <i class ='keyword'>and</i> <i class ='variable'>token</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;,&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>break</i>
+                <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+            <i class ='comment'># A trailing comment?</i>
+            <i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>if</i> <i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='variable'>COMMENT</i><i class ='delimiter'>:</i>
+                <i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='variable'>token</i>
+                <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>scol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>erow</i><i class ='delimiter'>,</i> <i class ='variable'>ecol</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+            <i class ='keyword'>if</i> <i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='variable'>NEWLINE</i><i class ='delimiter'>:</i>
+                <i class ='variable'>errprint</i><i class ='delimiter'>(</i><i class ='string'>&quot;Skipping file %r; can&#39;t parse line %d:\n%s&quot;</i> <i class ='operator'>%</i>
+                         <i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>srow</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+            <i class ='variable'>endline</i> <i class ='delimiter'>=</i> <i class ='variable'>srow</i> <i class ='variable'>-</i> <i class ='integer'>1</i>
+
+            <i class ='comment'># Check for obsolete features.</i>
+            <i class ='variable'>okfeatures</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>for</i> <i class ='variable'>f</i> <i class ='keyword'>in</i> <i class ='variable'>features</i><i class ='delimiter'>:</i>
+                <i class ='variable'>object</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>uture__</i><i class ='delimiter'>,</i> <i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>object</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># A feature we don&#39;t know about yet -- leave it in.</i>
+                    <i class ='comment'># They&#39;ll get a compile-time error when they compile</i>
+                    <i class ='comment'># this program, but that&#39;s not our job to sort out.</i>
+                    <i class ='variable'>okfeatures</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>released</i> <i class ='delimiter'>=</i> <i class ='variable'>object</i><i class ='delimiter'>.</i><i class ='variable'>getMandatoryRelease</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>released</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>or</i> <i class ='variable'>released</i> <i class ='operator'>&lt;=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i><i class ='delimiter'>:</i>
+                        <i class ='comment'># Withdrawn or obsolete.</i>
+                        <i class ='keyword'>pass</i>
+                    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>okfeatures</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+
+            <i class ='comment'># Rewrite the line if at least one future-feature is obsolete.</i>
+            <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>okfeatures</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>features</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>okfeatures</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;from __future__ import &quot;</i>
+                    <i class ='variable'>line</i> <i class ='delimiter'>+=</i> <i class ='charlist'>&#39;, &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>okfeatures</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>comment</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>line</i> <i class ='delimiter'>+=</i> <i class ='charlist'>&#39; &#39;</i> <i class ='operator'>+</i> <i class ='variable'>comment</i>
+                    <i class ='variable'>line</i> <i class ='delimiter'>+=</i> <i class ='charlist'>&#39;\n&#39;</i>
+                <i class ='variable'>changed</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>startline</i><i class ='delimiter'>,</i> <i class ='variable'>endline</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+            <i class ='comment'># Loop back for more future statements.</i>
+
+        <i class ='keyword'>return</i> <i class ='variable'>changed</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>gettherest</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ateof</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>therest</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>therest</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>changed</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>changed</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>changed</i>
+        <i class ='comment'># Prevent calling this again.</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>changed</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='comment'># Apply changes in reverse order.</i>
+        <i class ='variable'>changed</i><i class ='delimiter'>.</i><i class ='variable'>reverse</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>changed</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='comment'># pure deletion</i>
+                <i class ='keyword'>del</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='variable'>s</i><i class ='delimiter'>:</i><i class ='variable'>e</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='variable'>s</i><i class ='delimiter'>:</i><i class ='variable'>e</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>line</i><i class ='delimiter'>]</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>writelines</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lines</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Copy over the remainder of the file.</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>therest</i><i class ='delimiter'>:</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>therest</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

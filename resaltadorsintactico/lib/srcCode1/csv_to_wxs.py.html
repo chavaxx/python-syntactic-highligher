@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;
+Processes a CSV file containing a list of files into a WXS file with
+components for each listed file.
+
+The CSV columns are:
+    source of file, target for file, group name
+
+Usage::
+    py txt_to_wxs.py [path to file list .csv] [path to destination .wxs]
+
+This is necessary to handle structures where some directories only
+contain other directories. MSBuild is not able to generate the
+Directory entries in the WXS file correctly, as it operates on files.
+Python, however, can easily fill in the gap.
+&#39;</i><i class ='charlist'>&#39;&#39;</i>
+
+<i class ='hexadecimal'>__a</i><i class ='variable'>uthor__</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;Steve Dower &lt;steve.dower@microsoft.com&gt;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>csv</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>collections</i> <i class ='keyword'>import</i> <i class ='variable'>defaultdict</i>
+<i class ='keyword'>from</i> <i class ='variable'>itertools</i> <i class ='keyword'>import</i> <i class ='variable'>chain</i><i class ='delimiter'>,</i> <i class ='variable'>zip_</i><i class ='variable'>longest</i>
+<i class ='keyword'>from</i> <i class ='variable'>pathlib</i> <i class ='keyword'>import</i> <i class ='variable'>PureWindowsPath</i>
+<i class ='keyword'>from</i> <i class ='variable'>uuid</i> <i class ='keyword'>import</i> <i class ='variable'>uuid1</i>
+
+<i class ='variable'>ID_</i><i class ='variable'>CHAR_</i><i class ='variable'>SUBS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+    <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;_&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>:</i> <i class ='charlist'>&#39;_P&#39;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>}</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>id</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>sub</i><i class ='delimiter'>(</i>
+        <i class ='variable'>r</i><i class ='charlist'>&#39;[^A-Za-z0-9_.]&#39;</i><i class ='delimiter'>,</i>
+        <i class ='keyword'>lambda</i> <i class ='variable'>m</i><i class ='delimiter'>:</i> <i class ='variable'>ID_</i><i class ='variable'>CHAR_</i><i class ='variable'>SUBS</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+        <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/\\&#39;),
+        flags=re.I
+    )
+
+DIRECTORIES = set()
+
+def main(file_source, install_target):
+    with open(file_source, &#39;</i><i class ='variable'>r</i><i class ='charlist'>&#39;, newline=&#39;</i><i class ='charlist'>&#39;) as f:
+        files = list(csv.reader(f))
+
+    assert len(files) == len(set(make_id(f[1]) for f in files)), &quot;Duplicate file IDs exist&quot;
+
+    directories = defaultdict(set)
+    cache_directories = defaultdict(set)
+    groups = defaultdict(list)
+    for source, target, group, disk_id, condition in files:
+        target = PureWindowsPath(target)
+        groups[group].append((source, target, disk_id, condition))
+
+        if target.suffix.lower() in {&quot;.py&quot;, &quot;.pyw&quot;}:
+            cache_directories[group].add(target.parent)
+
+        for dirname in target.parents:
+            parent = make_id(dirname.parent)
+            if parent and parent != &#39;</i><i class ='delimiter'>.</i><i class ='charlist'>&#39;:
+                directories[parent].add(dirname.name)
+
+    lines = [
+        &#39;</i><i class ='operator'>&lt;</i><i class ='variable'>Wix</i> <i class ='variable'>xmlns</i><i class ='delimiter'>=</i><i class ='string'>&quot;http://schemas.microsoft.com/wix/2006/wi&quot;</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;,
+        &#39;</i>    <i class ='operator'>&lt;</i><i class ='variable'>Fragment</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;,
+    ]
+    for dir_parent in sorted(directories):
+        lines.append(&#39;</i>        <i class ='operator'>&lt;</i><i class ='variable'>DirectoryRef</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(dir_parent))
+        for dir_name in sorted(directories[dir_parent]):
+            lines.append(&#39;</i>            <i class ='operator'>&lt;</i><i class ='variable'>Directory</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}_{}&quot;</i> <i class ='variable'>Name</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='operator'>/</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(dir_parent, make_id(dir_name), dir_name))
+        lines.append(&#39;</i>        <i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>DirectoryRef</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;)
+    for dir_parent in (make_id(d) for group in cache_directories.values() for d in group):
+        lines.append(&#39;</i>        <i class ='operator'>&lt;</i><i class ='variable'>DirectoryRef</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(dir_parent))
+        lines.append(&#39;</i>            <i class ='operator'>&lt;</i><i class ='variable'>Directory</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}___pycache__&quot;</i> <i class ='variable'>Name</i><i class ='delimiter'>=</i><i class ='string'>&quot;__pycache__&quot;</i> <i class ='operator'>/</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(dir_parent))
+        lines.append(&#39;</i>        <i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>DirectoryRef</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;)
+    lines.append(&#39;</i>    <i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>Fragment</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;)
+
+    for group in sorted(groups):
+        lines.extend([
+            &#39;</i>    <i class ='operator'>&lt;</i><i class ='variable'>Fragment</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;,
+            &#39;</i>        <i class ='operator'>&lt;</i><i class ='variable'>ComponentGroup</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(group),
+        ])
+        for source, target, disk_id, condition in groups[group]:
+            lines.append(&#39;</i>            <i class ='operator'>&lt;</i><i class ='variable'>Component</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='variable'>Directory</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='variable'>Guid</i><i class ='delimiter'>=</i><i class ='string'>&quot;*&quot;</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(make_id(target), make_id(target.parent)))
+            if condition:
+                lines.append(&#39;</i>                <i class ='operator'>&lt;</i><i class ='variable'>Condition</i><i class ='operator'>&gt;</i><i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>Condition</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(condition))
+
+            if disk_id:
+                lines.append(&#39;</i>                <i class ='operator'>&lt;</i><i class ='variable'>File</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='variable'>Name</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='variable'>Source</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='variable'>DiskId</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='operator'>/</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(make_id(target), target.name, source, disk_id))
+            else:
+                lines.append(&#39;</i>                <i class ='operator'>&lt;</i><i class ='variable'>File</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='variable'>Name</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='variable'>Source</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='operator'>/</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(make_id(target), target.name, source))
+            lines.append(&#39;</i>            <i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>Component</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;)
+
+        create_folders = {make_id(p) + &quot;___pycache__&quot; for p in cache_directories[group]}
+        remove_folders = {make_id(p2) for p1 in cache_directories[group] for p2 in chain((p1,), p1.parents)}
+        create_folders.discard(&quot;.&quot;)
+        remove_folders.discard(&quot;.&quot;)
+        if create_folders or remove_folders:
+            lines.append(&#39;</i>            <i class ='operator'>&lt;</i><i class ='variable'>Component</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}__pycache__folders&quot;</i> <i class ='variable'>Directory</i><i class ='delimiter'>=</i><i class ='string'>&quot;TARGETDIR&quot;</i> <i class ='variable'>Guid</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(group, uuid1()))
+            lines.extend(&#39;</i>                <i class ='operator'>&lt;</i><i class ='variable'>CreateFolder</i> <i class ='variable'>Directory</i><i class ='delimiter'>=</i><i class ='string'>&quot;{}&quot;</i> <i class ='operator'>/</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(p) for p in create_folders)
+            lines.extend(&#39;</i>                <i class ='operator'>&lt;</i><i class ='variable'>RemoveFile</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;Remove_{0}_files&quot;</i> <i class ='variable'>Name</i><i class ='delimiter'>=</i><i class ='string'>&quot;*&quot;</i> <i class ='variable'>On</i><i class ='delimiter'>=</i><i class ='string'>&quot;uninstall&quot;</i> <i class ='variable'>Directory</i><i class ='delimiter'>=</i><i class ='string'>&quot;{0}&quot;</i> <i class ='operator'>/</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(p) for p in create_folders)
+            lines.extend(&#39;</i>                <i class ='operator'>&lt;</i><i class ='variable'>RemoveFolder</i> <i class ='variable'>Id</i><i class ='delimiter'>=</i><i class ='string'>&quot;Remove_{0}_folder&quot;</i> <i class ='variable'>On</i><i class ='delimiter'>=</i><i class ='string'>&quot;uninstall&quot;</i> <i class ='variable'>Directory</i><i class ='delimiter'>=</i><i class ='string'>&quot;{0}&quot;</i> <i class ='operator'>/</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;.format(p) for p in create_folders | remove_folders)
+            lines.append(&#39;</i>            <i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>Component</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;)
+
+        lines.extend([
+            &#39;</i>        <i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>ComponentGroup</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;,
+            &#39;</i>    <i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>Fragment</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;,
+        ])
+    lines.append(&#39;</i><i class ='operator'>&lt;</i><i class ='operator'>/</i><i class ='variable'>Wix</i><i class ='operator'>&gt;</i><i class ='charlist'>&#39;)
+
+    # Check if the file matches. If so, we don&#39;</i><i class ='variable'>t</i> <i class ='variable'>want</i> <i class ='variable'>to</i> <i class ='variable'>touch</i> <i class ='variable'>it</i> <i class ='variable'>so</i>
+    <i class ='comment'># that we can skip rebuilding.</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>install_</i><i class ='variable'>target</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;r&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>all</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\r\n&#39;</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>y</i> <i class ='keyword'>for</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='variable'>zip_</i><i class ='variable'>longest</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>lines</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;File is up to date&#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>install_</i><i class ='variable'>target</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>writelines</i><i class ='delimiter'>(</i><i class ='variable'>line</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;\n&#39;</i> <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>lines</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Wrote {} lines to {}&#39;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>lines</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>install_</i><i class ='variable'>target</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

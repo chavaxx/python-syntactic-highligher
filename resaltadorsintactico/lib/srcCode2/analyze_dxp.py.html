@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;
+Some helper functions to analyze the output of sys.getdxp() (which is
+only available if Python was built with -DDYNAMIC_EXECUTION_PROFILE).
+These will tell you which opcodes have been executed most frequently
+in the current process, and, if Python was also built with -DDXPAIRS,
+will tell you which instruction _pairs_ were executed most frequently,
+which may help in choosing new instructions.
+
+If Python was built without -DDYNAMIC_EXECUTION_PROFILE, importing
+this module will raise a RuntimeError.
+
+If you&#39;re running a script you want to profile, a simple way to get
+the common pairs is:
+
+$ PYTHONPATH=$PYTHONPATH:&lt;python_srcdir&gt;/Tools/scripts \
+./python -i -O the_script.py --args
+...
+&gt; from analyze_dxp import *
+&gt; s = render_common_pairs()
+&gt; open(&#39;/tmp/some_file&#39;, &#39;w&#39;).write(s)
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>copy</i>
+<i class ='keyword'>import</i> <i class ='variable'>opcode</i>
+<i class ='keyword'>import</i> <i class ='variable'>operator</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>threading</i>
+
+<i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='string'>&quot;getdxp&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i><i class ='delimiter'>(</i><i class ='string'>&quot;Can&#39;t import analyze_dxp: Python built without&quot;</i>
+                       <i class ='string'>&quot; -DDYNAMIC_EXECUTION_PROFILE.&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='hexadecimal'>_</i><i class ='variable'>profile_</i><i class ='variable'>lock</i> <i class ='delimiter'>=</i> <i class ='variable'>threading</i><i class ='delimiter'>.</i><i class ='variable'>RLock</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+<i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>getdxp</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># If Python was built with -DDXPAIRS, sys.getdxp() returns a list of</i>
+<i class ='comment'># lists of ints.  Otherwise it returns just a list of ints.</i>
+<i class ='keyword'>def</i> <i class ='variable'>has_</i><i class ='variable'>pairs</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Returns True if the Python that produced the argument profile
+    was built with -DDXPAIRS.&quot;&quot;&quot;</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='datatype'>list</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>reset_</i><i class ='variable'>profile</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Forgets any execution profile that has been gathered so far.&quot;&quot;&quot;</i>
+    <i class ='keyword'>with</i> <i class ='hexadecimal'>_</i><i class ='variable'>profile_</i><i class ='variable'>lock</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>getdxp</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>  <i class ='comment'># Resets the internal profile</i>
+        <i class ='keyword'>global</i> <i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i>
+        <i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>getdxp</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>  <i class ='comment'># 0s out our copy.</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>merge_</i><i class ='variable'>profile</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Reads sys.getdxp() and merges it into this module&#39;s cached copy.
+
+    We need this because sys.getdxp() 0s itself every time it&#39;s called.&quot;&quot;&quot;</i>
+
+    <i class ='keyword'>with</i> <i class ='hexadecimal'>_</i><i class ='variable'>profile_</i><i class ='variable'>lock</i><i class ='delimiter'>:</i>
+        <i class ='variable'>new_</i><i class ='variable'>profile</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>getdxp</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>has_</i><i class ='variable'>pairs</i><i class ='delimiter'>(</i><i class ='variable'>new_</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>first_</i><i class ='variable'>inst</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>for</i> <i class ='variable'>second_</i><i class ='variable'>inst</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='variable'>first_</i><i class ='variable'>inst</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='variable'>first_</i><i class ='variable'>inst</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>second_</i><i class ='variable'>inst</i><i class ='delimiter'>]</i> <i class ='delimiter'>+=</i> <i class ='delimiter'>(</i>
+                        <i class ='variable'>new_</i><i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='variable'>first_</i><i class ='variable'>inst</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>second_</i><i class ='variable'>inst</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>inst</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='variable'>inst</i><i class ='delimiter'>]</i> <i class ='delimiter'>+=</i> <i class ='variable'>new_</i><i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='variable'>inst</i><i class ='delimiter'>]</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>snapshot_</i><i class ='variable'>profile</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Returns the cumulative execution profile until this call.&quot;&quot;&quot;</i>
+    <i class ='keyword'>with</i> <i class ='hexadecimal'>_</i><i class ='variable'>profile_</i><i class ='variable'>lock</i><i class ='delimiter'>:</i>
+        <i class ='variable'>merge_</i><i class ='variable'>profile</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>copy</i><i class ='delimiter'>.</i><i class ='variable'>deepcopy</i><i class ='delimiter'>(</i><i class ='hexadecimal'>_c</i><i class ='variable'>umulative_</i><i class ='variable'>profile</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>common_</i><i class ='variable'>instructions</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Returns the most common opcodes in order of descending frequency.
+
+    The result is a list of tuples of the form
+      (opcode, opname, # of occurrences)
+
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>has_</i><i class ='variable'>pairs</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>profile</i><i class ='delimiter'>:</i>
+        <i class ='variable'>inst_</i><i class ='datatype'>list</i> <i class ='delimiter'>=</i> <i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>inst_</i><i class ='datatype'>list</i> <i class ='delimiter'>=</i> <i class ='variable'>profile</i>
+    <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='variable'>op</i><i class ='delimiter'>,</i> <i class ='variable'>opcode</i><i class ='delimiter'>.</i><i class ='variable'>opname</i><i class ='delimiter'>[</i><i class ='variable'>op</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>count</i><i class ='delimiter'>)</i>
+              <i class ='keyword'>for</i> <i class ='variable'>op</i><i class ='delimiter'>,</i> <i class ='variable'>count</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>inst_</i><i class ='datatype'>list</i><i class ='delimiter'>)</i>
+              <i class ='keyword'>if</i> <i class ='variable'>count</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>]</i>
+    <i class ='variable'>result</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>=</i><i class ='variable'>operator</i><i class ='delimiter'>.</i><i class ='variable'>itemgetter</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>reverse</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>result</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>common_</i><i class ='variable'>pairs</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Returns the most common opcode pairs in order of descending frequency.
+
+    The result is a list of tuples of the form
+      ((1st opcode, 2nd opcode),
+       (1st opname, 2nd opname),
+       # of occurrences of the pair)
+
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>has_</i><i class ='variable'>pairs</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>op1</i><i class ='delimiter'>,</i> <i class ='variable'>op2</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>opcode</i><i class ='delimiter'>.</i><i class ='variable'>opname</i><i class ='delimiter'>[</i><i class ='variable'>op1</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>opcode</i><i class ='delimiter'>.</i><i class ='variable'>opname</i><i class ='delimiter'>[</i><i class ='variable'>op2</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>count</i><i class ='delimiter'>)</i>
+              <i class ='comment'># Drop the row of single-op profiles with [:-1]</i>
+              <i class ='keyword'>for</i> <i class ='variable'>op1</i><i class ='delimiter'>,</i> <i class ='variable'>op1</i><i class ='variable'>profile</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+              <i class ='keyword'>for</i> <i class ='variable'>op2</i><i class ='delimiter'>,</i> <i class ='variable'>count</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>op1</i><i class ='variable'>profile</i><i class ='delimiter'>)</i>
+              <i class ='keyword'>if</i> <i class ='variable'>count</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>]</i>
+    <i class ='variable'>result</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>=</i><i class ='variable'>operator</i><i class ='delimiter'>.</i><i class ='variable'>itemgetter</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>reverse</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>result</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>render_</i><i class ='variable'>common_</i><i class ='variable'>pairs</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Renders the most common opcode pairs to a string in order of
+    descending frequency.
+
+    The result is a series of lines of the form:
+      # of occurrences: (&#39;1st opname&#39;, &#39;2nd opname&#39;)
+
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>profile</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>profile</i> <i class ='delimiter'>=</i> <i class ='variable'>snapshot_</i><i class ='variable'>profile</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>def</i> <i class ='variable'>seq</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='hexadecimal'>_</i><i class ='delimiter'>,</i> <i class ='variable'>ops</i><i class ='delimiter'>,</i> <i class ='variable'>count</i> <i class ='keyword'>in</i> <i class ='variable'>common_</i><i class ='variable'>pairs</i><i class ='delimiter'>(</i><i class ='variable'>profile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='string'>&quot;%s: %s\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>count</i><i class ='delimiter'>,</i> <i class ='variable'>ops</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

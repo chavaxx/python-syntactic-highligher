@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;Color Database.
+
+This file contains one class, called ColorDB, and several utility functions.
+The class must be instantiated by the get_colordb() function in this file,
+passing it a filename to read a database out of.
+
+The get_colordb() function will try to examine the file to figure out what the
+format of the file is.  If it can&#39;t figure out the file format, or it has
+trouble reading the file, None is returned.  You can pass get_colordb() an
+optional filetype argument.
+
+Supporte file types are:
+
+    X_RGB_TXT -- X Consortium rgb.txt format files.  Three columns of numbers
+                 from 0 .. 255 separated by whitespace.  Arbitrary trailing
+                 columns used as the color name.
+
+The utility functions are useful for converting between the various expected
+color formats, and for calculating other color values.
+
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>from</i> <i class ='variable'>types</i> <i class ='keyword'>import</i> <i class ='operator'>*</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>BadColor</i><i class ='delimiter'>(</i><i class ='variable'>Exception</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>pass</i>
+
+<i class ='variable'>DEFAULT_</i><i class ='variable'>DB</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+<i class ='variable'>SPACE</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i>
+<i class ='variable'>COMMASPACE</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;, &#39;</i>
+
+
+
+<i class ='comment'># generic class</i>
+<i class ='keyword'>class</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>fp</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>lineno</i> <i class ='delimiter'>=</i> <i class ='integer'>2</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>name</i>
+        <i class ='comment'># Maintain several dictionaries for indexing into the color database.</i>
+        <i class ='comment'># Note that while Tk supports RGB intensities of 4, 8, 12, or 16 bits,</i>
+        <i class ='comment'># for now we only support 8 bit intensities.  At least on OpenWindows,</i>
+        <i class ='comment'># all intensities in the /usr/openwin/lib/rgb.txt file are 8-bit</i>
+        <i class ='comment'>#</i>
+        <i class ='comment'># key is (red, green, blue) tuple, value is (name, [aliases])</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yrgb</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='comment'># key is name, value is (red, green, blue)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yname</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='comment'># all unique names (non-aliases).  built-on demand</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>llnames</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+            <i class ='comment'># get this compiled regular expression from derived class</i>
+            <i class ='variable'>mo</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>mo</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Error in&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39; line&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>lineno</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+                <i class ='variable'>lineno</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+                <i class ='keyword'>continue</i>
+            <i class ='comment'># extract the red, green, blue, and name</i>
+            <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_e</i><i class ='variable'>xtractrgb</i><i class ='delimiter'>(</i><i class ='variable'>mo</i><i class ='delimiter'>)</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_e</i><i class ='variable'>xtractname</i><i class ='delimiter'>(</i><i class ='variable'>mo</i><i class ='delimiter'>)</i>
+            <i class ='variable'>keyname</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='comment'># BAW: for now the `name&#39; is just the first named color with the</i>
+            <i class ='comment'># rgb values we find.  Later, we might want to make the two word</i>
+            <i class ='comment'># version the `name&#39;, or the CapitalizedVersion, etc.</i>
+            <i class ='variable'>key</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i>
+            <i class ='variable'>foundname</i><i class ='delimiter'>,</i> <i class ='variable'>aliases</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yrgb</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>foundname</i> <i class ='operator'>!=</i> <i class ='variable'>name</i> <i class ='keyword'>and</i> <i class ='variable'>foundname</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>aliases</i><i class ='delimiter'>:</i>
+                <i class ='variable'>aliases</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yrgb</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>foundname</i><i class ='delimiter'>,</i> <i class ='variable'>aliases</i><i class ='delimiter'>)</i>
+            <i class ='comment'># add to byname lookup</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yname</i><i class ='delimiter'>[</i><i class ='variable'>keyname</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>key</i>
+            <i class ='variable'>lineno</i> <i class ='delimiter'>=</i> <i class ='variable'>lineno</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+
+    <i class ='comment'># override in derived classes</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_e</i><i class ='variable'>xtractrgb</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>mo</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>mo</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;red&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;green&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;blue&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_e</i><i class ='variable'>xtractname</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>mo</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>mo</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;name&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>filename</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>name</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>find_</i><i class ='variable'>byrgb</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Return name for rgbtuple&quot;&quot;&quot;</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yrgb</i><i class ='delimiter'>[</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>except</i> <i class ='variable'>KeyError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>BadColor</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i> <i class ='keyword'>from</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>find_</i><i class ='variable'>byname</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Return (red, green, blue) for name&quot;&quot;&quot;</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yname</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>except</i> <i class ='variable'>KeyError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>BadColor</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='keyword'>from</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nearest</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Return the name of color nearest (red, green, blue)&quot;&quot;&quot;</i>
+        <i class ='comment'># BAW: should we use Voronoi diagrams, Delaunay triangulation, or</i>
+        <i class ='comment'># octree for speeding up the locating of nearest point?  Exhaustive</i>
+        <i class ='comment'># search is inefficient, but seems fast enough.</i>
+        <i class ='variable'>nearest</i> <i class ='delimiter'>=</i> <i class ='variable'>-1</i>
+        <i class ='variable'>nearest_</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+        <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>aliases</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yrgb</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yname</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+            <i class ='variable'>rdelta</i> <i class ='delimiter'>=</i> <i class ='variable'>red</i> <i class ='variable'>-</i> <i class ='variable'>r</i>
+            <i class ='variable'>gdelta</i> <i class ='delimiter'>=</i> <i class ='variable'>green</i> <i class ='variable'>-</i> <i class ='variable'>g</i>
+            <i class ='variable'>bdelta</i> <i class ='delimiter'>=</i> <i class ='variable'>blue</i> <i class ='variable'>-</i> <i class ='variable'>b</i>
+            <i class ='variable'>distance</i> <i class ='delimiter'>=</i> <i class ='variable'>rdelta</i> <i class ='operator'>*</i> <i class ='variable'>rdelta</i> <i class ='operator'>+</i> <i class ='variable'>gdelta</i> <i class ='operator'>*</i> <i class ='variable'>gdelta</i> <i class ='operator'>+</i> <i class ='variable'>bdelta</i> <i class ='operator'>*</i> <i class ='variable'>bdelta</i>
+            <i class ='keyword'>if</i> <i class ='variable'>nearest</i> <i class ='operator'>==</i> <i class ='variable'>-1</i> <i class ='keyword'>or</i> <i class ='variable'>distance</i> <i class ='operator'>&lt;</i> <i class ='variable'>nearest</i><i class ='delimiter'>:</i>
+                <i class ='variable'>nearest</i> <i class ='delimiter'>=</i> <i class ='variable'>distance</i>
+                <i class ='variable'>nearest_</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i>
+        <i class ='keyword'>return</i> <i class ='variable'>nearest_</i><i class ='variable'>name</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>unique_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># sorted</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>llnames</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>llnames</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>aliases</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yrgb</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>llnames</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>llnames</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>=</i><i class ='datatype'>str</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>llnames</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>aliases_</i><i class ='variable'>of</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>aliases</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>yrgb</i><i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>except</i> <i class ='variable'>KeyError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>BadColor</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='keyword'>from</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>aliases</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>RGBColorDB</i><i class ='delimiter'>(</i><i class ='variable'>ColorDB</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i>
+        <i class ='variable'>r</i><i class ='charlist'>&#39;\s*(?P&lt;red&gt;\d+)\s+(?P&lt;green&gt;\d+)\s+(?P&lt;blue&gt;\d+)\s+(?P&lt;name&gt;.*)&#39;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>HTML40</i><i class ='variable'>DB</i><i class ='delimiter'>(</i><i class ='variable'>ColorDB</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;(?P&lt;name&gt;\S+)\s+(?P&lt;hexrgb&gt;#[0-9a-fA-F]{6})&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_e</i><i class ='variable'>xtractrgb</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>mo</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>rrggbb_</i><i class ='variable'>to_</i><i class ='variable'>triplet</i><i class ='delimiter'>(</i><i class ='variable'>mo</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;hexrgb&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>LightlinkDB</i><i class ='delimiter'>(</i><i class ='variable'>HTML40</i><i class ='variable'>DB</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;(?P&lt;name&gt;(.+))\s+(?P&lt;hexrgb&gt;#[0-9a-fA-F]{6})&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_e</i><i class ='variable'>xtractname</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>mo</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>mo</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;name&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>WebsafeDB</i><i class ='delimiter'>(</i><i class ='variable'>ColorDB</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;(?P&lt;hexrgb&gt;#[0-9a-fA-F]{6})&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_e</i><i class ='variable'>xtractrgb</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>mo</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>rrggbb_</i><i class ='variable'>to_</i><i class ='variable'>triplet</i><i class ='delimiter'>(</i><i class ='variable'>mo</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;hexrgb&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_e</i><i class ='variable'>xtractname</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>mo</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>mo</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;hexrgb&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>upper</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+
+<i class ='comment'># format is a tuple (RE, SCANLINES, CLASS) where RE is a compiled regular</i>
+<i class ='comment'># expression, SCANLINES is the number of header lines to scan, and CLASS is</i>
+<i class ='comment'># the class to instantiate if a match is found</i>
+
+<i class ='variable'>FILETYPES</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Xorg&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>RGBColorDB</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;XConsortium&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>RGBColorDB</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;HTML&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>HTML40</i><i class ='variable'>DB</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;lightlink&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>LightlinkDB</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>(</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Websafe&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>WebsafeDB</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>colordb</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>filetype</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>colordb</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+        <i class ='comment'># try to determine the type of RGB file it is</i>
+        <i class ='keyword'>if</i> <i class ='variable'>filetype</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>filetypes</i> <i class ='delimiter'>=</i> <i class ='variable'>FILETYPES</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>filetypes</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>filetype</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>typere</i><i class ='delimiter'>,</i> <i class ='variable'>class_</i> <i class ='keyword'>in</i> <i class ='variable'>filetypes</i><i class ='delimiter'>:</i>
+            <i class ='variable'>mo</i> <i class ='delimiter'>=</i> <i class ='variable'>typere</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>mo</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='comment'># no matching type</i>
+            <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+        <i class ='comment'># we know the type and the class to grok the type, so suck it in</i>
+        <i class ='variable'>colordb</i> <i class ='delimiter'>=</i> <i class ='variable'>class_</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='comment'># save a global copy</i>
+    <i class ='keyword'>global</i> <i class ='variable'>DEFAULT_</i><i class ='variable'>DB</i>
+    <i class ='variable'>DEFAULT_</i><i class ='variable'>DB</i> <i class ='delimiter'>=</i> <i class ='variable'>colordb</i>
+    <i class ='keyword'>return</i> <i class ='variable'>colordb</i>
+
+
+
+<i class ='hexadecimal'>_</i><i class ='variable'>namedict</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>rrggbb_</i><i class ='variable'>to_</i><i class ='variable'>triplet</i><i class ='delimiter'>(</i><i class ='variable'>color</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Converts a #rrggbb color to the tuple (red, green, blue).&quot;&quot;&quot;</i>
+    <i class ='variable'>rgbtuple</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>namedict</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>color</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>rgbtuple</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>color</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>BadColor</i><i class ='delimiter'>(</i><i class ='variable'>color</i><i class ='delimiter'>)</i>
+        <i class ='variable'>red</i> <i class ='delimiter'>=</i> <i class ='variable'>color</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='integer'>3</i><i class ='delimiter'>]</i>
+        <i class ='variable'>green</i> <i class ='delimiter'>=</i> <i class ='variable'>color</i><i class ='delimiter'>[</i><i class ='integer'>3</i><i class ='delimiter'>:</i><i class ='integer'>5</i><i class ='delimiter'>]</i>
+        <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>color</i><i class ='delimiter'>[</i><i class ='integer'>5</i><i class ='delimiter'>:</i><i class ='integer'>7</i><i class ='delimiter'>]</i>
+        <i class ='variable'>rgbtuple</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>blue</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>namedict</i><i class ='delimiter'>[</i><i class ='variable'>color</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>rgbtuple</i>
+    <i class ='keyword'>return</i> <i class ='variable'>rgbtuple</i>
+
+
+<i class ='hexadecimal'>_</i><i class ='variable'>tripdict</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+<i class ='keyword'>def</i> <i class ='variable'>triplet_</i><i class ='variable'>to_</i><i class ='variable'>rrggbb</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Converts a (red, green, blue) tuple to #rrggbb.&quot;&quot;&quot;</i>
+    <i class ='keyword'>global</i> <i class ='hexadecimal'>_</i><i class ='variable'>tripdict</i>
+    <i class ='variable'>hexname</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>tripdict</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>hexname</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>hexname</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;#%02x%02x%02x&#39;</i> <i class ='operator'>%</i> <i class ='variable'>rgbtuple</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>tripdict</i><i class ='delimiter'>[</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>hexname</i>
+    <i class ='keyword'>return</i> <i class ='variable'>hexname</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>triplet_</i><i class ='variable'>to_</i><i class ='variable'>fractional_</i><i class ='variable'>rgb</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='variable'>x</i> <i class ='operator'>/</i> <i class ='integer'>256</i> <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>rgbtuple</i><i class ='delimiter'>]</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>triplet_</i><i class ='variable'>to_</i><i class ='variable'>brightness</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># return the brightness (grey level) along the scale 0.0==black to</i>
+    <i class ='comment'># 1.0==white</i>
+    <i class ='variable'>r</i> <i class ='delimiter'>=</i> <i class ='float'>0.299</i>
+    <i class ='variable'>g</i> <i class ='delimiter'>=</i> <i class ='float'>0.587</i>
+    <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='float'>0.114</i>
+    <i class ='keyword'>return</i> <i class ='variable'>r</i><i class ='operator'>*</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>g</i><i class ='operator'>*</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>b</i><i class ='operator'>*</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i>
+
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>colordb</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>colordb</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/usr/openwin/lib/rgb.txt&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>colordb</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;No parseable color database found&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+    <i class ='comment'># on my system, this color matches exactly</i>
+    <i class ='variable'>target</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;navy&#39;</i>
+    <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>rgbtuple</i> <i class ='delimiter'>=</i> <i class ='variable'>colordb</i><i class ='delimiter'>.</i><i class ='variable'>find_</i><i class ='variable'>byname</i><i class ='delimiter'>(</i><i class ='variable'>target</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>target</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>,</i> <i class ='variable'>triplet_</i><i class ='variable'>to_</i><i class ='variable'>rrggbb</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>aliases</i> <i class ='delimiter'>=</i> <i class ='variable'>colordb</i><i class ='delimiter'>.</i><i class ='variable'>find_</i><i class ='variable'>byrgb</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;name:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;aliases:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>COMMASPACE</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>aliases</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>128</i><i class ='delimiter'>)</i>                         <i class ='comment'># nearest to navy</i>
+    <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='integer'>145</i><i class ='delimiter'>,</i> <i class ='integer'>238</i><i class ='delimiter'>,</i> <i class ='integer'>144</i><i class ='delimiter'>)</i>                     <i class ='comment'># nearest to lightgreen</i>
+    <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='integer'>255</i><i class ='delimiter'>,</i> <i class ='integer'>251</i><i class ='delimiter'>,</i> <i class ='integer'>250</i><i class ='delimiter'>)</i>                     <i class ='comment'># snow</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;finding nearest to&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>target</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;...&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>import</i> <i class ='variable'>time</i>
+    <i class ='variable'>t0</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>nearest</i> <i class ='delimiter'>=</i> <i class ='variable'>colordb</i><i class ='delimiter'>.</i><i class ='variable'>nearest</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>)</i>
+    <i class ='variable'>t1</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;found nearest color&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>nearest</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;in&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>t1</i><i class ='variable'>-t0</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;seconds&#39;</i><i class ='delimiter'>)</i>
+    <i class ='comment'># dump the database</i>
+    <i class ='keyword'>for</i> <i class ='variable'>n</i> <i class ='keyword'>in</i> <i class ='variable'>colordb</i><i class ='delimiter'>.</i><i class ='variable'>unique_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>colordb</i><i class ='delimiter'>.</i><i class ='variable'>find_</i><i class ='variable'>byname</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+        <i class ='variable'>aliases</i> <i class ='delimiter'>=</i> <i class ='variable'>colordb</i><i class ='delimiter'>.</i><i class ='variable'>aliases_</i><i class ='variable'>of</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%20s: (%3d/%3d/%3d) == %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>r</i><i class ='delimiter'>,</i> <i class ='variable'>g</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>,</i>
+                                             <i class ='variable'>SPACE</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>aliases</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

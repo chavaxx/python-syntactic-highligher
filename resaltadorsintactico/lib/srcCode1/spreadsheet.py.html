@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+SS1 -- a spreadsheet-like application.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>from</i> <i class ='variable'>xml</i><i class ='delimiter'>.</i><i class ='variable'>parsers</i> <i class ='keyword'>import</i> <i class ='variable'>expat</i>
+<i class ='keyword'>from</i> <i class ='variable'>xml</i><i class ='delimiter'>.</i><i class ='variable'>sax</i><i class ='delimiter'>.</i><i class ='variable'>saxutils</i> <i class ='keyword'>import</i> <i class ='variable'>escape</i>
+
+<i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;LEFT&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;CENTER&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;RIGHT&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>ljust</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>x</i><i class ='delimiter'>.</i><i class ='variable'>ljust</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>center</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>x</i><i class ='delimiter'>.</i><i class ='variable'>center</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+<i class ='keyword'>def</i> <i class ='variable'>rjust</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>x</i><i class ='delimiter'>.</i><i class ='variable'>rjust</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+<i class ='variable'>align2</i><i class ='variable'>action</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>LEFT</i><i class ='delimiter'>:</i> <i class ='variable'>ljust</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>:</i> <i class ='variable'>center</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>:</i> <i class ='variable'>rjust</i><i class ='delimiter'>}</i>
+
+<i class ='variable'>align2</i><i class ='variable'>xml</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>LEFT</i><i class ='delimiter'>:</i> <i class ='string'>&quot;left&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>:</i> <i class ='string'>&quot;center&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>:</i> <i class ='string'>&quot;right&quot;</i><i class ='delimiter'>}</i>
+<i class ='variable'>xml2</i><i class ='variable'>align</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='string'>&quot;left&quot;</i><i class ='delimiter'>:</i> <i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='string'>&quot;center&quot;</i><i class ='delimiter'>:</i> <i class ='variable'>CENTER</i><i class ='delimiter'>,</i> <i class ='string'>&quot;right&quot;</i><i class ='delimiter'>:</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>}</i>
+
+<i class ='variable'>align2</i><i class ='variable'>anchor</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>LEFT</i><i class ='delimiter'>:</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>:</i> <i class ='string'>&quot;center&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>:</i> <i class ='string'>&quot;e&quot;</i><i class ='delimiter'>}</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>total</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>seq</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>total</i> <i class ='delimiter'>+=</i> <i class ='variable'>x</i>
+    <i class ='keyword'>return</i> <i class ='variable'>total</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>Sheet</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i> <i class ='comment'># {(x, y): cell, ...}</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ns</i> <i class ='delimiter'>=</i> <i class ='datatype'>dict</i><i class ='delimiter'>(</i>
+            <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellvalue</i><i class ='delimiter'>,</i>
+            <i class ='variable'>cells</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>multicellvalue</i><i class ='delimiter'>,</i>
+            <i class ='variable'>sum</i> <i class ='delimiter'>=</i> <i class ='variable'>sum</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>cellvalue</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>getcell</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;recalc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ns</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>cell</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>multicellvalue</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&gt;</i> <i class ='variable'>x2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>y1</i> <i class ='operator'>&gt;</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i>
+        <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>seq</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellvalue</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>seq</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>getcell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>setcell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>cell</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>x</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>y</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='variable'>BaseCell</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>clearcell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>del</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>except</i> <i class ='variable'>KeyError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>clearcells</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>xy</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>selectcells</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>del</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>[</i><i class ='variable'>xy</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>clearrows</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>clearcells</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>clearcolumns</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>clearcells</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>selectcells</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&gt;</i> <i class ='variable'>x2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>y1</i> <i class ='operator'>&gt;</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i>
+                <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x2</i> <i class ='keyword'>and</i> <i class ='variable'>y1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y2</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>movecells</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>dx</i><i class ='delimiter'>,</i> <i class ='variable'>dy</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>dx</i> <i class ='operator'>==</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>dy</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&gt;</i> <i class ='variable'>x2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>y1</i> <i class ='operator'>&gt;</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>x1</i><i class ='operator'>+</i><i class ='variable'>dx</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>y1</i><i class ='operator'>+</i><i class ='variable'>dy</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i>
+        <i class ='variable'>new</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='keyword'>for</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;renumber&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>renumber</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>dx</i><i class ='delimiter'>,</i> <i class ='variable'>dy</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x2</i> <i class ='keyword'>and</i> <i class ='variable'>y1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+                <i class ='variable'>x</i> <i class ='delimiter'>+=</i> <i class ='variable'>dx</i>
+                <i class ='variable'>y</i> <i class ='delimiter'>+=</i> <i class ='variable'>dy</i>
+            <i class ='variable'>new</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i> <i class ='delimiter'>=</i> <i class ='variable'>new</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>insertrows</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>n</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>movecells</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>deleterows</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>y1</i> <i class ='operator'>&gt;</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>clearrows</i><i class ='delimiter'>(</i><i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>movecells</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='variable'>-y2</i><i class ='variable'>-1</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>insertcolumns</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>n</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>movecells</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>deletecolumns</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&gt;</i> <i class ='variable'>x2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>clearcells</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>movecells</i><i class ='delimiter'>(</i><i class ='variable'>x2</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='variable'>-x2</i><i class ='variable'>-1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>getsize</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>maxx</i> <i class ='delimiter'>=</i> <i class ='variable'>maxy</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>for</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>:</i>
+            <i class ='variable'>maxx</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>maxx</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i>
+            <i class ='variable'>maxy</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>maxy</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>maxx</i><i class ='delimiter'>,</i> <i class ='variable'>maxy</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>reset</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>cell</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;reset&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>reset</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>reset</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>cell</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;recalc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ns</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>maxx</i><i class ='delimiter'>,</i> <i class ='variable'>maxy</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>getsize</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>width</i><i class ='delimiter'>,</i> <i class ='variable'>height</i> <i class ='delimiter'>=</i> <i class ='variable'>maxx</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>maxy</i><i class ='operator'>+</i><i class ='integer'>1</i>
+        <i class ='variable'>colwidth</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>width</i>
+        <i class ='variable'>full</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='comment'># Add column heading labels in row 0</i>
+        <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>width</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>full</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>colnum2</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i>
+            <i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Add row labels in column 0</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>full</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i>
+            <i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Add sheet cells in columns with x&gt;0 and y&gt;0</i>
+        <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>cell</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>&lt;=</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='variable'>y</i> <i class ='operator'>&lt;=</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;recalc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>ns</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;format&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>assert</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>assert</i> <i class ='variable'>alignment</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>LEFT</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>RIGHT</i>
+            <i class ='variable'>full</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i><i class ='delimiter'>)</i>
+            <i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Calculate the horizontal separator line (dashes and dots)</i>
+        <i class ='variable'>sep</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+        <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>width</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>sep</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sep</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;+&quot;</i>
+            <i class ='variable'>sep</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;-&quot;</i><i class ='operator'>*</i><i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i>
+        <i class ='comment'># Now print The full grid</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>height</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+            <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>width</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>full</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>LEFT</i><i class ='delimiter'>)</i>
+                <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>align2</i><i class ='variable'>action</i><i class ='delimiter'>[</i><i class ='variable'>alignment</i><i class ='delimiter'>]</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>line</i> <i class ='delimiter'>+=</i> <i class ='charlist'>&#39;|&#39;</i>
+                <i class ='variable'>line</i> <i class ='delimiter'>+=</i> <i class ='variable'>text</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>y</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>sep</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>xml</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;&lt;spreadsheet&gt;&#39;</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>cell</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cells</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;xml&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cellxml</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>xml</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cellxml</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&lt;value&gt;%s&lt;/value&gt;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>escape</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>)</i>
+            <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;cell row=&quot;%s&quot; col=&quot;%s&quot;&gt;\n  %s\n&lt;/cell&gt;&#39;</i> <i class ='operator'>%</i>
+                       <i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>cellxml</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;/spreadsheet&gt;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>out</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>save</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>xml</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;utf-8&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>text</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>load</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>SheetParser</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>parsefile</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>SheetParser</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>sheet</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i> <i class ='delimiter'>=</i> <i class ='variable'>sheet</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>parsefile</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>expat</i><i class ='delimiter'>.</i><i class ='variable'>ParserCreate</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>StartElementHandler</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>startelement</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>EndElementHandler</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>endelement</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>CharacterDataHandler</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>data</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>ParseFile</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>startelement</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>tag</i><i class ='delimiter'>,</i> <i class ='variable'>attrs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>method</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;start_&#39;</i><i class ='operator'>+</i><i class ='variable'>tag</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>method</i><i class ='delimiter'>:</i>
+            <i class ='variable'>method</i><i class ='delimiter'>(</i><i class ='variable'>attrs</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>texts</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>data</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>texts</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>endelement</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>tag</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>method</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;end_&#39;</i><i class ='operator'>+</i><i class ='variable'>tag</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>method</i><i class ='delimiter'>:</i>
+            <i class ='variable'>method</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>texts</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>start_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>attrs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>attrs</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='string'>&quot;row&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>attrs</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='string'>&quot;col&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>start_</i><i class ='variable'>value</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>attrs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='delimiter'>=</i> <i class ='variable'>attrs</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;format&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>xml2</i><i class ='variable'>align</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>attrs</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;align&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>start_</i><i class ='variable'>formula</i> <i class ='delimiter'>=</i> <i class ='variable'>start_</i><i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>end_</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>TypeError</i><i class ='delimiter'>,</i> <i class ='variable'>ValueError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='variable'>end_</i><i class ='variable'>long</i> <i class ='delimiter'>=</i> <i class ='variable'>end_</i><i class ='datatype'>int</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>end_</i><i class ='variable'>double</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>TypeError</i><i class ='delimiter'>,</i> <i class ='variable'>ValueError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>end_</i><i class ='datatype'>complex</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='datatype'>complex</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>TypeError</i><i class ='delimiter'>,</i> <i class ='variable'>ValueError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>end_</i><i class ='variable'>string</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>end_</i><i class ='variable'>value</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>BaseCell</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>StringCell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>,</i>
+                                   <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='keyword'>or</i> <i class ='string'>&quot;%s&quot;</i><i class ='delimiter'>,</i>
+                                   <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i> <i class ='keyword'>or</i> <i class ='variable'>LEFT</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>NumericCell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='keyword'>or</i> <i class ='string'>&quot;%s&quot;</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i> <i class ='keyword'>or</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>end_</i><i class ='variable'>formula</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>FormulaCell</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i>
+                                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='keyword'>or</i> <i class ='string'>&quot;%s&quot;</i><i class ='delimiter'>,</i>
+                                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i> <i class ='keyword'>or</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>end_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>setcell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cell</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>BaseCell</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>__</i><i class ='variable'>init__</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i> <i class ='comment'># Must provide</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Abstract base class for sheet cells.
+
+    Subclasses may but needn&#39;t provide the following APIs:
+
+    cell.reset() -- prepare for recalculation
+    cell.recalc(ns) -&gt; value -- recalculate formula
+    cell.format() -&gt; (value, alignment) -- return formatted value
+    cell.xml() -&gt; string -- return XML
+    &quot;&quot;&quot;</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>NumericCell</i><i class ='delimiter'>(</i><i class ='variable'>BaseCell</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>fmt</i><i class ='delimiter'>=</i><i class ='string'>&quot;%s&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i><i class ='delimiter'>=</i><i class ='variable'>RIGHT</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='datatype'>int</i><i class ='delimiter'>,</i> <i class ='datatype'>float</i><i class ='delimiter'>,</i> <i class ='datatype'>complex</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>alignment</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='delimiter'>=</i> <i class ='variable'>fmt</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>alignment</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>ns</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='operator'>%</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+        <i class ='keyword'>except</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>xml</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>method</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_xml_&#39;</i> <i class ='operator'>+</i> <i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>name__</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;&lt;value align=&quot;%s&quot; format=&quot;%s&quot;&gt;%s&lt;/value&gt;&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+                <i class ='variable'>align2</i><i class ='variable'>xml</i><i class ='delimiter'>[</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i><i class ='delimiter'>,</i>
+                <i class ='variable'>method</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>xml_</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>-2</i><i class ='operator'>**</i><i class ='integer'>31</i> <i class ='operator'>&lt;=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='operator'>&lt;</i> <i class ='integer'>2</i><i class ='operator'>**</i><i class ='integer'>31</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='charlist'>&#39;&lt;int&gt;%s&lt;/int&gt;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='charlist'>&#39;&lt;long&gt;%s&lt;/long&gt;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>xml_</i><i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;&lt;double&gt;%r&lt;/double&gt;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>xml_</i><i class ='datatype'>complex</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;&lt;complex&gt;%r&lt;/complex&gt;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>StringCell</i><i class ='delimiter'>(</i><i class ='variable'>BaseCell</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>fmt</i><i class ='delimiter'>=</i><i class ='string'>&quot;%s&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i><i class ='delimiter'>=</i><i class ='variable'>LEFT</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>alignment</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='delimiter'>=</i> <i class ='variable'>fmt</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>alignment</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>ns</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>xml</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&lt;value align=&quot;%s&quot; format=&quot;%s&quot;&gt;&lt;string&gt;%s&lt;/string&gt;&lt;/value&gt;&#39;</i>
+        <i class ='keyword'>return</i> <i class ='variable'>s</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+            <i class ='variable'>align2</i><i class ='variable'>xml</i><i class ='delimiter'>[</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i><i class ='delimiter'>,</i>
+            <i class ='variable'>escape</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>FormulaCell</i><i class ='delimiter'>(</i><i class ='variable'>BaseCell</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>formula</i><i class ='delimiter'>,</i> <i class ='variable'>fmt</i><i class ='delimiter'>=</i><i class ='string'>&quot;%s&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i><i class ='delimiter'>=</i><i class ='variable'>RIGHT</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>alignment</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>CENTER</i><i class ='delimiter'>,</i> <i class ='variable'>RIGHT</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>formula</i> <i class ='delimiter'>=</i> <i class ='variable'>formula</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>translated</i> <i class ='delimiter'>=</i> <i class ='variable'>translate</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>formula</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='delimiter'>=</i> <i class ='variable'>fmt</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>alignment</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>reset</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>reset</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>ns</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>translated</i><i class ='delimiter'>,</i> <i class ='variable'>ns</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>except</i><i class ='delimiter'>:</i>
+                <i class ='variable'>exc</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exc_</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+                <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>exc</i><i class ='delimiter'>,</i> <i class ='string'>&quot;__name__&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>exc</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>name__</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>exc</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i> <i class ='operator'>%</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+        <i class ='keyword'>except</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>xml</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;&lt;formula align=&quot;%s&quot; format=&quot;%s&quot;&gt;%s&lt;/formula&gt;&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+            <i class ='variable'>align2</i><i class ='variable'>xml</i><i class ='delimiter'>[</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i><i class ='delimiter'>,</i>
+            <i class ='variable'>escape</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>formula</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>renumber</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>dx</i><i class ='delimiter'>,</i> <i class ='variable'>dy</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>part</i> <i class ='keyword'>in</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;(\w+)&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>formula</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^([A-Z]+)([1-9][0-9]*)$&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>part</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>m</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sx</i><i class ='delimiter'>,</i> <i class ='variable'>sy</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>colname2</i><i class ='variable'>num</i><i class ='delimiter'>(</i><i class ='variable'>sx</i><i class ='delimiter'>)</i>
+                <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>sy</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x2</i> <i class ='keyword'>and</i> <i class ='variable'>y1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>part</i> <i class ='delimiter'>=</i> <i class ='variable'>cellname</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='operator'>+</i><i class ='variable'>dx</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='operator'>+</i><i class ='variable'>dy</i><i class ='delimiter'>)</i>
+            <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>part</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>FormulaCell</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>out</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fmt</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alignment</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>translate</i><i class ='delimiter'>(</i><i class ='variable'>formula</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Translate a formula containing fancy cell names to valid Python code.
+
+    Examples:
+        B4 -&gt; cell(2, 4)
+        B4:Z100 -&gt; cells(2, 4, 26, 100)
+    &quot;&quot;&quot;</i>
+    <i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>part</i> <i class ='keyword'>in</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;(\w+(?::\w+)?)&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>formula</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;^([A-Z]+)([1-9][0-9]*)(?::([A-Z]+)([1-9][0-9]*))?$&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>part</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>m</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>part</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>x1</i> <i class ='delimiter'>=</i> <i class ='variable'>colname2</i><i class ='variable'>num</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x2</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;cell(%s, %s)&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>colname2</i><i class ='variable'>num</i><i class ='delimiter'>(</i><i class ='variable'>x2</i><i class ='delimiter'>)</i>
+                <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;cells(%s, %s, %s, %s)&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i>
+            <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>out</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>cellname</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;Translate a cell coordinate to a fancy cell name (e.g. (1, 1)-&gt;&#39;A1&#39;).&quot;</i>
+    <i class ='keyword'>assert</i> <i class ='variable'>x</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='comment'># Column 0 has an empty name, so can&#39;t use that</i>
+    <i class ='keyword'>return</i> <i class ='variable'>colnum2</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>colname2</i><i class ='variable'>num</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;Translate a column name to number (e.g. &#39;A&#39;-&gt;1, &#39;Z&#39;-&gt;26, &#39;AA&#39;-&gt;27).&quot;</i>
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>upper</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='charlist'>&#39;A&#39;</i> <i class ='operator'>&lt;=</i> <i class ='variable'>c</i> <i class ='operator'>&lt;=</i> <i class ='charlist'>&#39;Z&#39;</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>n</i><i class ='operator'>*</i><i class ='integer'>26</i> <i class ='operator'>+</i> <i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='variable'>c</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;A&#39;</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+    <i class ='keyword'>return</i> <i class ='variable'>n</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>colnum2</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;Translate a column number to name (e.g. 1-&gt;&#39;A&#39;, etc.).&quot;</i>
+    <i class ='keyword'>assert</i> <i class ='variable'>n</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i>
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+    <i class ='keyword'>while</i> <i class ='variable'>n</i><i class ='delimiter'>:</i>
+        <i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>divmod</i><i class ='delimiter'>(</i><i class ='variable'>n-1</i><i class ='delimiter'>,</i> <i class ='integer'>26</i><i class ='delimiter'>)</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='operator'>+</i><i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;A&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='variable'>s</i>
+    <i class ='keyword'>return</i> <i class ='variable'>s</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>tkinter</i> <i class ='keyword'>as</i> <i class ='variable'>Tk</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>SheetGUI</i><i class ='delimiter'>:</i>
+
+    <i class ='multilineComment'>&quot;&quot;&quot;Beginnings of a GUI for a spreadsheet.
+
+    TO DO:
+    - clear multiple cells
+    - Insert, clear, remove rows or columns
+    - Show new contents while typing
+    - Scroll bars
+    - Grow grid when window is grown
+    - Proper menus
+    - Undo, redo
+    - Cut, copy and paste
+    - Formatting and alignment
+    &quot;&quot;&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>=</i><i class ='string'>&quot;sheet1.xml&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>rows</i><i class ='delimiter'>=</i><i class ='integer'>10</i><i class ='delimiter'>,</i> <i class ='variable'>columns</i><i class ='delimiter'>=</i><i class ='integer'>5</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Constructor.
+
+        Load the sheet from the filename argument.
+        Set up the Tk widget tree.
+        &quot;&quot;&quot;</i>
+        <i class ='comment'># Create and load the sheet</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>filename</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i> <i class ='delimiter'>=</i> <i class ='variable'>Sheet</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>load</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Calculate the needed grid size</i>
+        <i class ='variable'>maxx</i><i class ='delimiter'>,</i> <i class ='variable'>maxy</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>getsize</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>rows</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>rows</i><i class ='delimiter'>,</i> <i class ='variable'>maxy</i><i class ='delimiter'>)</i>
+        <i class ='variable'>columns</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>columns</i><i class ='delimiter'>,</i> <i class ='variable'>maxx</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Create the widgets</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Tk</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>wm_</i><i class ='variable'>title</i><i class ='delimiter'>(</i><i class ='string'>&quot;Spreadsheet: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>beacon</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;A1&quot;</i><i class ='delimiter'>,</i>
+                               <i class ='variable'>font</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;helvetica&#39;</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;bold&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Entry</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>savebutton</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Save&quot;</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>save</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Configure the widget lay-out</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='string'>&quot;bottom&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='string'>&quot;both&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>beacon</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='string'>&quot;left&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>savebutton</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='string'>&quot;right&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='string'>&quot;left&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='string'>&quot;x&quot;</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Bind some events</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Return&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>return_</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Shift-Return&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>shift_</i><i class ='variable'>return_</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Tab&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tab_</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Shift-Tab&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>shift_</i><i class ='variable'>tab_</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Delete&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>delete_</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Escape&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>escape_</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Now create the cell grid</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>makegrid</i><i class ='delimiter'>(</i><i class ='variable'>rows</i><i class ='delimiter'>,</i> <i class ='variable'>columns</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Select the top-left cell</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Copy the sheet cells to the GUI cells</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sync</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>delete_</i><i class ='variable'>event</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i> <i class ='operator'>!=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='keyword'>and</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>clearcells</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>clearcell</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sync</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>delete</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;end&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;break&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>escape_</i><i class ='variable'>event</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>load_</i><i class ='variable'>entry</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>load_</i><i class ='variable'>entry</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>getcell</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>cell</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='variable'>FormulaCell</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;=&#39;</i> <i class ='operator'>+</i> <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>formula</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>delete</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;end&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>selection_</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;end&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>makegrid</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rows</i><i class ='delimiter'>,</i> <i class ='variable'>columns</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Helper to create the grid of GUI cells.
+
+        The edge (x==0 or y==0) is filled with labels; the rest is real cells.
+        &quot;&quot;&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rows</i> <i class ='delimiter'>=</i> <i class ='variable'>rows</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>columns</i> <i class ='delimiter'>=</i> <i class ='variable'>columns</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='comment'># Create the top left corner cell (which selects all)</i>
+        <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;raised&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>grid_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;NSWE&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;ButtonPress-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>selectall</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Create the top row of labels, and configure the grid columns</i>
+        <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>columns</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i><i class ='delimiter'>.</i><i class ='variable'>grid_</i><i class ='variable'>columnconfigure</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>minsize</i><i class ='delimiter'>=</i><i class ='integer'>64</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>colnum2</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;raised&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>grid_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;WE&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>x</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;ButtonPress-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>selectcolumn</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;B1-Motion&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>extendcolumn</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;ButtonRelease-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>extendcolumn</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Shift-Button-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>extendcolumn</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Create the leftmost column of labels</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>rows</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;raised&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>grid_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;WE&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>y</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;ButtonPress-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>selectrow</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;B1-Motion&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>extendrow</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;ButtonRelease-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>extendrow</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Shift-Button-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>extendrow</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Create the real cells</i>
+        <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>columns</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>rows</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;sunken&#39;</i><i class ='delimiter'>,</i>
+                                <i class ='variable'>bg</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;white&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>fg</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;black&#39;</i><i class ='delimiter'>)</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>grid_</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;NSWE&#39;</i><i class ='delimiter'>)</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>x</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>y</i>
+                <i class ='comment'># Bind mouse events</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;ButtonPress-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>press</i><i class ='delimiter'>)</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;B1-Motion&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>motion</i><i class ='delimiter'>)</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;ButtonRelease-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>release</i><i class ='delimiter'>)</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Shift-Button-1&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>release</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>selectall</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcorner</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>selectcolumn</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>whichxy</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcorner</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>extendcolumn</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>whichxy</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcorner</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>selectrow</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>whichxy</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcorner</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>extendrow</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>whichxy</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>y</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcorner</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>press</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>whichxy</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>y</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>motion</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>whichxy</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i> <i class ='keyword'>and</i> <i class ='variable'>y</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcorner</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>release</i> <i class ='delimiter'>=</i> <i class ='variable'>motion</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>whichxy</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cellgrid</i><i class ='delimiter'>.</i><i class ='variable'>winfo_</i><i class ='variable'>containing</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>x_</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>y_</i><i class ='variable'>root</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>w</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i> <i class ='keyword'>and</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>,</i> <i class ='variable'>Tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='variable'>w</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>y</i>
+            <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>pass</i>
+        <i class ='keyword'>return</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>save</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>save</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Make (x, y) the current cell.&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>change_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>clearfocus</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>beacon</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;text&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>cellname</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>load_</i><i class ='variable'>entry</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>focus_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='delimiter'>=</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>gridcell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>gridcell</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>gridcell</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;bg&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;yellow&#39;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>setcorner</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='operator'>==</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>clearfocus</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i> <i class ='delimiter'>=</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i>
+        <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&gt;</i> <i class ='variable'>x2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>y1</i> <i class ='operator'>&gt;</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+            <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i>
+        <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>cell</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x2</i> <i class ='keyword'>and</i> <i class ='variable'>y1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;bg&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;lightBlue&#39;</i>
+        <i class ='variable'>gridcell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>gridcell</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>gridcell</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;bg&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;yellow&#39;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setbeacon</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>setbeacon</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>==</i> <i class ='variable'>y1</i> <i class ='operator'>==</i> <i class ='integer'>1</i> <i class ='keyword'>and</i> <i class ='variable'>x2</i> <i class ='operator'>==</i> <i class ='variable'>y2</i> <i class ='operator'>==</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>:</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;:&quot;</i>
+        <i class ='keyword'>elif</i> <i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>y1</i> <i class ='operator'>==</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%d&quot;</i> <i class ='operator'>%</i> <i class ='variable'>y1</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%d:%d&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='delimiter'>(</i><i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxsize</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>==</i> <i class ='variable'>x2</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>colnum2</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%s:%s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>colnum2</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>colnum2</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>x2</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>name1</i> <i class ='delimiter'>=</i> <i class ='variable'>cellname</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i><i class ='delimiter'>)</i>
+            <i class ='variable'>name2</i> <i class ='delimiter'>=</i> <i class ='variable'>cellname</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i><i class ='delimiter'>)</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%s:%s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name1</i><i class ='delimiter'>,</i> <i class ='variable'>name2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>beacon</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;text&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i>
+
+
+    <i class ='keyword'>def</i> <i class ='variable'>clearfocus</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+            <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>cornerxy</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&gt;</i> <i class ='variable'>x2</i><i class ='delimiter'>:</i>
+                <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i>
+            <i class ='keyword'>if</i> <i class ='variable'>y1</i> <i class ='operator'>&gt;</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+                <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i>
+            <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>cell</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>x1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x</i> <i class ='operator'>&lt;=</i> <i class ='variable'>x2</i> <i class ='keyword'>and</i> <i class ='variable'>y1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y</i> <i class ='operator'>&lt;=</i> <i class ='variable'>y2</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>cell</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;bg&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;white&#39;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>return_</i><i class ='variable'>event</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Callback for the Return key.&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>change_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;break&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>shift_</i><i class ='variable'>return_</i><i class ='variable'>event</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Callback for the Return key with Shift modifier.&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>change_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>y-1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;break&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>tab_</i><i class ='variable'>event</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Callback for the Tab key.&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>change_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;break&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>shift_</i><i class ='variable'>tab_</i><i class ='variable'>event</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Callback for the Tab key with Shift modifier.&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>change_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setcurrent</i><i class ='delimiter'>(</i><i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>x-1</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;break&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>change_</i><i class ='variable'>cell</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Set the current cell from the entry widget.&quot;</i>
+        <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentxy</i>
+        <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>entry</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>if</i> <i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;=&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>FormulaCell</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>cls</i> <i class ='keyword'>in</i> <i class ='datatype'>int</i><i class ='delimiter'>,</i> <i class ='datatype'>float</i><i class ='delimiter'>,</i> <i class ='datatype'>complex</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>cls</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>TypeError</i><i class ='delimiter'>,</i> <i class ='variable'>ValueError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>continue</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>NumericCell</i><i class ='delimiter'>(</i><i class ='variable'>value</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>break</i>
+        <i class ='keyword'>if</i> <i class ='variable'>cell</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>and</i> <i class ='variable'>text</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>StringCell</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>cell</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>clearcell</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>setcell</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>cell</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sync</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>sync</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Fill the GUI cells from the sheet cells.&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>recalc</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>gridcell</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>gridcells</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>==</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='variable'>y</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sheet</i><i class ='delimiter'>.</i><i class ='variable'>getcell</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>cell</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>gridcell</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;text&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;format&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='variable'>cell</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>alignment</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>cell</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>LEFT</i>
+                <i class ='variable'>gridcell</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;text&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i>
+                <i class ='variable'>gridcell</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;anchor&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>align2</i><i class ='variable'>anchor</i><i class ='delimiter'>[</i><i class ='variable'>alignment</i><i class ='delimiter'>]</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>basic</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;Basic non-gui self-test.&quot;</i>
+    <i class ='variable'>a</i> <i class ='delimiter'>=</i> <i class ='variable'>Sheet</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>11</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>11</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>NumericCell</i><i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>y</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+                <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>NumericCell</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>c1</i> <i class ='delimiter'>=</i> <i class ='variable'>cellname</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+                <i class ='variable'>c2</i> <i class ='delimiter'>=</i> <i class ='variable'>cellname</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+                <i class ='variable'>formula</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%s*%s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>c1</i><i class ='delimiter'>,</i> <i class ='variable'>c2</i><i class ='delimiter'>)</i>
+                <i class ='variable'>cell</i> <i class ='delimiter'>=</i> <i class ='variable'>FormulaCell</i><i class ='delimiter'>(</i><i class ='variable'>formula</i><i class ='delimiter'>)</i>
+            <i class ='variable'>a</i><i class ='delimiter'>.</i><i class ='variable'>setcell</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>cell</i><i class ='delimiter'>)</i>
+<i class ='comment'>##    if os.path.isfile(&quot;sheet1.xml&quot;):</i>
+<i class ='comment'>##        print &quot;Loading from sheet1.xml&quot;</i>
+<i class ='comment'>##        a.load(&quot;sheet1.xml&quot;)</i>
+    <i class ='variable'>a</i><i class ='delimiter'>.</i><i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>a</i><i class ='delimiter'>.</i><i class ='variable'>save</i><i class ='delimiter'>(</i><i class ='string'>&quot;sheet1.xml&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>gui</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='string'>&quot;GUI test.&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;sheet1.xml&quot;</i>
+    <i class ='variable'>g</i> <i class ='delimiter'>=</i> <i class ='variable'>SheetGUI</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='variable'>g</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>mainloop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='comment'>#test_basic()</i>
+    <i class ='variable'>test_</i><i class ='variable'>gui</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

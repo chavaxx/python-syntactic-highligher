@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#</i>
+<i class ='comment'># genmap_korean.py: Korean Codecs Map Generator</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Original Author:  Hye-Shik Chang &lt;perky@FreeBSD.org&gt;</i>
+<i class ='comment'># Modified Author:  Dong-hee Na &lt;donghee.na92@gmail.com&gt;</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>genmap_</i><i class ='variable'>support</i> <i class ='keyword'>import</i> <i class ='operator'>*</i>
+
+
+<i class ='variable'>KSX1001_</i><i class ='variable'>C1</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='integer'>21</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>7</i><i class ='variable'>e</i><i class ='delimiter'>)</i>
+<i class ='variable'>KSX1001_</i><i class ='variable'>C2</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='integer'>21</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>7</i><i class ='variable'>e</i><i class ='delimiter'>)</i>
+<i class ='variable'>UHCL1_</i><i class ='variable'>C1</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='integer'>81</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0xa</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+<i class ='variable'>UHCL1_</i><i class ='variable'>C2</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='integer'>41</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0xfe</i><i class ='delimiter'>)</i>
+<i class ='variable'>UHCL2_</i><i class ='variable'>C1</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='hexadecimal'>0xa</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0xfe</i><i class ='delimiter'>)</i>
+<i class ='variable'>UHCL2_</i><i class ='variable'>C2</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='integer'>41</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0xa</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+<i class ='variable'>MAPPINGS_</i><i class ='variable'>CP949</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP949.TXT&#39;</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>mapfile</i> <i class ='delimiter'>=</i> <i class ='variable'>open_</i><i class ='variable'>mapping_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;python-mappings/CP949.TXT&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>MAPPINGS_</i><i class ='variable'>CP949</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Loading Mapping File...&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>decmap</i> <i class ='delimiter'>=</i> <i class ='variable'>loadmap</i><i class ='delimiter'>(</i><i class ='variable'>mapfile</i><i class ='delimiter'>)</i>
+    <i class ='variable'>uhcdecmap</i><i class ='delimiter'>,</i> <i class ='variable'>ksx1001</i><i class ='variable'>decmap</i><i class ='delimiter'>,</i> <i class ='variable'>cp949</i><i class ='variable'>encmap</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>c1</i><i class ='delimiter'>,</i> <i class ='variable'>c2</i><i class ='variable'>map</i> <i class ='keyword'>in</i> <i class ='variable'>decmap</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>c2</i><i class ='delimiter'>,</i> <i class ='variable'>code</i> <i class ='keyword'>in</i> <i class ='variable'>c2</i><i class ='variable'>map</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>c1</i> <i class ='operator'>&gt;=</i> <i class ='hexadecimal'>0xa</i><i class ='integer'>1</i> <i class ='keyword'>and</i> <i class ='variable'>c2</i> <i class ='operator'>&gt;=</i> <i class ='hexadecimal'>0xa</i><i class ='integer'>1</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ksx1001</i><i class ='variable'>decmap</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>c1</i> <i class ='operator'>&amp;</i> <i class ='hexadecimal'>0x</i><i class ='integer'>7</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+                <i class ='variable'>ksx1001</i><i class ='variable'>decmap</i><i class ='delimiter'>[</i><i class ='variable'>c1</i> <i class ='operator'>&amp;</i> <i class ='hexadecimal'>0x</i><i class ='integer'>7</i><i class ='variable'>f</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>c2</i> <i class ='operator'>&amp;</i> <i class ='hexadecimal'>0x</i><i class ='integer'>7</i><i class ='variable'>f</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>c2</i><i class ='variable'>map</i><i class ='delimiter'>[</i><i class ='variable'>c2</i><i class ='delimiter'>]</i>
+                <i class ='variable'>cp949</i><i class ='variable'>encmap</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>code</i> <i class ='operator'>&gt;&gt;</i> <i class ='integer'>8</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+                <i class ='variable'>cp949</i><i class ='variable'>encmap</i><i class ='delimiter'>[</i><i class ='variable'>code</i> <i class ='operator'>&gt;&gt;</i> <i class ='integer'>8</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>code</i> <i class ='operator'>&amp;</i> <i class ='hexadecimal'>0x</i><i class ='variable'>FF</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>c1</i> <i class ='operator'>&lt;&lt;</i> <i class ='integer'>8</i> <i class ='operator'>|</i> <i class ='variable'>c2</i><i class ='delimiter'>)</i> <i class ='operator'>&amp;</i> <i class ='hexadecimal'>0x</i><i class ='integer'>7</i><i class ='variable'>f7</i><i class ='variable'>f</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='comment'># uhc</i>
+                <i class ='variable'>uhcdecmap</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>c1</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+                <i class ='variable'>uhcdecmap</i><i class ='delimiter'>[</i><i class ='variable'>c1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>c2</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>c2</i><i class ='variable'>map</i><i class ='delimiter'>[</i><i class ='variable'>c2</i><i class ='delimiter'>]</i>
+                <i class ='variable'>cp949</i><i class ='variable'>encmap</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>code</i> <i class ='operator'>&gt;&gt;</i> <i class ='integer'>8</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>  <i class ='comment'># MSB set</i>
+                <i class ='variable'>cp949</i><i class ='variable'>encmap</i><i class ='delimiter'>[</i><i class ='variable'>code</i> <i class ='operator'>&gt;&gt;</i> <i class ='integer'>8</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>code</i> <i class ='operator'>&amp;</i> <i class ='hexadecimal'>0x</i><i class ='variable'>FF</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>c1</i> <i class ='operator'>&lt;&lt;</i> <i class ='integer'>8</i> <i class ='operator'>|</i> <i class ='variable'>c2</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;mappings_kr.h&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='variable'>print_</i><i class ='variable'>autogen</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>basename</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Generating KS X 1001 decode map...&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i> <i class ='delimiter'>=</i> <i class ='variable'>DecodeMapWriter</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='string'>&quot;ksx1001&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>ksx1001</i><i class ='variable'>decmap</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>decode_</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>KSX1001_</i><i class ='variable'>C1</i><i class ='delimiter'>,</i> <i class ='variable'>KSX1001_</i><i class ='variable'>C2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Generating UHC decode map...&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i> <i class ='delimiter'>=</i> <i class ='variable'>DecodeMapWriter</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='string'>&quot;cp949ext&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>uhcdecmap</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>decode_</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>UHCL1_</i><i class ='variable'>C1</i><i class ='delimiter'>,</i> <i class ='variable'>UHCL1_</i><i class ='variable'>C2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>decode_</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>UHCL2_</i><i class ='variable'>C1</i><i class ='delimiter'>,</i> <i class ='variable'>UHCL2_</i><i class ='variable'>C2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Generating CP949 (includes KS X 1001) encode map...&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i> <i class ='delimiter'>=</i> <i class ='variable'>EncodeMapWriter</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='string'>&quot;cp949&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>cp949</i><i class ='variable'>encmap</i><i class ='delimiter'>)</i>
+        <i class ='variable'>writer</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Done!&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

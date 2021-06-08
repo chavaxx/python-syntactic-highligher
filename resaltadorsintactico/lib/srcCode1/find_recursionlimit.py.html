@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+<i class ='string'>&quot;&quot;</i><i class ='string'>&quot;Find the maximum recursion limit that prevents interpreter termination.
+
+This script finds the maximum safe recursion limit on a particular
+platform.  If you need to change the recursion limit on your system,
+this script will tell you a safe upper bound.  To use the new limit,
+call sys.setrecursionlimit().
+
+This module implements several ways to create infinite recursion in
+Python.  Different implementations end up pushing different numbers of
+C stack frames, depending on how many calls through Python&#39;s abstract
+C API occur.
+
+After each round of tests, it prints a message:
+&quot;</i><i class ='variable'>Limit</i> <i class ='variable'>of</i> <i class ='variable'>NNNN</i> <i class ='keyword'>is</i> <i class ='variable'>fine</i><i class ='string'>&quot;.
+
+The highest printed value of &quot;</i><i class ='variable'>NNNN</i><i class ='string'>&quot; is therefore the highest potentially
+safe limit for your system (which depends on the OS, architecture, but also
+the compilation flags). Please note that it is practically impossible to
+test all possible recursion paths in the interpreter, so the results of
+this test should not be trusted blindly -- although they give a good hint
+of which values are reasonable.
+
+NOTE: When the C stack space allocated by your system is exceeded due
+to excessive recursion, exact behaviour depends on the platform, although
+the interpreter will always fail in a likely brutal way: either a
+segmentation fault, a MemoryError, or just a silent abort.
+
+NB: A program that does not use __methods__ can set a higher limit.
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>itertools</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>RecursiveBlowup1</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>init</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>RecursiveBlowup1</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>RecursiveBlowup2</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>RecursiveBlowup2</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>RecursiveBlowup4</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__add__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='variable'>self</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>RecursiveBlowup4</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='variable'>RecursiveBlowup4</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>RecursiveBlowup5</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>getattr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>attr</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>attr</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>RecursiveBlowup5</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>attr</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>RecursiveBlowup6</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>getitem__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>[</i><i class ='variable'>item</i> <i class ='variable'>-</i> <i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>[</i><i class ='variable'>item</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>getitem</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>RecursiveBlowup6</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>5</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>recurse</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>test_</i><i class ='variable'>recurse</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>cpickle</i><i class ='delimiter'>(</i><i class ='hexadecimal'>_cac</i><i class ='variable'>he</i><i class ='delimiter'>=</i><i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>io</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>import</i> <i class ='hexadecimal'>_</i><i class ='variable'>pickle</i>
+    <i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;cannot import _pickle, skipped!&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='variable'>k</i><i class ='delimiter'>,</i> <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>for</i> <i class ='variable'>n</i> <i class ='keyword'>in</i> <i class ='variable'>itertools</i><i class ='delimiter'>.</i><i class ='variable'>count</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_cac</i><i class ='variable'>he</i><i class ='delimiter'>[</i><i class ='variable'>n</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>continue</i>  <i class ='comment'># Already tried and it works, let&#39;s save some time</i>
+        <i class ='keyword'>except</i> <i class ='variable'>KeyError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>100</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>k</i><i class ='delimiter'>,</i> <i class ='variable'>l</i><i class ='delimiter'>]</i>
+                <i class ='variable'>k</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>i</i><i class ='delimiter'>:</i> <i class ='variable'>l</i><i class ='delimiter'>}</i>
+        <i class ='hexadecimal'>_</i><i class ='variable'>pickle</i><i class ='delimiter'>.</i><i class ='variable'>Pickler</i><i class ='delimiter'>(</i><i class ='variable'>io</i><i class ='delimiter'>.</i><i class ='variable'>BytesIO</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>protocol</i><i class ='delimiter'>=</i><i class ='variable'>-1</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i>
+        <i class ='hexadecimal'>_cac</i><i class ='variable'>he</i><i class ='delimiter'>[</i><i class ='variable'>n</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>l</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test_</i><i class ='variable'>compiler_</i><i class ='variable'>recursion</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># The compiler uses a scaling factor to support additional levels</i>
+    <i class ='comment'># of recursion. This is a sanity check of that scaling to ensure</i>
+    <i class ='comment'># it still raises RecursionError even at higher recursion limits</i>
+    <i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='string'>&quot;()&quot;</i> <i class ='operator'>*</i> <i class ='delimiter'>(</i><i class ='integer'>10</i> <i class ='operator'>*</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>getrecursionlimit</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&lt;single&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;single&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>test_</i><i class ='variable'>func_</i><i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>setrecursionlimit</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>test_</i><i class ='variable'>func_</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;test_&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>test_</i><i class ='variable'>func_</i><i class ='variable'>name</i><i class ='delimiter'>[</i><i class ='integer'>5</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>test_</i><i class ='variable'>func_</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='variable'>test_</i><i class ='variable'>func</i> <i class ='delimiter'>=</i> <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='variable'>test_</i><i class ='variable'>func_</i><i class ='variable'>name</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>test_</i><i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='comment'># AttributeError can be raised because of the way e.g. PyDict_GetItem()</i>
+    <i class ='comment'># silences all exceptions and returns NULL, which is usually interpreted</i>
+    <i class ='comment'># as &quot;missing attribute&quot;.</i>
+    <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>RecursionError</i><i class ='delimiter'>,</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Yikes!&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>limit</i> <i class ='delimiter'>=</i> <i class ='integer'>1000</i>
+    <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_recurse&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_add&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_repr&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_init&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_getattr&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_getitem&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_cpickle&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>check_</i><i class ='variable'>limit</i><i class ='delimiter'>(</i><i class ='variable'>limit</i><i class ='delimiter'>,</i> <i class ='string'>&quot;test_compiler_recursion&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Limit of %d is fine&quot;</i> <i class ='operator'>%</i> <i class ='variable'>limit</i><i class ='delimiter'>)</i>
+        <i class ='variable'>limit</i> <i class ='delimiter'>=</i> <i class ='variable'>limit</i> <i class ='operator'>+</i> <i class ='integer'>100</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>string</i>
+
+<i class ='variable'>codecs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+    <i class ='charlist'>&#39;cn&#39;</i><i class ='delimiter'>:</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;gb2312&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;gbk&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;gb18030&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;hz&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tw&#39;</i><i class ='delimiter'>:</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;big5&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;cp950&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;hk&#39;</i><i class ='delimiter'>:</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;big5hkscs&#39;</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;jp&#39;</i><i class ='delimiter'>:</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;cp932&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;shift_jis&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;euc_jp&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;euc_jisx0213&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;shift_jisx0213&#39;</i><i class ='delimiter'>,</i>
+           <i class ='charlist'>&#39;euc_jis_2004&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;shift_jis_2004&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;kr&#39;</i><i class ='delimiter'>:</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;cp949&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;euc_kr&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;johab&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;iso2022&#39;</i><i class ='delimiter'>:</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;iso2022_jp&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;iso2022_jp_1&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;iso2022_jp_2&#39;</i><i class ='delimiter'>,</i>
+                <i class ='charlist'>&#39;iso2022_jp_2004&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;iso2022_jp_3&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;iso2022_jp_ext&#39;</i><i class ='delimiter'>,</i>
+                <i class ='charlist'>&#39;iso2022_kr&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>}</i>
+
+<i class ='variable'>TEMPLATE</i> <i class ='delimiter'>=</i> <i class ='variable'>string</i><i class ='delimiter'>.</i><i class ='variable'>Template</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;\
+#
+# $encoding.py: Python Unicode Codec for $ENCODING
+#
+# Written by Hye-Shik Chang &lt;perky@FreeBSD.org&gt;
+#
+
+import _codecs_$owner, codecs
+import _multibytecodec as mbc
+
+codec = _codecs_$owner.getcodec(&#39;$encoding&#39;)
+
+class Codec(codecs.Codec):
+    encode = codec.encode
+    decode = codec.decode
+
+class IncrementalEncoder(mbc.MultibyteIncrementalEncoder,
+                         codecs.IncrementalEncoder):
+    codec = codec
+
+class IncrementalDecoder(mbc.MultibyteIncrementalDecoder,
+                         codecs.IncrementalDecoder):
+    codec = codec
+
+class StreamReader(Codec, mbc.MultibyteStreamReader, codecs.StreamReader):
+    codec = codec
+
+class StreamWriter(Codec, mbc.MultibyteStreamWriter, codecs.StreamWriter):
+    codec = codec
+
+def getregentry():
+    return codecs.CodecInfo(
+        name=&#39;$encoding&#39;,
+        encode=Codec().encode,
+        decode=Codec().decode,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+        streamreader=StreamReader,
+        streamwriter=StreamWriter,
+    )
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>gencodecs</i><i class ='delimiter'>(</i><i class ='variable'>prefix</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>loc</i><i class ='delimiter'>,</i> <i class ='variable'>encodings</i> <i class ='keyword'>in</i> <i class ='variable'>codecs</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>enc</i> <i class ='keyword'>in</i> <i class ='variable'>encodings</i><i class ='delimiter'>:</i>
+            <i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='variable'>TEMPLATE</i><i class ='delimiter'>.</i><i class ='variable'>substitute</i><i class ='delimiter'>(</i><i class ='variable'>ENCODING</i><i class ='delimiter'>=</i><i class ='variable'>enc</i><i class ='delimiter'>.</i><i class ='variable'>upper</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='variable'>enc</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>owner</i><i class ='delimiter'>=</i><i class ='variable'>loc</i><i class ='delimiter'>)</i>
+            <i class ='variable'>codecpath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>prefix</i><i class ='delimiter'>,</i> <i class ='variable'>enc</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;.py&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>codecpath</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+    <i class ='variable'>gencodecs</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

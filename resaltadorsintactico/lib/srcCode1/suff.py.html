@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='comment'># suff</i>
+<i class ='comment'>#</i>
+<i class ='comment'># show different suffixes amongst arguments</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='variable'>suffixes</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+        <i class ='variable'>suff</i> <i class ='delimiter'>=</i> <i class ='variable'>getsuffix</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='variable'>suffixes</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>suff</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>suff</i><i class ='delimiter'>,</i> <i class ='variable'>filenames</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>suffixes</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>suff</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>filenames</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>getsuffix</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>sep</i><i class ='delimiter'>,</i> <i class ='variable'>suff</i> <i class ='delimiter'>=</i> <i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>rpartition</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>sep</i> <i class ='operator'>+</i> <i class ='variable'>suff</i> <i class ='keyword'>if</i> <i class ='variable'>sep</i> <i class ='keyword'>else</i> <i class ='charlist'>&#39;&#39;</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

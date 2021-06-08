@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+<i class ='comment'># This script generates token related files from Grammar/Tokens:</i>
+<i class ='comment'>#</i>
+<i class ='comment'>#   Doc/library/token-list.inc</i>
+<i class ='comment'>#   Include/token.h</i>
+<i class ='comment'>#   Parser/token.c</i>
+<i class ='comment'>#   Lib/token.py</i>
+
+
+<i class ='variable'>NT_</i><i class ='variable'>OFFSET</i> <i class ='delimiter'>=</i> <i class ='integer'>256</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>load_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>tok_</i><i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>ERRORTOKEN</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='comment'># strip comments</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>&gt;=</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='variable'>fields</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+            <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;ERRORTOKEN&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ERRORTOKEN</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i>
+            <i class ='variable'>string</i> <i class ='delimiter'>=</i> <i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>fields</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i> <i class ='keyword'>else</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>if</i> <i class ='variable'>string</i><i class ='delimiter'>:</i>
+                <i class ='variable'>string</i> <i class ='delimiter'>=</i> <i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='variable'>string</i><i class ='delimiter'>)</i>
+                <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i><i class ='delimiter'>[</i><i class ='variable'>string</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i>
+            <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>,</i> <i class ='variable'>ERRORTOKEN</i><i class ='delimiter'>,</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>update_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>content</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;r&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fobj</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>fobj</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>content</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+    <i class ='keyword'>except</i> <i class ='delimiter'>(</i><i class ='variable'>OSError</i><i class ='delimiter'>,</i> <i class ='variable'>ValueError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fobj</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fobj</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>content</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+
+<i class ='variable'>token_</i><i class ='variable'>h_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;\
+/* Auto-generated by Tools/scripts/generate_token.py */
+
+/* Token types */
+#ifndef Py_LIMITED_API
+#ifndef Py_TOKEN_H
+#define Py_TOKEN_H
+#ifdef __cplusplus
+extern &quot;</i><i class ='variable'>C</i><i class ='string'>&quot; {
+#endif
+
+#undef TILDE   /* Prevent clash of our definition with system macro. Ex AIX, ioctl.h */
+
+%s\
+#define N_TOKENS        %d
+#define NT_OFFSET       %d
+
+/* Special definitions for cooperation with parser */
+
+#define ISTERMINAL(x)           ((x) &lt; NT_OFFSET)
+#define ISNONTERMINAL(x)        ((x) &gt;= NT_OFFSET)
+#define ISEOF(x)                ((x) == ENDMARKER)
+#define ISWHITESPACE(x)         ((x) == ENDMARKER || \\
+                                 (x) == NEWLINE   || \\
+                                 (x) == INDENT    || \\
+                                 (x) == DEDENT)
+
+
+PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */
+PyAPI_FUNC(int) PyToken_OneChar(int);
+PyAPI_FUNC(int) PyToken_TwoChars(int, int);
+PyAPI_FUNC(int) PyToken_ThreeChars(int, int, int);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_TOKEN_H */
+#endif /* Py_LIMITED_API */
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>h</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>,</i> <i class ='variable'>outfile</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Include/token.h&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>,</i> <i class ='variable'>ERRORTOKEN</i><i class ='delimiter'>,</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i> <i class ='delimiter'>=</i> <i class ='variable'>load_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>defines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>ERRORTOKEN</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>defines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;#define %-15s %d\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>update_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>token_</i><i class ='variable'>h_</i><i class ='variable'>template</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+            <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>defines</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>NT_</i><i class ='variable'>OFFSET</i>
+        <i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s regenerated from %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>infile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>token_</i><i class ='variable'>c_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;\
+/* Auto-generated by Tools/scripts/generate_token.py */
+
+#include &quot;</i><i class ='variable'>Python</i><i class ='delimiter'>.</i><i class ='variable'>h</i><i class ='string'>&quot;
+#include &quot;</i><i class ='variable'>token</i><i class ='delimiter'>.</i><i class ='variable'>h</i><i class ='string'>&quot;
+
+/* Token names */
+
+const char * const _PyParser_TokenNames[] = {
+%s\
+};
+
+/* Return the token corresponding to a single character */
+
+int
+PyToken_OneChar(int c1)
+{
+%s\
+    return OP;
+}
+
+int
+PyToken_TwoChars(int c1, int c2)
+{
+%s\
+    return OP;
+}
+
+int
+PyToken_ThreeChars(int c1, int c2, int c3)
+{
+%s\
+    return OP;
+}
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>generate_</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>(</i><i class ='variable'>mapping</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>write</i> <i class ='delimiter'>=</i> <i class ='variable'>result</i><i class ='delimiter'>.</i><i class ='variable'>append</i>
+    <i class ='variable'>indent</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;    &#39;</i> <i class ='operator'>*</i> <i class ='variable'>n</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>indent</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;switch (c%d) {\n&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>mapping</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>indent</i><i class ='delimiter'>)</i>
+        <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>mapping</i><i class ='delimiter'>[</i><i class ='variable'>c</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='datatype'>dict</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;case &#39;%s&#39;:\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>c</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>generate_</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>(</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>n</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>indent</i><i class ='delimiter'>)</i>
+            <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    break;\n&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;case &#39;%s&#39;: return %s;\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>c</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>indent</i><i class ='delimiter'>)</i>
+    <i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;}\n&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>result</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>c</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>,</i> <i class ='variable'>outfile</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Parser/token.c&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>,</i> <i class ='variable'>ERRORTOKEN</i><i class ='delimiter'>,</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i> <i class ='delimiter'>=</i> <i class ='variable'>load_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>)</i>
+    <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;&lt;&gt;&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;!=&#39;</i><i class ='delimiter'>]</i>
+    <i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>string</i><i class ='delimiter'>,</i> <i class ='variable'>value</i> <i class ='keyword'>in</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='integer'>1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>string</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;=</i> <i class ='integer'>3</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>[</i><i class ='variable'>value</i><i class ='delimiter'>]</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>string</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='variable'>string</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>c</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+        <i class ='variable'>m</i><i class ='delimiter'>[</i><i class ='variable'>string</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i>
+
+    <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>value</i> <i class ='operator'>&gt;=</i> <i class ='variable'>ERRORTOKEN</i><i class ='delimiter'>:</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&lt;%s&gt;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>name</i>
+        <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    &quot;%s&quot;,\n&#39;</i> <i class ='operator'>%</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    &quot;&lt;N_TOKENS&gt;&quot;,\n&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>update_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>token_</i><i class ='variable'>c_</i><i class ='variable'>template</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+            <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>generate_</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>(</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>generate_</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>(</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>generate_</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>(</i><i class ='variable'>chars_</i><i class ='variable'>to_</i><i class ='variable'>token</i><i class ='delimiter'>[</i><i class ='integer'>3</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s regenerated from %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>infile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>token_</i><i class ='variable'>inc_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+.. Auto-generated by Tools/scripts/generate_token.py
+%s
+.. data:: N_TOKENS
+
+.. data:: NT_OFFSET
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>rst</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>,</i> <i class ='variable'>outfile</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Doc/library/token-list.inc&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>,</i> <i class ='variable'>ERRORTOKEN</i><i class ='delimiter'>,</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i> <i class ='delimiter'>=</i> <i class ='variable'>load_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>)</i>
+    <i class ='variable'>tok_</i><i class ='variable'>to_</i><i class ='variable'>string</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>value</i><i class ='delimiter'>:</i> <i class ='variable'>s</i> <i class ='keyword'>for</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>value</i> <i class ='keyword'>in</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>}</i>
+
+    <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>ERRORTOKEN</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.. data:: %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>value</i> <i class ='keyword'>in</i> <i class ='variable'>tok_</i><i class ='variable'>to_</i><i class ='variable'>string</i><i class ='delimiter'>:</i>
+            <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;   Token value for ``&quot;%s&quot;``.&#39;</i> <i class ='operator'>%</i> <i class ='variable'>tok_</i><i class ='variable'>to_</i><i class ='variable'>string</i><i class ='delimiter'>[</i><i class ='variable'>value</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>update_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>token_</i><i class ='variable'>inc_</i><i class ='variable'>template</i> <i class ='operator'>%</i> <i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s regenerated from %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>infile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>token_</i><i class ='variable'>py_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+&quot;&quot;&quot;Token constants.&quot;&quot;&quot;
+# Auto-generated by Tools/scripts/generate_token.py
+
+__all__ = [&#39;</i><i class ='variable'>tok_</i><i class ='variable'>name</i><i class ='charlist'>&#39;, &#39;</i><i class ='variable'>ISTERMINAL</i><i class ='charlist'>&#39;, &#39;</i><i class ='variable'>ISNONTERMINAL</i><i class ='charlist'>&#39;, &#39;</i><i class ='variable'>ISEOF</i><i class ='charlist'>&#39;]
+
+%s
+N_TOKENS = %d
+# Special definitions for cooperation with parser
+NT_OFFSET = %d
+
+tok_name = {value: name
+            for name, value in globals().items()
+            if isinstance(value, int) and not name.startswith(&#39;</i><i class ='hexadecimal'>_</i><i class ='charlist'>&#39;)}
+__all__.extend(tok_name.values())
+
+EXACT_TOKEN_TYPES = {
+%s
+}
+
+def ISTERMINAL(x):
+    return x &lt; NT_OFFSET
+
+def ISNONTERMINAL(x):
+    return x &gt;= NT_OFFSET
+
+def ISEOF(x):
+    return x == ENDMARKER
+&#39;</i><i class ='charlist'>&#39;&#39;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>py</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>,</i> <i class ='variable'>outfile</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Lib/token.py&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>,</i> <i class ='variable'>ERRORTOKEN</i><i class ='delimiter'>,</i> <i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i> <i class ='delimiter'>=</i> <i class ='variable'>load_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>constants</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>constants</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s = %d&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>constants</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='variable'>ERRORTOKEN</i><i class ='delimiter'>,</i>
+        <i class ='string'>&quot;# These aren&#39;t used by the C tokenizer but are needed for tokenize.py&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>token_</i><i class ='variable'>types</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>value</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>string_</i><i class ='variable'>to_</i><i class ='variable'>tok</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>token_</i><i class ='variable'>types</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %r: %s,&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>,</i> <i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>[</i><i class ='variable'>value</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>update_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>token_</i><i class ='variable'>py_</i><i class ='variable'>template</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i>
+            <i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>constants</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>tok_</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>NT_</i><i class ='variable'>OFFSET</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>token_</i><i class ='variable'>types</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s regenerated from %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>infile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>op</i><i class ='delimiter'>,</i> <i class ='variable'>infile</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Grammar/Tokens&#39;</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>make</i> <i class ='delimiter'>=</i> <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;make_&#39;</i> <i class ='operator'>+</i> <i class ='variable'>op</i><i class ='delimiter'>]</i>
+    <i class ='variable'>make</i><i class ='delimiter'>(</i><i class ='variable'>infile</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

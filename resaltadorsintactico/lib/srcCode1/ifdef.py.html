@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='comment'># Selectively preprocess #ifdef / #ifndef statements.</i>
+<i class ='comment'># Usage:</i>
+<i class ='comment'># ifdef [-Dname] ... [-Uname] ... [file] ...</i>
+<i class ='comment'>#</i>
+<i class ='comment'># This scans the file(s), looking for #ifdef and #ifndef preprocessor</i>
+<i class ='comment'># commands that test for one of the names mentioned in the -D and -U</i>
+<i class ='comment'># options.  On standard output it writes a copy of the input file(s)</i>
+<i class ='comment'># minus those code sections that are suppressed by the selected</i>
+<i class ='comment'># combination of defined/undefined symbols.  The #if(n)def/#else/#else</i>
+<i class ='comment'># lines themselves (if the #if(n)def tests for one of the mentioned</i>
+<i class ='comment'># names) are removed as well.</i>
+
+<i class ='comment'># Features: Arbitrary nesting of recognized and unrecognized</i>
+<i class ='comment'># preprocessor statements works correctly.  Unrecognized #if* commands</i>
+<i class ='comment'># are left in place, so it will never remove too much, only too</i>
+<i class ='comment'># little.  It does accept whitespace around the &#39;#&#39; character.</i>
+
+<i class ='comment'># Restrictions: There should be no comments or other symbols on the</i>
+<i class ='comment'># #if(n)def lines.  The effect of #define/#undef commands in the input</i>
+<i class ='comment'># file or in included files is not taken into account.  Tests using</i>
+<i class ='comment'># #if and the defined() pseudo function are not recognized.  The #elif</i>
+<i class ='comment'># command is not recognized.  Improperly nesting is not detected.</i>
+<i class ='comment'># Lines that look like preprocessor commands but which are actually</i>
+<i class ='comment'># part of comments or string literals will be mistaken for</i>
+<i class ='comment'># preprocessor commands.</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+
+<i class ='variable'>defs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+<i class ='variable'>undefs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;D:U:&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>o</i><i class ='delimiter'>,</i> <i class ='variable'>a</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-D&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>defs</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-U&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>undefs</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>filename</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>fpi</i><i class ='delimiter'>,</i> <i class ='variable'>fpo</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>keywords</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;if&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ifdef&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ifndef&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;else&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;endif&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>ok</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='variable'>stack</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>fpi</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i> <i class ='keyword'>break</i>
+        <i class ='keyword'>while</i> <i class ='variable'>line</i><i class ='delimiter'>[</i><i class ='variable'>-2</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;\\\n&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>nextline</i> <i class ='delimiter'>=</i> <i class ='variable'>fpi</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>nextline</i><i class ='delimiter'>:</i> <i class ='keyword'>break</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i> <i class ='operator'>+</i> <i class ='variable'>nextline</i>
+        <i class ='variable'>tmp</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>tmp</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>ok</i><i class ='delimiter'>:</i> <i class ='variable'>fpo</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>tmp</i> <i class ='delimiter'>=</i> <i class ='variable'>tmp</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='variable'>tmp</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>keyword</i> <i class ='delimiter'>=</i> <i class ='variable'>words</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>keyword</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>keywords</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>ok</i><i class ='delimiter'>:</i> <i class ='variable'>fpo</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>keyword</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;ifdef&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ifndef&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>words</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>keyword</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;ifdef&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ko</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ko</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='variable'>word</i> <i class ='delimiter'>=</i> <i class ='variable'>words</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>if</i> <i class ='variable'>word</i> <i class ='keyword'>in</i> <i class ='variable'>defs</i><i class ='delimiter'>:</i>
+                <i class ='variable'>stack</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>ok</i><i class ='delimiter'>,</i> <i class ='variable'>ko</i><i class ='delimiter'>,</i> <i class ='variable'>word</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>ko</i><i class ='delimiter'>:</i> <i class ='variable'>ok</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>word</i> <i class ='keyword'>in</i> <i class ='variable'>undefs</i><i class ='delimiter'>:</i>
+                <i class ='variable'>stack</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>ok</i><i class ='delimiter'>,</i> <i class ='keyword'>not</i> <i class ='variable'>ko</i><i class ='delimiter'>,</i> <i class ='variable'>word</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>ko</i><i class ='delimiter'>:</i> <i class ='variable'>ok</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>stack</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>ok</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>,</i> <i class ='variable'>word</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>ok</i><i class ='delimiter'>:</i> <i class ='variable'>fpo</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>keyword</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;if&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>stack</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>ok</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>ok</i><i class ='delimiter'>:</i> <i class ='variable'>fpo</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>keyword</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;else&#39;</i> <i class ='keyword'>and</i> <i class ='variable'>stack</i><i class ='delimiter'>:</i>
+            <i class ='variable'>s_</i><i class ='variable'>ok</i><i class ='delimiter'>,</i> <i class ='variable'>s_</i><i class ='variable'>ko</i><i class ='delimiter'>,</i> <i class ='variable'>s_</i><i class ='variable'>word</i> <i class ='delimiter'>=</i> <i class ='variable'>stack</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>if</i> <i class ='variable'>s_</i><i class ='variable'>ko</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>ok</i><i class ='delimiter'>:</i> <i class ='variable'>fpo</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>s_</i><i class ='variable'>ko</i> <i class ='delimiter'>=</i> <i class ='keyword'>not</i> <i class ='variable'>s_</i><i class ='variable'>ko</i>
+                <i class ='variable'>ok</i> <i class ='delimiter'>=</i> <i class ='variable'>s_</i><i class ='variable'>ok</i>
+                <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>s_</i><i class ='variable'>ko</i><i class ='delimiter'>:</i> <i class ='variable'>ok</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+                <i class ='variable'>stack</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>s_</i><i class ='variable'>ok</i><i class ='delimiter'>,</i> <i class ='variable'>s_</i><i class ='variable'>ko</i><i class ='delimiter'>,</i> <i class ='variable'>s_</i><i class ='variable'>word</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>keyword</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;endif&#39;</i> <i class ='keyword'>and</i> <i class ='variable'>stack</i><i class ='delimiter'>:</i>
+            <i class ='variable'>s_</i><i class ='variable'>ok</i><i class ='delimiter'>,</i> <i class ='variable'>s_</i><i class ='variable'>ko</i><i class ='delimiter'>,</i> <i class ='variable'>s_</i><i class ='variable'>word</i> <i class ='delimiter'>=</i> <i class ='variable'>stack</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>if</i> <i class ='variable'>s_</i><i class ='variable'>ko</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>ok</i><i class ='delimiter'>:</i> <i class ='variable'>fpo</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>del</i> <i class ='variable'>stack</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+            <i class ='variable'>ok</i> <i class ='delimiter'>=</i> <i class ='variable'>s_</i><i class ='variable'>ok</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Unknown keyword %s\n&#39;</i> <i class ='operator'>%</i> <i class ='variable'>keyword</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>stack</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;stack: %s\n&#39;</i> <i class ='operator'>%</i> <i class ='variable'>stack</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+GUI framework and application for use with Python unit testing framework.
+Execute tests written using the framework provided by the &#39;unittest&#39; module.
+
+Updated for unittest test discovery by Mark Roddy and Python 3
+support by Brian Curtin.
+
+Based on the original by Steve Purcell, from:
+
+  http://pyunit.sourceforge.net/
+
+Copyright (c) 1999, 2000, 2001 Steve Purcell
+This module is free software, and you may redistribute it and/or modify
+it under the same terms as Python itself, so long as this copyright message
+and disclaimer are retained in their original form.
+
+IN NO EVENT SHALL THE AUTHOR BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF
+THIS CODE, EVEN IF THE AUTHOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE AUTHOR SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE.  THE CODE PROVIDED HEREUNDER IS ON AN &quot;</i><i class ='variable'>AS</i> <i class ='variable'>IS</i><i class ='string'>&quot; BASIS,
+AND THERE IS NO OBLIGATION WHATSOEVER TO PROVIDE MAINTENANCE,
+SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='hexadecimal'>__a</i><i class ='variable'>uthor__</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;Steve Purcell (stephen_purcell@yahoo.com)&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>traceback</i>
+<i class ='keyword'>import</i> <i class ='variable'>unittest</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>tkinter</i> <i class ='keyword'>as</i> <i class ='variable'>tk</i>
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='variable'>messagebox</i>
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='variable'>filedialog</i>
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='variable'>simpledialog</i>
+
+
+
+
+<i class ='comment'>##############################################################################</i>
+<i class ='comment'># GUI framework classes</i>
+<i class ='comment'>##############################################################################</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>BaseGUITestRunner</i><i class ='delimiter'>(</i><i class ='variable'>object</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Subclass this class to create a GUI TestRunner that uses a specific
+    windowing toolkit. The class takes care of running tests in the correct
+    manner, and making callbacks to the derived class to obtain information
+    or signal that events have occurred.
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentResult</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>running</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>rollbackImporter</i> <i class ='delimiter'>=</i> <i class ='variable'>RollbackImporter</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>suite</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+        <i class ='comment'>#test discovery variables</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>directory_</i><i class ='variable'>to_</i><i class ='variable'>read</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;test*.py&#39;</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>initGUI</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>errorDialog</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>title</i><i class ='delimiter'>,</i> <i class ='variable'>message</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to display an error arising from GUI usage&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>getDirectoryToDiscover</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to prompt user for directory to perform test discovery&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>runClicked</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;To be called in response to user choosing to run a test&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>running</i><i class ='delimiter'>:</i> <i class ='keyword'>return</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>suite</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorDialog</i><i class ='delimiter'>(</i><i class ='string'>&quot;Test Discovery&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;You discover some tests first!&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentResult</i> <i class ='delimiter'>=</i> <i class ='variable'>GUITestResult</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>totalTests</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>suite</i><i class ='delimiter'>.</i><i class ='variable'>countTestCases</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>running</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>notifyRunning</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>suite</i><i class ='delimiter'>.</i><i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentResult</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>running</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>notifyStopped</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>stopClicked</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;To be called in response to user stopping the running of a test&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentResult</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>currentResult</i><i class ='delimiter'>.</i><i class ='variable'>stop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>discoverClicked</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>rollbackImporter</i><i class ='delimiter'>.</i><i class ='variable'>rollbackImports</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>directory</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>getDirectoryToDiscover</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>directory</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>directory_</i><i class ='variable'>to_</i><i class ='variable'>read</i> <i class ='delimiter'>=</i> <i class ='variable'>directory</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Explicitly use &#39;None&#39; value if no top level directory is</i>
+            <i class ='comment'># specified (indicated by empty string) as discover() explicitly</i>
+            <i class ='comment'># checks for a &#39;None&#39; to determine if no tld has been specified</i>
+            <i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i> <i class ='keyword'>or</i> <i class ='keyword'>None</i>
+            <i class ='variable'>tests</i> <i class ='delimiter'>=</i> <i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>defaultTestLoader</i><i class ='delimiter'>.</i><i class ='variable'>discover</i><i class ='delimiter'>(</i><i class ='variable'>directory</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i><i class ='delimiter'>,</i> <i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>suite</i> <i class ='delimiter'>=</i> <i class ='variable'>tests</i>
+        <i class ='keyword'>except</i><i class ='delimiter'>:</i>
+            <i class ='variable'>exc_</i><i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>exc_</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>exc_</i><i class ='variable'>tb</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exc_</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>traceback</i><i class ='delimiter'>.</i><i class ='variable'>print_</i><i class ='variable'>exception</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exc_</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorDialog</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unable to run test &#39;%s&#39;&quot;</i> <i class ='operator'>%</i> <i class ='variable'>directory</i><i class ='delimiter'>,</i>
+                             <i class ='string'>&quot;Error loading specified test: %s, %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>exc_</i><i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>exc_</i><i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestsDiscovered</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>suite</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Required callbacks</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestsDiscovered</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test_</i><i class ='variable'>suite</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to display information about the suite of discovered tests&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyRunning</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to set GUI in &#39;running&#39; mode, enabling &#39;stop&#39; button etc.&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyStopped</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to set GUI in &#39;stopped&#39; mode, enabling &#39;run&#39; button etc.&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestFailed</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to indicate that a test has just failed&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestErrored</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to indicate that a test has just errored&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestSkipped</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>reason</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to indicate that test was skipped&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestFailedExpectedly</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to indicate that test has just failed expectedly&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestStarted</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Override to indicate that a test is about to run&quot;</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestFinished</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Override to indicate that a test has finished (it may already have
+           failed or errored)&quot;&quot;&quot;</i>
+        <i class ='keyword'>pass</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>GUITestResult</i><i class ='delimiter'>(</i><i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>TestResult</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;A TestResult that makes callbacks to its associated GUI TestRunner.
+    Used by BaseGUITestRunner. Need not be created directly.
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>callback</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>TestResult</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>callback</i> <i class ='delimiter'>=</i> <i class ='variable'>callback</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>addError</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>TestResult</i><i class ='delimiter'>.</i><i class ='variable'>addError</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>callback</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestErrored</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>addFailure</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>TestResult</i><i class ='delimiter'>.</i><i class ='variable'>addFailure</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>callback</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestFailed</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>addSkip</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>reason</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='variable'>GUITestResult</i><i class ='delimiter'>,</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>addSkip</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>reason</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>callback</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestSkipped</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>reason</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>addExpectedFailure</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='variable'>GUITestResult</i><i class ='delimiter'>,</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>addExpectedFailure</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>callback</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestFailedExpectedly</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>stopTest</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>TestResult</i><i class ='delimiter'>.</i><i class ='variable'>stopTest</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>callback</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestFinished</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>startTest</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>TestResult</i><i class ='delimiter'>.</i><i class ='variable'>startTest</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>callback</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestStarted</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>RollbackImporter</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;This tricky little class is used to make sure that modules under test
+    will be reloaded the next time they are imported.
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>previousModules</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>modules</i><i class ='delimiter'>.</i><i class ='variable'>copy</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>rollbackImports</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>modname</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>modules</i><i class ='delimiter'>.</i><i class ='variable'>copy</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>modname</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>previousModules</i><i class ='delimiter'>:</i>
+                <i class ='comment'># Force reload when modname next imported</i>
+                <i class ='keyword'>del</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>modules</i><i class ='delimiter'>[</i><i class ='variable'>modname</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'>##############################################################################</i>
+<i class ='comment'># Tkinter GUI</i>
+<i class ='comment'>##############################################################################</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>DiscoverSettingsDialog</i><i class ='delimiter'>(</i><i class ='variable'>simpledialog</i><i class ='delimiter'>.</i><i class ='variable'>Dialog</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;
+    Dialog box for prompting test discovery settings
+    &quot;&quot;&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>dirVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>StringVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>dirVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i> <i class ='delimiter'>=</i> <i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>testPatternVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>StringVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>testPatternVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>simpledialog</i><i class ='delimiter'>.</i><i class ='variable'>Dialog</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>title</i><i class ='delimiter'>=</i><i class ='string'>&quot;Discover Settings&quot;</i><i class ='delimiter'>,</i>
+                                     <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>body</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Top Level Directory&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>e1</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Entry</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>textvariable</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>dirVar</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>e1</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;...&quot;</i><i class ='delimiter'>,</i>
+                  <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='keyword'>lambda</i><i class ='delimiter'>:</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>selectDirClicked</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i><i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>3</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Test File Pattern&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>e2</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Entry</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>textvariable</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>testPatternVar</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>e2</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>selectDirClicked</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>dir_</i><i class ='variable'>path</i> <i class ='delimiter'>=</i> <i class ='variable'>filedialog</i><i class ='delimiter'>.</i><i class ='variable'>askdirectory</i><i class ='delimiter'>(</i><i class ='variable'>parent</i><i class ='delimiter'>=</i><i class ='variable'>master</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>dir_</i><i class ='variable'>path</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>dirVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>dir_</i><i class ='variable'>path</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>apply</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>dirVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>testPatternVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>TkTestRunner</i><i class ='delimiter'>(</i><i class ='variable'>BaseGUITestRunner</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;An implementation of BaseGUITestRunner using Tkinter.
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='variable'>initGUI</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>initialTestName</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Set up the GUI inside the given root window. The test name entry
+        field will be pre-filled with the given initialTestName.
+        &quot;&quot;&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>root</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>StringVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='string'>&quot;Idle&quot;</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'>#tk vars for tracking counts of test result types</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runCountVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>IntVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>failCountVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>IntVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorCountVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>IntVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>skipCountVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>IntVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>expectFailCountVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>IntVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>remainingCountVar</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>IntVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTH</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>createWidgets</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>getDirectoryToDiscover</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>filedialog</i><i class ='delimiter'>.</i><i class ='variable'>askdirectory</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>settingsClicked</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>d</i> <i class ='delimiter'>=</i> <i class ='variable'>DiscoverSettingsDialog</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>d</i><i class ='delimiter'>.</i><i class ='variable'>top_</i><i class ='variable'>level_</i><i class ='variable'>dir</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i> <i class ='delimiter'>=</i> <i class ='variable'>d</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>file_</i><i class ='variable'>glob_</i><i class ='variable'>pattern</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestsDiscovered</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test_</i><i class ='variable'>suite</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>discovered</i> <i class ='delimiter'>=</i> <i class ='variable'>test_</i><i class ='variable'>suite</i><i class ='delimiter'>.</i><i class ='variable'>countTestCases</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>failCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>remainingCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>discovered</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>progressBar</i><i class ='delimiter'>.</i><i class ='variable'>setProgressFraction</i><i class ='delimiter'>(</i><i class ='float'>0.0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>delete</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>END</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='string'>&quot;Discovering tests from %s. Found: %s&quot;</i> <i class ='operator'>%</i>
+            <i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>directory_</i><i class ='variable'>to_</i><i class ='variable'>read</i><i class ='delimiter'>,</i> <i class ='variable'>discovered</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stopGoButton</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;state&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>NORMAL</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>createWidgets</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Creates and packs the various widgets.
+
+        Why is it that GUI code always ends up looking a mess, despite all the
+        best intentions to keep it tidy? Answers on a postcard, please.
+        &quot;&quot;&quot;</i>
+        <i class ='comment'># Status bar</i>
+        <i class ='variable'>statusFrame</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>SUNKEN</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>statusFrame</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>SW</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>,</i> <i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTTOM</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>statusFrame</i><i class ='delimiter'>,</i> <i class ='variable'>width</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>textvariable</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusVar</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>TOP</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Area to enter name of test to run</i>
+        <i class ='variable'>leftFrame</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>3</i><i class ='delimiter'>)</i>
+        <i class ='variable'>leftFrame</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTH</i><i class ='delimiter'>,</i> <i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>NW</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>suiteNameFrame</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>leftFrame</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>3</i><i class ='delimiter'>)</i>
+        <i class ='variable'>suiteNameFrame</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Progress bar</i>
+        <i class ='variable'>progressFrame</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>leftFrame</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>GROOVE</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>progressFrame</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>NW</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>progressFrame</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Progress:&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>progressBar</i> <i class ='delimiter'>=</i> <i class ='variable'>ProgressBar</i><i class ='delimiter'>(</i><i class ='variable'>progressFrame</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>SUNKEN</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>progressBar</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+
+        <i class ='comment'># Area with buttons to start/stop tests and quit</i>
+        <i class ='variable'>buttonFrame</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>3</i><i class ='delimiter'>)</i>
+        <i class ='variable'>buttonFrame</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>NW</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Y</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>buttonFrame</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Discover Tests&quot;</i><i class ='delimiter'>,</i>
+                  <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>discoverClicked</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stopGoButton</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>buttonFrame</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Start&quot;</i><i class ='delimiter'>,</i>
+                                      <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runClicked</i><i class ='delimiter'>,</i> <i class ='variable'>state</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>DISABLED</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stopGoButton</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>buttonFrame</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Close&quot;</i><i class ='delimiter'>,</i>
+                  <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>.</i><i class ='variable'>quit</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTTOM</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>buttonFrame</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Settings&quot;</i><i class ='delimiter'>,</i>
+                  <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>settingsClicked</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTTOM</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Area with labels reporting results</i>
+        <i class ='keyword'>for</i> <i class ='variable'>label</i><i class ='delimiter'>,</i> <i class ='variable'>var</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Run:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runCountVar</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>(</i><i class ='charlist'>&#39;Failures:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>failCountVar</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>(</i><i class ='charlist'>&#39;Errors:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorCountVar</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>(</i><i class ='charlist'>&#39;Skipped:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>skipCountVar</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>(</i><i class ='charlist'>&#39;Expected Failures:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>expectFailCountVar</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>(</i><i class ='charlist'>&#39;Remaining:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>remainingCountVar</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>progressFrame</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>label</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>)</i>
+            <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>progressFrame</i><i class ='delimiter'>,</i> <i class ='variable'>textvariable</i><i class ='delimiter'>=</i><i class ='variable'>var</i><i class ='delimiter'>,</i>
+                     <i class ='variable'>foreground</i><i class ='delimiter'>=</i><i class ='string'>&quot;blue&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>,</i>
+                                             <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># List box showing errors and failures</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>leftFrame</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Failures and errors:&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+        <i class ='variable'>listFrame</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>leftFrame</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>SUNKEN</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>listFrame</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTH</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>NW</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Listbox</i><i class ='delimiter'>(</i><i class ='variable'>listFrame</i><i class ='delimiter'>,</i> <i class ='variable'>foreground</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;red&#39;</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>selectmode</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>SINGLE</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>selectborderwidth</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTH</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i>
+                               <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>NW</i><i class ='delimiter'>)</i>
+        <i class ='variable'>listScroll</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Scrollbar</i><i class ='delimiter'>(</i><i class ='variable'>listFrame</i><i class ='delimiter'>,</i> <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>yview</i><i class ='delimiter'>)</i>
+        <i class ='variable'>listScroll</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Y</i><i class ='delimiter'>,</i> <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>N</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;Double-1&gt;&quot;</i><i class ='delimiter'>,</i>
+                               <i class ='keyword'>lambda</i> <i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>:</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>showSelectedError</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>yscrollcommand</i><i class ='delimiter'>=</i><i class ='variable'>listScroll</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>errorDialog</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>title</i><i class ='delimiter'>,</i> <i class ='variable'>message</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>messagebox</i><i class ='delimiter'>.</i><i class ='variable'>showerror</i><i class ='delimiter'>(</i><i class ='variable'>parent</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>title</i><i class ='delimiter'>=</i><i class ='variable'>title</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>message</i><i class ='delimiter'>=</i><i class ='variable'>message</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyRunning</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>failCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>remainingCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>totalTests</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorInfo</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>while</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>size</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>delete</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='comment'>#Stopping seems not to work, so simply disable the start button</i>
+        <i class ='comment'>#self.stopGoButton.config(command=self.stopClicked, text=&quot;Stop&quot;)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stopGoButton</i><i class ='delimiter'>.</i><i class ='variable'>config</i><i class ='delimiter'>(</i><i class ='variable'>state</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>DISABLED</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>progressBar</i><i class ='delimiter'>.</i><i class ='variable'>setProgressFraction</i><i class ='delimiter'>(</i><i class ='float'>0.0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>idletasks</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyStopped</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stopGoButton</i><i class ='delimiter'>.</i><i class ='variable'>config</i><i class ='delimiter'>(</i><i class ='variable'>state</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>DISABLED</i><i class ='delimiter'>)</i>
+        <i class ='comment'>#self.stopGoButton.config(command=self.runClicked, text=&quot;Start&quot;)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='string'>&quot;Idle&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestStarted</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statusVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>top</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>idletasks</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestFailed</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>failCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>failCountVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>END</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Failure: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>test</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorInfo</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i><i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestErrored</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorCountVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>END</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Error: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>test</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorInfo</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i><i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestSkipped</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>reason</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='variable'>TkTestRunner</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestSkipped</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>reason</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>skipCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>skipCountVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestFailedExpectedly</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='variable'>TkTestRunner</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>notifyTestFailedExpectedly</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>expectFailCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>expectFailCountVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+    <i class ='keyword'>def</i> <i class ='variable'>notifyTestFinished</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>remainingCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>remainingCountVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runCountVar</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runCountVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>fractionDone</i> <i class ='delimiter'>=</i> <i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>runCountVar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='operator'>/</i><i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>totalTests</i><i class ='delimiter'>)</i>
+        <i class ='variable'>fillColor</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorInfo</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='string'>&quot;red&quot;</i> <i class ='keyword'>or</i> <i class ='string'>&quot;green&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>progressBar</i><i class ='delimiter'>.</i><i class ='variable'>setProgressFraction</i><i class ='delimiter'>(</i><i class ='variable'>fractionDone</i><i class ='delimiter'>,</i> <i class ='variable'>fillColor</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>showSelectedError</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>selection</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>curselection</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>selection</i><i class ='delimiter'>:</i> <i class ='keyword'>return</i>
+        <i class ='variable'>selected</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>selection</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>txt</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorListbox</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>selected</i><i class ='delimiter'>)</i>
+        <i class ='variable'>window</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Toplevel</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>root</i><i class ='delimiter'>)</i>
+        <i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>title</i><i class ='delimiter'>(</i><i class ='variable'>txt</i><i class ='delimiter'>)</i>
+        <i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>protocol</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;WM_DELETE_WINDOW&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>quit</i><i class ='delimiter'>)</i>
+        <i class ='variable'>test</i><i class ='delimiter'>,</i> <i class ='variable'>error</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>errorInfo</i><i class ='delimiter'>[</i><i class ='variable'>selected</i><i class ='delimiter'>]</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>window</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>test</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>foreground</i><i class ='delimiter'>=</i><i class ='string'>&quot;red&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>justify</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tracebackLines</i> <i class ='delimiter'>=</i>  <i class ='variable'>traceback</i><i class ='delimiter'>.</i><i class ='variable'>format_</i><i class ='variable'>exception</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>error</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tracebackText</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>tracebackLines</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Label</i><i class ='delimiter'>(</i><i class ='variable'>window</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>tracebackText</i><i class ='delimiter'>,</i> <i class ='variable'>justify</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>LEFT</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>window</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='string'>&quot;Close&quot;</i><i class ='delimiter'>,</i>
+                  <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>quit</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>BOTTOM</i><i class ='delimiter'>)</i>
+        <i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Key-Return&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='keyword'>lambda</i> <i class ='variable'>e</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>=</i><i class ='variable'>window</i><i class ='delimiter'>:</i> <i class ='variable'>w</i><i class ='delimiter'>.</i><i class ='variable'>quit</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>mainloop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>destroy</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>ProgressBar</i><i class ='delimiter'>(</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;A simple progress bar that shows a percentage progress in
+    the given colour.&quot;&quot;&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Frame</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Canvas</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;20&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>width</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;60&#39;</i><i class ='delimiter'>,</i>
+                                <i class ='variable'>background</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;white&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>3</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>X</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rect</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Configure&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>paint</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>setProgressFraction</i><i class ='delimiter'>(</i><i class ='float'>0.0</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>setProgressFraction</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>fraction</i><i class ='delimiter'>,</i> <i class ='variable'>color</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;blue&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fraction</i> <i class ='delimiter'>=</i> <i class ='variable'>fraction</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>color</i> <i class ='delimiter'>=</i> <i class ='variable'>color</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>paint</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>idletasks</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>paint</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>totalWidth</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>winfo_</i><i class ='variable'>width</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>width</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fraction</i> <i class ='operator'>*</i> <i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>totalWidth</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>height</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>winfo_</i><i class ='variable'>height</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rect</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>delete</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rect</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>delete</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rect</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>rectangle</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>width</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='delimiter'>,</i>
+                                                 <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>color</i><i class ='delimiter'>)</i>
+        <i class ='variable'>percentString</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;%3.0f%%&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='float'>100.0</i> <i class ='operator'>*</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>fraction</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='variable'>totalWidth</i><i class ='operator'>/</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='operator'>/</i><i class ='integer'>2</i><i class ='delimiter'>,</i>
+                                            <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>CENTER</i><i class ='delimiter'>,</i>
+                                            <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>percentString</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>initialTestName</i><i class ='delimiter'>=</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>Tk</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>title</i><i class ='delimiter'>(</i><i class ='string'>&quot;PyUnit&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>runner</i> <i class ='delimiter'>=</i> <i class ='variable'>TkTestRunner</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>initialTestName</i><i class ='delimiter'>)</i>
+    <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>protocol</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;WM_DELETE_WINDOW&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>quit</i><i class ='delimiter'>)</i>
+    <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>mainloop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+        <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

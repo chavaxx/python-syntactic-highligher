@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='comment'># Copy one file&#39;s atime and mtime to another</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>from</i> <i class ='variable'>stat</i> <i class ='keyword'>import</i> <i class ='variable'>ST_</i><i class ='variable'>ATIME</i><i class ='delimiter'>,</i> <i class ='variable'>ST_</i><i class ='variable'>MTIME</i> <i class ='comment'># Really constants 7 and 8</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>!=</i> <i class ='integer'>3</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;usage: copytime source destination\n&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+    <i class ='variable'>file1</i><i class ='delimiter'>,</i> <i class ='variable'>file2</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>stat1</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>stat</i><i class ='delimiter'>(</i><i class ='variable'>file1</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>OSError</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>file1</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;: cannot stat\n&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>utime</i><i class ='delimiter'>(</i><i class ='variable'>file2</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>stat1</i><i class ='delimiter'>[</i><i class ='variable'>ST_</i><i class ='variable'>ATIME</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>stat1</i><i class ='delimiter'>[</i><i class ='variable'>ST_</i><i class ='variable'>MTIME</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>OSError</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>file2</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;: cannot change time\n&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

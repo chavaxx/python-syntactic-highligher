@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+<i class ='string'>&quot;Replace CRLF with LF in argument files.  Print names of changed files.&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='variable'>os</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Directory!&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>b</i><i class ='charlist'>&#39;\0&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>data</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Binary!&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>newdata</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='variable'>b</i><i class ='string'>&quot;\r\n&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>newdata</i> <i class ='operator'>!=</i> <i class ='variable'>data</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;wb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>newdata</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'># Purges the Fastly cache for Windows download files</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Usage:</i>
+<i class ='comment'>#   py -3 purge.py 3.5.1rc1</i>
+<i class ='comment'>#</i>
+
+<i class ='hexadecimal'>__a</i><i class ='variable'>uthor__</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;Steve Dower &lt;steve.dower@python.org&gt;&#39;</i>
+<i class ='hexadecimal'>__</i><i class ='variable'>version__</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;1.0.0&#39;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>request</i> <i class ='keyword'>import</i> <i class ='operator'>*</i>
+
+<i class ='variable'>VERSION_</i><i class ='variable'>RE</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;(\d+\.\d+\.\d+)([A-Za-z_]+\d+)?$&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>VERSION_</i><i class ='variable'>RE</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Invalid version:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Expected something like &quot;3.5.1rc1&quot;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+<i class ='keyword'>except</i> <i class ='variable'>LookupError</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Missing version argument. Expected something like &quot;3.5.1rc1&quot;&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>URL</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;https://www.python.org/ftp/python/{}/&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>REL</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='charlist'>&#39;&#39;</i>
+
+<i class ='variable'>FILES</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='string'>&quot;core.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;core_d.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;core_pdb.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;dev.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;dev_d.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;doc.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;exe.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;exe_d.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;exe_pdb.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;launcher.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;lib.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;lib_d.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;lib_pdb.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;path.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;pip.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;tcltk.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;tcltk_d.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;tcltk_pdb.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;test.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;test_d.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;test_pdb.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;tools.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;ucrt.msi&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows6.0-KB2999226-x64.msu&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows6.0-KB2999226-x86.msu&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows6.1-KB2999226-x64.msu&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows6.1-KB2999226-x86.msu&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows8.1-KB2999226-x64.msu&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows8.1-KB2999226-x86.msu&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows8-RT-KB2999226-x64.msu&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;Windows8-RT-KB2999226-x86.msu&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>]</i>
+<i class ='variable'>PATHS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='string'>&quot;python-{}.exe&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;python-{}-webinstall.exe&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;python-{}-amd64.exe&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;python-{}-amd64-webinstall.exe&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;python-{}-embed-amd64.zip&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;python-{}-embed-win32.zip&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='delimiter'>[</i><i class ='string'>&quot;win32{}/{}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>REL</i><i class ='delimiter'>,</i> <i class ='variable'>f</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>f</i> <i class ='keyword'>in</i> <i class ='variable'>FILES</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='delimiter'>[</i><i class ='string'>&quot;amd64{}/{}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>REL</i><i class ='delimiter'>,</i> <i class ='variable'>f</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>f</i> <i class ='keyword'>in</i> <i class ='variable'>FILES</i><i class ='delimiter'>]</i>
+<i class ='variable'>PATHS</i> <i class ='delimiter'>=</i> <i class ='variable'>PATHS</i> <i class ='operator'>+</i> <i class ='delimiter'>[</i><i class ='variable'>p</i> <i class ='operator'>+</i> <i class ='string'>&quot;.asc&quot;</i> <i class ='keyword'>for</i> <i class ='variable'>p</i> <i class ='keyword'>in</i> <i class ='variable'>PATHS</i><i class ='delimiter'>]</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Purged:&#39;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>for</i> <i class ='variable'>n</i> <i class ='keyword'>in</i> <i class ='variable'>PATHS</i><i class ='delimiter'>:</i>
+    <i class ='variable'>u</i> <i class ='delimiter'>=</i> <i class ='variable'>URL</i> <i class ='operator'>+</i> <i class ='variable'>n</i>
+    <i class ='keyword'>with</i> <i class ='variable'>urlopen</i><i class ='delimiter'>(</i><i class ='variable'>Request</i><i class ='delimiter'>(</i><i class ='variable'>u</i><i class ='delimiter'>,</i> <i class ='variable'>method</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;PURGE&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>headers</i><i class ='delimiter'>=</i><i class ='delimiter'>{</i><i class ='charlist'>&#39;Fastly-Soft-Purge&#39;</i><i class ='delimiter'>:</i> <i class ='integer'>1</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>r</i><i class ='delimiter'>:</i>
+        <i class ='variable'>r</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;  &#39;</i><i class ='delimiter'>,</i> <i class ='variable'>u</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

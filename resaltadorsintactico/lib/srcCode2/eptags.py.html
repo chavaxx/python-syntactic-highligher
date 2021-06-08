@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+<i class ='multilineComment'>&quot;&quot;&quot;Create a TAGS file for Python programs, usable with GNU Emacs.
+
+usage: eptags pyfiles...
+
+The output TAGS file is usable with Emacs version 18, 19, 20.
+Tagged are:
+ - functions (even inside other defs or classes)
+ - classes
+
+eptags warns about files it cannot open.
+eptags will not give warnings about duplicate tags.
+
+BUGS:
+   Because of tag duplication (methods with the same name in different
+   classes), TAGS files are not very useful for most object-oriented
+   python projects.
+&quot;&quot;&quot;</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i><i class ='delimiter'>,</i><i class ='variable'>re</i>
+
+<i class ='variable'>expr</i> <i class ='delimiter'>=</i> <i class ='variable'>r</i><i class ='charlist'>&#39;^[ \t]*(def|class)[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*[:\(]&#39;</i>
+<i class ='variable'>matcher</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>expr</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>treat_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>outfp</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Append tags found in file named &#39;filename&#39; to the open file &#39;outfp&#39;&quot;&quot;&quot;</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;r&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>OSError</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Cannot open %s\n&#39;</i><i class ='operator'>%</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='keyword'>with</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='variable'>charno</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>lineno</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>tags</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>lineno</i> <i class ='delimiter'>=</i> <i class ='variable'>lineno</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+            <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>matcher</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+                <i class ='variable'>tag</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;\177%d,%d\n&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>lineno</i><i class ='delimiter'>,</i> <i class ='variable'>charno</i><i class ='delimiter'>)</i>
+                <i class ='variable'>tags</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>tag</i><i class ='delimiter'>)</i>
+                <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>size</i> <i class ='operator'>+</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>tag</i><i class ='delimiter'>)</i>
+            <i class ='variable'>charno</i> <i class ='delimiter'>=</i> <i class ='variable'>charno</i> <i class ='operator'>+</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+    <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\f\n%s,%d\n&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i><i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>tag</i> <i class ='keyword'>in</i> <i class ='variable'>tags</i><i class ='delimiter'>:</i>
+        <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>tag</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;TAGS&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>outfp</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='variable'>treat_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>outfp</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i><i class ='operator'>==</i><i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

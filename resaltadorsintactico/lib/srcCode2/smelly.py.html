@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python</i>
+<i class ='comment'># Script checking that all symbols exported by libpython start with Py or _Py</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i>
+<i class ='keyword'>import</i> <i class ='variable'>subprocess</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>sysconfig</i>
+
+
+<i class ='variable'>ALLOWED_</i><i class ='variable'>PREFIXES</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;Py&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_Py&#39;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>platform</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;darwin&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>ALLOWED_</i><i class ='variable'>PREFIXES</i> <i class ='delimiter'>+=</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;__Py&#39;</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>IGNORED_</i><i class ='variable'>EXTENSION</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;_ctypes_test&quot;</i>
+<i class ='comment'># Ignore constructor and destructor functions</i>
+<i class ='variable'>IGNORED_</i><i class ='variable'>SYMBOLS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;_init&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_fini&#39;</i><i class ='delimiter'>}</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>is_</i><i class ='variable'>local_</i><i class ='variable'>symbol_</i><i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='variable'>symtype</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Ignore local symbols.</i>
+
+    <i class ='comment'># If lowercase, the symbol is usually local; if uppercase, the symbol</i>
+    <i class ='comment'># is global (external).  There are however a few lowercase symbols that</i>
+    <i class ='comment'># are shown for special global symbols (&quot;u&quot;, &quot;v&quot; and &quot;w&quot;).</i>
+    <i class ='keyword'>if</i> <i class ='variable'>symtype</i><i class ='delimiter'>.</i><i class ='variable'>islower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>symtype</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='string'>&quot;uvw&quot;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='comment'># Ignore the initialized data section (d and D) and the BSS data</i>
+    <i class ='comment'># section. For example, ignore &quot;__bss_start (type: B)&quot;</i>
+    <i class ='comment'># and &quot;_edata (type: D)&quot;.</i>
+    <i class ='keyword'>if</i> <i class ='variable'>symtype</i> <i class ='keyword'>in</i> <i class ='string'>&quot;bBdD&quot;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>exported_</i><i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>library</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Check that {library} only exports symbols starting with Py or _Py&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Only look at dynamic symbols</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;nm&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--no-sort&#39;</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>dynamic</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;--dynamic&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>library</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;+ %s&quot;</i> <i class ='operator'>%</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>proc</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>stdout</i><i class ='delimiter'>=</i><i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>PIPE</i><i class ='delimiter'>,</i> <i class ='variable'>universal_</i><i class ='variable'>newlines</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>returncode</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>returncode</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>stdout</i> <i class ='delimiter'>=</i> <i class ='variable'>proc</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>stdout</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;command output is empty&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>stdout</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>stdout</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>smelly_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>python_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>local_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Split line &#39;0000000000001b80 D PyTextIOWrapper_Type&#39;</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='variable'>parts</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>maxsplit</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>parts</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>3</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='variable'>symtype</i> <i class ='delimiter'>=</i> <i class ='variable'>parts</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>symbol</i> <i class ='delimiter'>=</i> <i class ='variable'>parts</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+        <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;%s (type: %s)&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>symbol</i><i class ='delimiter'>,</i> <i class ='variable'>symtype</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>if</i> <i class ='variable'>symbol</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='variable'>ALLOWED_</i><i class ='variable'>PREFIXES</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>python_</i><i class ='variable'>symbols</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>result</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='keyword'>if</i> <i class ='variable'>is_</i><i class ='variable'>local_</i><i class ='variable'>symbol_</i><i class ='variable'>type</i><i class ='delimiter'>(</i><i class ='variable'>symtype</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>local_</i><i class ='variable'>symbols</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>result</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>symbol</i> <i class ='keyword'>in</i> <i class ='variable'>IGNORED_</i><i class ='variable'>SYMBOLS</i><i class ='delimiter'>:</i>
+            <i class ='variable'>local_</i><i class ='variable'>symbols</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>result</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>result</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>local_</i><i class ='variable'>symbols</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Ignore {len(local_symbols)} local symbols&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>,</i> <i class ='variable'>python_</i><i class ='variable'>symbols</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>check_</i><i class ='variable'>library</i><i class ='delimiter'>(</i><i class ='variable'>library</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>nm_</i><i class ='variable'>output</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>exported_</i><i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>library</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>)</i>
+    <i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>,</i> <i class ='variable'>python_</i><i class ='variable'>symbols</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>(</i><i class ='variable'>nm_</i><i class ='variable'>output</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;OK: no smelly symbol found ({len(python_symbols)} Python symbols)&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>symbol</i> <i class ='keyword'>in</i> <i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Smelly symbol: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>symbol</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;ERROR: Found %s smelly symbols!&quot;</i> <i class ='operator'>%</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>smelly_</i><i class ='variable'>symbols</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>check_</i><i class ='variable'>extensions</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i>
+    <i class ='variable'>srcdir</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>srcdir</i><i class ='delimiter'>,</i> <i class ='string'>&quot;pybuilddir.txt&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='string'>&quot;utf-8&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+            <i class ='variable'>pybuilddir</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>FileNotFoundError</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Cannot check extensions because {filename} does not exist&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Check extension modules from {pybuilddir} directory&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>builddir</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>srcdir</i><i class ='delimiter'>,</i> <i class ='variable'>pybuilddir</i><i class ='delimiter'>)</i>
+    <i class ='variable'>nsymbol</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>builddir</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.so&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>IGNORED_</i><i class ='variable'>EXTENSION</i> <i class ='keyword'>in</i> <i class ='variable'>name</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Ignore extension: {name}&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>builddir</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='variable'>nsymbol</i> <i class ='delimiter'>+=</i> <i class ='variable'>check_</i><i class ='variable'>library</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>nsymbol</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>nsymbol</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+    <i class ='comment'># static library</i>
+    <i class ='variable'>LIBRARY</i> <i class ='delimiter'>=</i> <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>config_</i><i class ='variable'>var</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;LIBRARY&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>LIBRARY</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;failed to get LIBRARY variable from sysconfig&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>exists</i><i class ='delimiter'>(</i><i class ='variable'>LIBRARY</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>nsymbol</i> <i class ='delimiter'>+=</i> <i class ='variable'>check_</i><i class ='variable'>library</i><i class ='delimiter'>(</i><i class ='variable'>LIBRARY</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># dynamic library</i>
+    <i class ='variable'>LDLIBRARY</i> <i class ='delimiter'>=</i> <i class ='variable'>sysconfig</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>config_</i><i class ='variable'>var</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;LDLIBRARY&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>LDLIBRARY</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;failed to get LDLIBRARY variable from sysconfig&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>LDLIBRARY</i> <i class ='operator'>!=</i> <i class ='variable'>LIBRARY</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>nsymbol</i> <i class ='delimiter'>+=</i> <i class ='variable'>check_</i><i class ='variable'>library</i><i class ='delimiter'>(</i><i class ='variable'>LDLIBRARY</i><i class ='delimiter'>,</i> <i class ='variable'>dynamic</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Check extension modules like _ssl.cpython-310d-x86_64-linux-gnu.so</i>
+    <i class ='variable'>nsymbol</i> <i class ='delimiter'>+=</i> <i class ='variable'>check_</i><i class ='variable'>extensions</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>nsymbol</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;ERROR: Found {nsymbol} smelly symbols in total!&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;OK: all exported symbols of all libraries &quot;</i>
+          <i class ='fstring'>f&quot;are prefixed with {&#39; or &#39;.join(map(repr, ALLOWED_PREFIXES))}&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;Transform gprof(1) output into useful HTML.&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>html</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>webbrowser</i>
+
+<i class ='variable'>header</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;gprof output (%s)&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;pre&gt;
+&quot;&quot;&quot;</i>
+
+<i class ='variable'>trailer</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+&lt;/pre&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>add_</i><i class ='variable'>escapes</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='variable'>html</i><i class ='delimiter'>.</i><i class ='variable'>escape</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>gprof2</i><i class ='variable'>html</i><i class ='delimiter'>(</i><i class ='variable'>input</i><i class ='delimiter'>,</i> <i class ='variable'>output</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>header</i> <i class ='operator'>%</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>input</i><i class ='delimiter'>:</i>
+        <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot; time&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+    <i class ='variable'>labels</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>input</i><i class ='delimiter'>:</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;(.*  )(\w+)\n&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+            <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>break</i>
+        <i class ='variable'>stuff</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>labels</i><i class ='delimiter'>[</i><i class ='variable'>fname</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>fname</i>
+        <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s&lt;a name=&quot;flat:%s&quot; href=&quot;#call:%s&quot;&gt;%s&lt;/a&gt;\n&#39;</i> <i class ='operator'>%</i>
+                     <i class ='delimiter'>(</i><i class ='variable'>stuff</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>input</i><i class ='delimiter'>:</i>
+        <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;index % time&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>input</i><i class ='delimiter'>:</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;(.*  )(\w+)(( &amp;lt;cycle.*&amp;gt;)? \[\d+\])\n&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+            <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;Index by function name&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>prefix</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>suffix</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='integer'>3</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>fname</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>labels</i><i class ='delimiter'>:</i>
+            <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;[&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s&lt;a name=&quot;call:%s&quot; href=&quot;#flat:%s&quot;&gt;%s&lt;/a&gt;%s\n&#39;</i> <i class ='operator'>%</i>
+                         <i class ='delimiter'>(</i><i class ='variable'>prefix</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>suffix</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s&lt;a href=&quot;#call:%s&quot;&gt;%s&lt;/a&gt;%s\n&#39;</i> <i class ='operator'>%</i>
+                         <i class ='delimiter'>(</i><i class ='variable'>prefix</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>suffix</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>input</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>part</i> <i class ='keyword'>in</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>findall</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;(\w+(?:\.c)?|\W+)&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>part</i> <i class ='keyword'>in</i> <i class ='variable'>labels</i><i class ='delimiter'>:</i>
+                <i class ='variable'>part</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&lt;a href=&quot;#call:%s&quot;&gt;%s&lt;/a&gt;&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>part</i><i class ='delimiter'>,</i> <i class ='variable'>part</i><i class ='delimiter'>)</i>
+            <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>part</i><i class ='delimiter'>)</i>
+    <i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>trailer</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;gprof.out&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='variable'>outputfilename</i> <i class ='delimiter'>=</i> <i class ='variable'>filename</i> <i class ='operator'>+</i> <i class ='string'>&quot;.html&quot;</i>
+    <i class ='variable'>input</i> <i class ='delimiter'>=</i> <i class ='variable'>add_</i><i class ='variable'>escapes</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>outputfilename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>output</i><i class ='delimiter'>:</i>
+        <i class ='variable'>gprof2</i><i class ='variable'>html</i><i class ='delimiter'>(</i><i class ='variable'>input</i><i class ='delimiter'>,</i> <i class ='variable'>output</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='variable'>webbrowser</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='string'>&quot;file:&quot;</i> <i class ='operator'>+</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>abspath</i><i class ='delimiter'>(</i><i class ='variable'>outputfilename</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

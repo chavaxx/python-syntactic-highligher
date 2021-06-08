@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+Synopsis: %(prog)s [-h|-b|-g|-r|-a|-d] [ picklefile ] dbfile
+
+Read the given picklefile as a series of key/value pairs and write to a new
+database.  If the database already exists, any contents are deleted.  The
+optional flags indicate the type of the output database:
+
+    -a - open using dbm (open any supported format)
+    -b - open as bsddb btree file
+    -d - open as dbm.ndbm file
+    -g - open as dbm.gnu file
+    -h - open as bsddb hash file
+    -r - open as bsddb recno file
+
+The default is hash.  If a pickle file is named it is opened for read
+access.  If no pickle file is named, the pickle input is read from standard
+input.
+
+Note that recno databases can only contain integer keys, so you can&#39;t dump a
+hash or btree database using db2pickle.py and reconstitute it to a recno
+database with %(prog)s unless your keys are integers.
+
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>bsddb</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='variable'>bsddb</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>dbm</i><i class ='delimiter'>.</i><i class ='variable'>ndbm</i> <i class ='keyword'>as</i> <i class ='variable'>dbm</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='variable'>dbm</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>dbm</i><i class ='delimiter'>.</i><i class ='variable'>gnu</i> <i class ='keyword'>as</i> <i class ='variable'>gdbm</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='variable'>gdbm</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>dbm</i><i class ='delimiter'>.</i><i class ='variable'>ndbm</i> <i class ='keyword'>as</i> <i class ='variable'>anydbm</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='variable'>anydbm</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>pickle</i> <i class ='keyword'>as</i> <i class ='variable'>pickle</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>pickle</i>
+
+<i class ='variable'>prog</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i> <i class ='operator'>%</i> <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='string'>&quot;hbrdag&quot;</i><i class ='delimiter'>,</i>
+                                   <i class ='delimiter'>[</i><i class ='string'>&quot;hash&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;btree&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;recno&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;dbm&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;anydbm&quot;</i><i class ='delimiter'>,</i>
+                                    <i class ='string'>&quot;gdbm&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>0</i> <i class ='keyword'>or</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>pfile</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i>
+        <i class ='variable'>dbfile</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>pfile</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>IOError</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unable to open %s\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>args</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='variable'>dbfile</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+
+    <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>for</i> <i class ='variable'>opt</i><i class ='delimiter'>,</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;-h&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--hash&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='variable'>bsddb</i><i class ='delimiter'>.</i><i class ='variable'>hashopen</i>
+            <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;bsddb module unavailable.\n&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;-b&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--btree&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='variable'>bsddb</i><i class ='delimiter'>.</i><i class ='variable'>btopen</i>
+            <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;bsddb module unavailable.\n&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;-r&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--recno&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='variable'>bsddb</i><i class ='delimiter'>.</i><i class ='variable'>rnopen</i>
+            <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;bsddb module unavailable.\n&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;-a&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--anydbm&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='variable'>anydbm</i><i class ='delimiter'>.</i><i class ='variable'>open</i>
+            <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;dbm module unavailable.\n&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;-g&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--gdbm&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='variable'>gdbm</i><i class ='delimiter'>.</i><i class ='variable'>open</i>
+            <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;dbm.gnu module unavailable.\n&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;-d&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--dbm&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='variable'>dbm</i><i class ='delimiter'>.</i><i class ='variable'>open</i>
+            <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;dbm.ndbm module unavailable.\n&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>return</i> <i class ='integer'>1</i>
+    <i class ='keyword'>if</i> <i class ='variable'>dbopen</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>bsddb</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;bsddb module unavailable - &quot;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;must specify dbtype.\n&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>dbopen</i> <i class ='delimiter'>=</i> <i class ='variable'>bsddb</i><i class ='delimiter'>.</i><i class ='variable'>hashopen</i>
+
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>db</i> <i class ='delimiter'>=</i> <i class ='variable'>dbopen</i><i class ='delimiter'>(</i><i class ='variable'>dbfile</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;c&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>bsddb</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unable to open %s.  &quot;</i> <i class ='operator'>%</i> <i class ='variable'>dbfile</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Check for format or version mismatch.\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>k</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>db</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>del</i> <i class ='variable'>db</i><i class ='delimiter'>[</i><i class ='variable'>k</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>val</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>pickle</i><i class ='delimiter'>.</i><i class ='variable'>load</i><i class ='delimiter'>(</i><i class ='variable'>pfile</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>EOFError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+        <i class ='variable'>db</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>val</i>
+
+    <i class ='variable'>db</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>pfile</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

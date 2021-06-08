@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='comment'># Write the config.c file</i>
+
+<i class ='variable'>never</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;marshal&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_imp&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_ast&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;builtins&#39;</i><i class ='delimiter'>,</i>
+         <i class ='charlist'>&#39;sys&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;gc&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_warnings&#39;</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>makeconfig</i><i class ='delimiter'>(</i><i class ='variable'>infp</i><i class ='delimiter'>,</i> <i class ='variable'>outfp</i><i class ='delimiter'>,</i> <i class ='variable'>modules</i><i class ='delimiter'>,</i> <i class ='variable'>with_</i><i class ='variable'>ifdef</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>m1</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-- ADDMODULE MARKER 1 --&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>m2</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-- ADDMODULE MARKER 2 --&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>infp</i><i class ='delimiter'>:</i>
+        <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>m1</i> <i class ='keyword'>and</i> <i class ='variable'>m1</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>m1</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>never</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>continue</i>
+                <i class ='keyword'>if</i> <i class ='variable'>with_</i><i class ='variable'>ifdef</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;#ifndef PyInit_%s\n&quot;</i><i class ='operator'>%</i><i class ='variable'>mod</i><i class ='delimiter'>)</i>
+                <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;extern PyObject* PyInit_%s(void);\n&#39;</i> <i class ='operator'>%</i> <i class ='variable'>mod</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>with_</i><i class ='variable'>ifdef</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;#endif\n&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>m2</i> <i class ='keyword'>and</i> <i class ='variable'>m2</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>m2</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>never</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>continue</i>
+                <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t{&quot;%s&quot;, PyInit_%s},\n&#39;</i> <i class ='operator'>%</i>
+                            <i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>mod</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>m1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;MARKER 1 never found\n&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>m2</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;MARKER 2 never found\n&#39;</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Test program.</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>3</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;usage: python makeconfig.py config.c.in outputfile&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;modulename ...&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>infp</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>infp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>outfp</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>outfp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>makeconfig</i><i class ='delimiter'>(</i><i class ='variable'>infp</i><i class ='delimiter'>,</i> <i class ='variable'>outfp</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>3</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>outfp</i> <i class ='operator'>!=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>:</i>
+        <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>infp</i> <i class ='operator'>!=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i><i class ='delimiter'>:</i>
+        <i class ='variable'>infp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3.8</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>import</i> <i class ='variable'>ast</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>time</i>
+<i class ='keyword'>import</i> <i class ='variable'>traceback</i>
+<i class ='keyword'>import</i> <i class ='variable'>tokenize</i>
+<i class ='keyword'>from</i> <i class ='variable'>glob</i> <i class ='keyword'>import</i> <i class ='variable'>glob</i><i class ='delimiter'>,</i> <i class ='variable'>escape</i>
+<i class ='keyword'>from</i> <i class ='variable'>pathlib</i> <i class ='keyword'>import</i> <i class ='variable'>PurePath</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>typing</i> <i class ='keyword'>import</i> <i class ='variable'>List</i><i class ='delimiter'>,</i> <i class ='variable'>Optional</i><i class ='delimiter'>,</i> <i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='variable'>Tuple</i>
+
+<i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>getcwd</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>ast_</i><i class ='variable'>dump</i> <i class ='keyword'>import</i> <i class ='variable'>ast_</i><i class ='variable'>dump</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>testutil</i> <i class ='keyword'>import</i> <i class ='variable'>print_</i><i class ='variable'>memstats</i>
+
+<i class ='variable'>SUCCESS</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;\033[92m&quot;</i>
+<i class ='variable'>FAIL</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;\033[91m&quot;</i>
+<i class ='variable'>ENDC</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;\033[0m&quot;</i>
+
+<i class ='variable'>COMPILE</i> <i class ='delimiter'>=</i> <i class ='integer'>2</i>
+<i class ='variable'>PARSE</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+<i class ='variable'>NOTREE</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+<i class ='variable'>argparser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i>
+    <i class ='variable'>prog</i><i class ='delimiter'>=</i><i class ='string'>&quot;test_parse_directory&quot;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='string'>&quot;Helper program to test directories or files for pegen&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='string'>&quot;-d&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--directory&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Directory path containing files to test&quot;</i><i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;-e&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--exclude&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;append&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Glob(s) for matching files to exclude&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;-s&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--short&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Only show errors, in a more Emacs-friendly format&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;-v&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--verbose&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store_true&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Display detailed errors for failures&quot;</i>
+<i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>report_</i><i class ='variable'>status</i><i class ='delimiter'>(</i>
+    <i class ='variable'>succeeded</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i><i class ='delimiter'>,</i>
+    <i class ='variable'>file</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i>
+    <i class ='variable'>verbose</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i><i class ='delimiter'>,</i>
+    <i class ='variable'>error</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='variable'>Exception</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i>
+    <i class ='variable'>short</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>short</i> <i class ='keyword'>and</i> <i class ='variable'>succeeded</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>succeeded</i> <i class ='keyword'>is</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+        <i class ='variable'>status</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;OK&quot;</i>
+        <i class ='variable'>COLOR</i> <i class ='delimiter'>=</i> <i class ='variable'>SUCCESS</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>status</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;Fail&quot;</i>
+        <i class ='variable'>COLOR</i> <i class ='delimiter'>=</i> <i class ='variable'>FAIL</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>short</i><i class ='delimiter'>:</i>
+        <i class ='variable'>lineno</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>offset</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>error</i><i class ='delimiter'>,</i> <i class ='variable'>SyntaxError</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>lineno</i> <i class ='delimiter'>=</i> <i class ='variable'>error</i><i class ='delimiter'>.</i><i class ='variable'>lineno</i> <i class ='keyword'>or</i> <i class ='integer'>1</i>
+            <i class ='variable'>offset</i> <i class ='delimiter'>=</i> <i class ='variable'>error</i><i class ='delimiter'>.</i><i class ='variable'>offset</i> <i class ='keyword'>or</i> <i class ='integer'>1</i>
+            <i class ='variable'>message</i> <i class ='delimiter'>=</i> <i class ='variable'>error</i><i class ='delimiter'>.</i><i class ='variable'>args</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>message</i> <i class ='delimiter'>=</i> <i class ='fstring'>f&quot;{error.__class__.__name__}: {error}&quot;</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;{file}:{lineno}:{offset}: {message}&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;{COLOR}{file:60} {status}{ENDC}&quot;</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>if</i> <i class ='variable'>error</i> <i class ='keyword'>and</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;  {str(error.__class__.__name__)}: {error}&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Tuple</i><i class ='delimiter'>[</i><i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='datatype'>float</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+    <i class ='variable'>t0</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='variable'>ast</i><i class ='delimiter'>.</i><i class ='variable'>parse</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>=</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+    <i class ='variable'>t1</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>result</i><i class ='delimiter'>,</i> <i class ='variable'>t1</i> <i class ='variable'>-</i> <i class ='variable'>t0</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>generate_</i><i class ='variable'>time_</i><i class ='variable'>stats</i><i class ='delimiter'>(</i><i class ='variable'>files</i><i class ='delimiter'>,</i> <i class ='variable'>total_</i><i class ='variable'>seconds</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>total_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>files</i><i class ='delimiter'>)</i>
+    <i class ='variable'>total_</i><i class ='datatype'>bytes</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='variable'>total_</i><i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>file</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Count lines and bytes separately</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>total_</i><i class ='variable'>lines</i> <i class ='delimiter'>+=</i> <i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='keyword'>for</i> <i class ='hexadecimal'>_</i> <i class ='keyword'>in</i> <i class ='variable'>f</i><i class ='delimiter'>)</i>
+            <i class ='variable'>total_</i><i class ='datatype'>bytes</i> <i class ='delimiter'>+=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>tell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i>
+        <i class ='fstring'>f&quot;Checked {total_files:,} files, {total_lines:,} lines,&quot;</i><i class ='delimiter'>,</i>
+        <i class ='fstring'>f&quot;{total_bytes:,} bytes in {total_seconds:,.3f} seconds.&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>total_</i><i class ='variable'>seconds</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i>
+            <i class ='fstring'>f&quot;That&#39;s {total_lines / total_seconds :,.0f} lines/sec,&quot;</i><i class ='delimiter'>,</i>
+            <i class ='fstring'>f&quot;or {total_bytes / total_seconds :,.0f} bytes/sec.&quot;</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>directory</i><i class ='delimiter'>(</i><i class ='variable'>directory</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i><i class ='delimiter'>,</i> <i class ='variable'>excluded_</i><i class ='variable'>files</i><i class ='delimiter'>:</i> <i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>short</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>int</i><i class ='delimiter'>:</i>
+    <i class ='comment'># For a given directory, traverse files and attempt to parse each one</i>
+    <i class ='comment'># - Output success/failure for each file</i>
+    <i class ='variable'>errors</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>total_</i><i class ='variable'>seconds</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>file</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>glob</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>escape</i><i class ='delimiter'>(</i><i class ='variable'>directory</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='fstring'>f&quot;**/*.py&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>recursive</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Only attempt to parse Python files and files that are not excluded</i>
+        <i class ='keyword'>if</i> <i class ='variable'>any</i><i class ='delimiter'>(</i><i class ='variable'>PurePath</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>pattern</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>pattern</i> <i class ='keyword'>in</i> <i class ='variable'>excluded_</i><i class ='variable'>files</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+
+        <i class ='keyword'>with</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>source</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>result</i><i class ='delimiter'>,</i> <i class ='variable'>dt</i> <i class ='delimiter'>=</i> <i class ='variable'>parse_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+            <i class ='variable'>total_</i><i class ='variable'>seconds</i> <i class ='delimiter'>+=</i> <i class ='variable'>dt</i>
+            <i class ='variable'>report_</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='variable'>succeeded</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>=</i><i class ='variable'>verbose</i><i class ='delimiter'>,</i> <i class ='variable'>short</i><i class ='delimiter'>=</i><i class ='variable'>short</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>SyntaxError</i> <i class ='keyword'>as</i> <i class ='variable'>error</i><i class ='delimiter'>:</i>
+            <i class ='variable'>report_</i><i class ='variable'>status</i><i class ='delimiter'>(</i><i class ='variable'>succeeded</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>=</i><i class ='variable'>verbose</i><i class ='delimiter'>,</i> <i class ='variable'>error</i><i class ='delimiter'>=</i><i class ='variable'>error</i><i class ='delimiter'>,</i> <i class ='variable'>short</i><i class ='delimiter'>=</i><i class ='variable'>short</i><i class ='delimiter'>)</i>
+            <i class ='variable'>errors</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>generate_</i><i class ='variable'>time_</i><i class ='variable'>stats</i><i class ='delimiter'>(</i><i class ='variable'>files</i><i class ='delimiter'>,</i> <i class ='variable'>total_</i><i class ='variable'>seconds</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>short</i><i class ='delimiter'>:</i>
+        <i class ='variable'>print_</i><i class ='variable'>memstats</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>errors</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Encountered {errors} failures.&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+
+    <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>directory</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>directory</i>
+    <i class ='variable'>verbose</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>verbose</i>
+    <i class ='variable'>excluded_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>exclude</i>
+    <i class ='variable'>short</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>short</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>parse_</i><i class ='variable'>directory</i><i class ='delimiter'>(</i><i class ='variable'>directory</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>,</i> <i class ='variable'>excluded_</i><i class ='variable'>files</i><i class ='delimiter'>,</i> <i class ='variable'>short</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

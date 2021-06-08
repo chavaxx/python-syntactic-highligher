@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;Extension management for Windows.
+
+Under Windows it is unlikely the .obj files are of use, as special compiler options
+are needed (primarily to toggle the behavior of &quot;</i><i class ='variable'>public</i><i class ='string'>&quot; symbols.
+
+I don&#39;t consider it worth parsing the MSVC makefiles for compiler options.  Even if
+we get it just right, a specific freeze application may have specific compiler
+options anyway (eg, to enable or disable specific functionality)
+
+So my basic strategy is:
+
+* Have some Windows INI files which &quot;</i><i class ='variable'>describe</i><i class ='string'>&quot; one or more extension modules.
+  (Freeze comes with a default one for all known modules - but you can specify
+  your own).
+* This description can include:
+  - The MSVC .dsp file for the extension.  The .c source file names
+    are extracted from there.
+  - Specific compiler/linker options
+  - Flag to indicate if Unicode compilation is expected.
+
+At the moment the name and location of this INI file is hardcoded,
+but an obvious enhancement would be to provide command line options.
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>win32</i><i class ='variable'>api</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='variable'>win32</i><i class ='variable'>api</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i> <i class ='comment'># User has already been warned</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>CExtension</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;An abstraction of an extension implemented in C/C++
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>sourceFiles</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i>
+        <i class ='comment'># A list of strings defining additional compiler options.</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sourceFiles</i> <i class ='delimiter'>=</i> <i class ='variable'>sourceFiles</i>
+        <i class ='comment'># A list of special compiler options to be applied to</i>
+        <i class ='comment'># all source modules in this extension.</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compilerOptions</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='comment'># A list of .lib files the final .EXE will need.</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>linkerLibs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>GetSourceFiles</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sourceFiles</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>AddCompilerOption</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>option</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compilerOptions</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>option</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>def</i> <i class ='variable'>GetCompilerOptions</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>compilerOptions</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>AddLinkerLib</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>lib</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>linkerLibs</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>lib</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>def</i> <i class ='variable'>GetLinkerLibs</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>linkerLibs</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>checkextensions</i><i class ='delimiter'>(</i><i class ='variable'>unknown</i><i class ='delimiter'>,</i> <i class ='variable'>extra_</i><i class ='variable'>inis</i><i class ='delimiter'>,</i> <i class ='variable'>prefix</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Create a table of frozen extensions</i>
+
+    <i class ='variable'>defaultMapName</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='string'>&quot;extensions_win32.ini&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>defaultMapName</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;WARNING: %s can not be found - standard extensions may not be found\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>defaultMapName</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='comment'># must go on end, so other inis can override.</i>
+        <i class ='variable'>extra_</i><i class ='variable'>inis</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>defaultMapName</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>ret</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>unknown</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ini</i> <i class ='keyword'>in</i> <i class ='variable'>extra_</i><i class ='variable'>inis</i><i class ='delimiter'>:</i>
+<i class ='comment'>#                       print &quot;Looking for&quot;, mod, &quot;in&quot;, win32api.GetFullPathName(ini),&quot;...&quot;,</i>
+            <i class ='variable'>defn</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>extension_</i><i class ='variable'>defn</i><i class ='delimiter'>(</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>ini</i><i class ='delimiter'>,</i> <i class ='variable'>prefix</i> <i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>defn</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+<i class ='comment'>#                               print &quot;Yay - found it!&quot;</i>
+                <i class ='variable'>ret</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i> <i class ='variable'>defn</i> <i class ='delimiter'>)</i>
+                <i class ='keyword'>break</i>
+<i class ='comment'>#                       print &quot;Nope!&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i> <i class ='comment'># For not broken!</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;No definition of module %s in any specified map file.\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>ret</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>extension_</i><i class ='variable'>defn</i><i class ='delimiter'>(</i><i class ='variable'>moduleName</i><i class ='delimiter'>,</i> <i class ='variable'>mapFileName</i><i class ='delimiter'>,</i> <i class ='variable'>prefix</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>win32</i><i class ='variable'>api</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i> <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;PYTHONPREFIX&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>prefix</i>
+    <i class ='variable'>dsp</i> <i class ='delimiter'>=</i> <i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>GetProfileVal</i><i class ='delimiter'>(</i><i class ='variable'>moduleName</i><i class ='delimiter'>,</i> <i class ='string'>&quot;dsp&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>mapFileName</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>dsp</i><i class ='operator'>==</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='comment'># We allow environment variables in the file name</i>
+    <i class ='variable'>dsp</i> <i class ='delimiter'>=</i> <i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>ExpandEnvironmentStrings</i><i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>)</i>
+    <i class ='comment'># If the path to the .DSP file is not absolute, assume it is relative</i>
+    <i class ='comment'># to the description file.</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isabs</i><i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>dsp</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>mapFileName</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>dsp</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Parse it to extract the source files.</i>
+    <i class ='variable'>sourceFiles</i> <i class ='delimiter'>=</i> <i class ='variable'>parse_</i><i class ='variable'>dsp</i><i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sourceFiles</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='variable'>module</i> <i class ='delimiter'>=</i> <i class ='variable'>CExtension</i><i class ='delimiter'>(</i><i class ='variable'>moduleName</i><i class ='delimiter'>,</i> <i class ='variable'>sourceFiles</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Put the path to the DSP into the environment so entries can reference it.</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;dsp_path&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;ini_path&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>mapFileName</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+
+    <i class ='variable'>cl_</i><i class ='variable'>options</i> <i class ='delimiter'>=</i> <i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>GetProfileVal</i><i class ='delimiter'>(</i><i class ='variable'>moduleName</i><i class ='delimiter'>,</i> <i class ='string'>&quot;cl&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>mapFileName</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>cl_</i><i class ='variable'>options</i><i class ='delimiter'>:</i>
+        <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>AddCompilerOption</i><i class ='delimiter'>(</i><i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>ExpandEnvironmentStrings</i><i class ='delimiter'>(</i><i class ='variable'>cl_</i><i class ='variable'>options</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>exclude</i> <i class ='delimiter'>=</i> <i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>GetProfileVal</i><i class ='delimiter'>(</i><i class ='variable'>moduleName</i><i class ='delimiter'>,</i> <i class ='string'>&quot;exclude&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>mapFileName</i><i class ='delimiter'>)</i>
+    <i class ='variable'>exclude</i> <i class ='delimiter'>=</i> <i class ='variable'>exclude</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>GetProfileVal</i><i class ='delimiter'>(</i><i class ='variable'>moduleName</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Unicode&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>mapFileName</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>AddCompilerOption</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/D UNICODE /D _UNICODE&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>libs</i> <i class ='delimiter'>=</i> <i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>GetProfileVal</i><i class ='delimiter'>(</i><i class ='variable'>moduleName</i><i class ='delimiter'>,</i> <i class ='string'>&quot;libs&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>mapFileName</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>lib</i> <i class ='keyword'>in</i> <i class ='variable'>libs</i><i class ='delimiter'>:</i>
+        <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>AddLinkerLib</i><i class ='delimiter'>(</i><i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>ExpandEnvironmentStrings</i><i class ='delimiter'>(</i><i class ='variable'>lib</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>exc</i> <i class ='keyword'>in</i> <i class ='variable'>exclude</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>exc</i> <i class ='keyword'>in</i> <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>sourceFiles</i><i class ='delimiter'>:</i>
+            <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>sourceFiles</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>exc</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>module</i>
+
+<i class ='comment'># Given an MSVC DSP file, locate C source files it uses</i>
+<i class ='comment'># returns a list of source files.</i>
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>dsp</i><i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+<i class ='comment'>#       print &quot;Processing&quot;, dsp</i>
+    <i class ='comment'># For now, only support</i>
+    <i class ='variable'>ret</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>dsp_</i><i class ='variable'>path</i><i class ='delimiter'>,</i> <i class ='variable'>dsp_</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+            <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s: %s\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>dsp</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>lines</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fields</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot;=&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='operator'>==</i><i class ='string'>&quot;SOURCE&quot;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>splitext</i><i class ='delimiter'>(</i><i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;.cpp&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;.c&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+                <i class ='variable'>ret</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i> <i class ='variable'>win32</i><i class ='variable'>api</i><i class ='delimiter'>.</i><i class ='variable'>GetFullPathName</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>dsp_</i><i class ='variable'>path</i><i class ='delimiter'>,</i> <i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='delimiter'>)</i> <i class ='delimiter'>)</i> <i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>ret</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>write_</i><i class ='variable'>extension_</i><i class ='variable'>table</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>modules</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>write</i> <i class ='delimiter'>(</i><i class ='variable'>ext_</i><i class ='variable'>src_</i><i class ='variable'>header</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Write fn protos</i>
+        <i class ='keyword'>for</i> <i class ='variable'>module</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+            <i class ='comment'># bit of a hack for .pyd&#39;s as part of packages.</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+            <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;extern void init%s(void);\n&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='delimiter'>)</i>
+        <i class ='comment'># Write the table</i>
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>write</i> <i class ='delimiter'>(</i><i class ='variable'>ext_</i><i class ='variable'>tab_</i><i class ='variable'>header</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>module</i> <i class ='keyword'>in</i> <i class ='variable'>modules</i><i class ='delimiter'>:</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+            <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t{&quot;%s&quot;, init%s},\n&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i> <i class ='delimiter'>)</i>
+
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>write</i> <i class ='delimiter'>(</i><i class ='variable'>ext_</i><i class ='variable'>tab_</i><i class ='variable'>footer</i><i class ='delimiter'>)</i>
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>ext_</i><i class ='variable'>src_</i><i class ='variable'>footer</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>ext_</i><i class ='variable'>src_</i><i class ='variable'>header</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;\
+#include &quot;</i><i class ='variable'>Python</i><i class ='delimiter'>.</i><i class ='variable'>h</i><i class ='string'>&quot;
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='variable'>ext_</i><i class ='variable'>tab_</i><i class ='variable'>header</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+
+static struct _inittab extensions[] = {
+&quot;&quot;&quot;</i>
+
+<i class ='variable'>ext_</i><i class ='variable'>tab_</i><i class ='variable'>footer</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+        /* Sentinel */
+        {0, 0}
+};
+&quot;&quot;&quot;</i>
+
+<i class ='variable'>ext_</i><i class ='variable'>src_</i><i class ='variable'>footer</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+extern DL_IMPORT(int) PyImport_ExtendInittab(struct _inittab *newtab);
+
+int PyInitFrozenExtensions()
+{
+        return PyImport_ExtendInittab(extensions);
+}
+
+&quot;&quot;&quot;</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

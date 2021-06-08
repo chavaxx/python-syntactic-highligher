@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+This script should be called *manually* when we want to upgrade SSLError
+`library` and `reason` mnemonics to a more recent OpenSSL version.
+
+It takes two arguments:
+- the path to the OpenSSL source tree (e.g. git checkout)
+- the path to the header file to be generated Modules/_ssl_data_{version}.h
+- error codes are version specific
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>import</i> <i class ='variable'>datetime</i>
+<i class ='keyword'>import</i> <i class ='variable'>operator</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+
+<i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i>
+    <i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='string'>&quot;Generate ssl_data.h from OpenSSL sources&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='string'>&quot;srcdir&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;OpenSSL source directory&quot;</i><i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;output&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>nargs</i><i class ='delimiter'>=</i><i class ='string'>&quot;?&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>FileType</i><i class ='delimiter'>(</i><i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i>
+<i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_f</i><i class ='variable'>ile_</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>pat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='string'>&quot;utf-8&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>match</i> <i class ='delimiter'>=</i> <i class ='variable'>pat</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>match</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>yield</i> <i class ='variable'>match</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>err_</i><i class ='variable'>h</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Parse err codes, e.g. ERR_LIB_X509: 11&quot;&quot;&quot;</i>
+    <i class ='variable'>pat</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;#\s*define\W+ERR_LIB_(\w+)\s+(\d+)&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>lib2</i><i class ='variable'>errnum</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>match</i> <i class ='keyword'>in</i> <i class ='hexadecimal'>_f</i><i class ='variable'>ile_</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>err_</i><i class ='variable'>h</i><i class ='delimiter'>,</i> <i class ='variable'>pat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>libname</i><i class ='delimiter'>,</i> <i class ='variable'>num</i> <i class ='delimiter'>=</i> <i class ='variable'>match</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>lib2</i><i class ='variable'>errnum</i><i class ='delimiter'>[</i><i class ='variable'>libname</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>num</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>lib2</i><i class ='variable'>errnum</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>openssl_</i><i class ='variable'>error_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Parse error reasons, X509_R_AKID_MISMATCH&quot;&quot;&quot;</i>
+    <i class ='comment'># ignore backslash line continuation for now</i>
+    <i class ='variable'>pat</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;^((\w+?)_R_(\w+)):(\d+):&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>match</i> <i class ='keyword'>in</i> <i class ='hexadecimal'>_f</i><i class ='variable'>ile_</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>errtxt</i><i class ='delimiter'>,</i> <i class ='variable'>pat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>reason</i><i class ='delimiter'>,</i> <i class ='variable'>libname</i><i class ='delimiter'>,</i> <i class ='variable'>errname</i><i class ='delimiter'>,</i> <i class ='variable'>num</i> <i class ='delimiter'>=</i> <i class ='variable'>match</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='string'>&quot;_F_&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>reason</i><i class ='delimiter'>:</i>
+            <i class ='comment'># ignore function codes</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>num</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>num</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>reason</i><i class ='delimiter'>,</i> <i class ='variable'>libname</i><i class ='delimiter'>,</i> <i class ='variable'>errname</i><i class ='delimiter'>,</i> <i class ='variable'>num</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>extra_</i><i class ='variable'>reasons</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Parse extra reasons from openssl.ec&quot;&quot;&quot;</i>
+    <i class ='variable'>pat</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;^R\s+((\w+)_R_(\w+))\s+(\d+)&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>match</i> <i class ='keyword'>in</i> <i class ='hexadecimal'>_f</i><i class ='variable'>ile_</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>errcodes</i><i class ='delimiter'>,</i> <i class ='variable'>pat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>reason</i><i class ='delimiter'>,</i> <i class ='variable'>libname</i><i class ='delimiter'>,</i> <i class ='variable'>errname</i><i class ='delimiter'>,</i> <i class ='variable'>num</i> <i class ='delimiter'>=</i> <i class ='variable'>match</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>num</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>num</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>reason</i><i class ='delimiter'>,</i> <i class ='variable'>libname</i><i class ='delimiter'>,</i> <i class ='variable'>errname</i><i class ='delimiter'>,</i> <i class ='variable'>num</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>library_</i><i class ='variable'>codes</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Generate table short libname to numeric code&quot;&quot;&quot;</i>
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;static struct py_ssl_library_code library_codes[] = {&quot;</i>
+    <i class ='keyword'>for</i> <i class ='variable'>libname</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>lib2</i><i class ='variable'>errnum</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='fstring'>f&quot;#ifdef ERR_LIB_{libname}&quot;</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>f</i><i class ='charlist'>&#39;    {{&quot;{libname}&quot;, ERR_LIB_{libname}}},&#39;</i>
+        <i class ='keyword'>yield</i> <i class ='string'>&quot;#endif&quot;</i>
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;    { NULL }&quot;</i>
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;};&quot;</i>
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;&quot;</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>error_</i><i class ='variable'>codes</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Generate error code table for error reasons&quot;&quot;&quot;</i>
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;static struct py_ssl_error_code error_codes[] = {&quot;</i>
+    <i class ='keyword'>for</i> <i class ='variable'>reason</i><i class ='delimiter'>,</i> <i class ='variable'>libname</i><i class ='delimiter'>,</i> <i class ='variable'>errname</i><i class ='delimiter'>,</i> <i class ='variable'>num</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>reasons</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='fstring'>f&quot;  #ifdef {reason}&quot;</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>f</i><i class ='charlist'>&#39;    {{&quot;{errname}&quot;, ERR_LIB_{libname}, {reason}}},&#39;</i>
+        <i class ='keyword'>yield</i> <i class ='string'>&quot;  #else&quot;</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>f</i><i class ='charlist'>&#39;    {{&quot;{errname}&quot;, {args.lib2errnum[libname]}, {num}}},&#39;</i>
+        <i class ='keyword'>yield</i> <i class ='string'>&quot;  #endif&quot;</i>
+
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;    { NULL }&quot;</i>
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;};&quot;</i>
+    <i class ='keyword'>yield</i> <i class ='string'>&quot;&quot;</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>err_</i><i class ='variable'>h</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>srcdir</i><i class ='delimiter'>,</i> <i class ='string'>&quot;include&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;openssl&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;err.h&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>err_</i><i class ='variable'>h</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Fall back to infile for OpenSSL 3.0.0</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>err_</i><i class ='variable'>h</i> <i class ='delimiter'>+=</i> <i class ='string'>&quot;.in&quot;</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>errcodes</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>srcdir</i><i class ='delimiter'>,</i> <i class ='string'>&quot;crypto&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;err&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;openssl.ec&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>errtxt</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>srcdir</i><i class ='delimiter'>,</i> <i class ='string'>&quot;crypto&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;err&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;openssl.txt&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>errtxt</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;File {args.errtxt} not found in srcdir\n.&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># {X509: 11, ...}</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>lib2</i><i class ='variable'>errnum</i> <i class ='delimiter'>=</i> <i class ='variable'>parse_</i><i class ='variable'>err_</i><i class ='variable'>h</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># [(&#39;X509_R_AKID_MISMATCH&#39;, &#39;X509&#39;, &#39;AKID_MISMATCH&#39;, 110), ...]</i>
+    <i class ='variable'>reasons</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>reasons</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>parse_</i><i class ='variable'>openssl_</i><i class ='variable'>error_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>reasons</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>parse_</i><i class ='variable'>extra_</i><i class ='variable'>reasons</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='comment'># sort by libname, numeric error code</i>
+    <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>reasons</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>reasons</i><i class ='delimiter'>,</i> <i class ='variable'>key</i><i class ='delimiter'>=</i><i class ='variable'>operator</i><i class ='delimiter'>.</i><i class ='variable'>itemgetter</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>3</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+        <i class ='string'>&quot;/* File generated by Tools/ssl/make_ssl_data.py */&quot;</i>
+        <i class ='fstring'>f&quot;/* Generated on {datetime.datetime.utcnow().isoformat()} */&quot;</i>
+    <i class ='delimiter'>]</i>
+    <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>library_</i><i class ='variable'>codes</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>error_</i><i class ='variable'>codes</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>lines</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>output</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>line</i> <i class ='operator'>+</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

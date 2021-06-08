@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>import</i> <i class ='variable'>marshal</i>
+<i class ='keyword'>import</i> <i class ='variable'>bkfile</i>
+
+
+<i class ='comment'># Write a file containing frozen code for the modules in the dictionary.</i>
+
+<i class ='variable'>header</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+#include &quot;</i><i class ='variable'>Python</i><i class ='delimiter'>.</i><i class ='variable'>h</i><i class ='string'>&quot;
+
+static struct _frozen _PyImport_FrozenModules[] = {
+&quot;</i><i class ='string'>&quot;&quot;</i>
+<i class ='variable'>trailer</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;\
+    {0, 0, 0} /* sentinel */
+};
+&quot;&quot;&quot;</i>
+
+<i class ='comment'># if __debug__ == 0 (i.e. -O option given), set Py_OptimizeFlag in frozen app.</i>
+<i class ='variable'>default_</i><i class ='variable'>entry_</i><i class ='variable'>point</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;
+int
+main(int argc, char **argv)
+{
+        extern int Py_FrozenMain(int, char **);
+&quot;&quot;&quot;</i> <i class ='operator'>+</i> <i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='keyword'>not</i> <i class ='hexadecimal'>__deb</i><i class ='variable'>ug__</i> <i class ='keyword'>and</i> <i class ='multilineComment'>&quot;&quot;&quot;
+        Py_OptimizeFlag++;
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>  <i class ='operator'>+</i> <i class ='multilineComment'>&quot;&quot;&quot;
+        PyImport_FrozenModules = _PyImport_FrozenModules;
+        return Py_FrozenMain(argc, argv);
+}
+
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>makefreeze</i><i class ='delimiter'>(</i><i class ='variable'>base</i><i class ='delimiter'>,</i> <i class ='datatype'>dict</i><i class ='delimiter'>,</i> <i class ='variable'>debug</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>entry_</i><i class ='variable'>point</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>fail_</i><i class ='keyword'>import</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>entry_</i><i class ='variable'>point</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i> <i class ='variable'>entry_</i><i class ='variable'>point</i> <i class ='delimiter'>=</i> <i class ='variable'>default_</i><i class ='variable'>entry_</i><i class ='variable'>point</i>
+    <i class ='variable'>done</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>mods</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='datatype'>dict</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>mods</i><i class ='delimiter'>:</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='datatype'>dict</i><i class ='delimiter'>[</i><i class ='variable'>mod</i><i class ='delimiter'>]</i>
+        <i class ='variable'>mangled</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;__&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot;.&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__c</i><i class ='variable'>ode__</i><i class ='delimiter'>:</i>
+            <i class ='variable'>file</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;M_&#39;</i> <i class ='operator'>+</i> <i class ='variable'>mangled</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;.c&#39;</i>
+            <i class ='keyword'>with</i> <i class ='variable'>bkfile</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>base</i> <i class ='operator'>+</i> <i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>outfp</i><i class ='delimiter'>:</i>
+                <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>debug</i><i class ='delimiter'>:</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;freezing&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='string'>&quot;...&quot;</i><i class ='delimiter'>)</i>
+                <i class ='datatype'>str</i> <i class ='delimiter'>=</i> <i class ='variable'>marshal</i><i class ='delimiter'>.</i><i class ='variable'>dumps</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__c</i><i class ='variable'>ode__</i><i class ='delimiter'>)</i>
+                <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>path__</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># Indicate package by negative size</i>
+                    <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>-size</i>
+                <i class ='variable'>done</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>mangled</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='variable'>writecode</i><i class ='delimiter'>(</i><i class ='variable'>outfp</i><i class ='delimiter'>,</i> <i class ='variable'>mangled</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>debug</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;generating table of frozen modules&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>bkfile</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>base</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;frozen.c&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>outfp</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>mangled</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='keyword'>in</i> <i class ='variable'>done</i><i class ='delimiter'>:</i>
+            <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;extern unsigned char M_%s[];\n&#39;</i> <i class ='operator'>%</i> <i class ='variable'>mangled</i><i class ='delimiter'>)</i>
+        <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>header</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>mangled</i><i class ='delimiter'>,</i> <i class ='variable'>size</i> <i class ='keyword'>in</i> <i class ='variable'>done</i><i class ='delimiter'>:</i>
+            <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t{&quot;%s&quot;, M_%s, %d},\n&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>mangled</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>)</i>
+        <i class ='comment'># The following modules have a NULL code pointer, indicating</i>
+        <i class ='comment'># that the frozen program should not search for them on the host</i>
+        <i class ='comment'># system. Importing them will *always* raise an ImportError.</i>
+        <i class ='comment'># The zero value size is never used.</i>
+        <i class ='keyword'>for</i> <i class ='variable'>mod</i> <i class ='keyword'>in</i> <i class ='variable'>fail_</i><i class ='keyword'>import</i><i class ='delimiter'>:</i>
+            <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t{&quot;%s&quot;, NULL, 0},\n&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>trailer</i><i class ='delimiter'>)</i>
+        <i class ='variable'>outfp</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>entry_</i><i class ='variable'>point</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>files</i>
+
+
+
+<i class ='comment'># Write a C initializer for a module containing the frozen python code.</i>
+<i class ='comment'># The array is called M_&lt;mod&gt;.</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>writecode</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>data</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;unsigned char M_%s[] = {&#39;</i> <i class ='operator'>%</i> <i class ='variable'>mod</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='variable'>indent</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i> <i class ='operator'>*</i> <i class ='integer'>4</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>indent</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='datatype'>bytes</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>16</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%d,&#39;</i> <i class ='operator'>%</i> <i class ='variable'>c</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;};&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>fp</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

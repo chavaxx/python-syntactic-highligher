@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot; Unicode Mapping Parser and Codec Generator.
+
+This script parses Unicode mapping files as available from the Unicode
+site (ftp://ftp.unicode.org/Public/MAPPINGS/) and creates Python codec
+modules from them. The codecs use the standard character mapping codec
+to actually apply the mapping.
+
+Synopsis: gencodec.py dir codec_prefix
+
+All files in dir are scanned and those producing non-empty mappings
+will be written to &lt;codec_prefix&gt;&lt;mapname&gt;.py with &lt;mapname&gt; being the
+first part of the map&#39;s filename (&#39;a&#39; in a.b.c.txt) converted to
+lowercase with hyphens replaced by underscores.
+
+The tool also writes marshalled versions of the mapping tables to the
+same location (with .mapping extension).
+
+Written by Marc-Andre Lemburg (mal@lemburg.com).
+
+(c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright Guido van Rossum, 2000.
+
+Table generation:
+(c) Copyright Marc-Andre Lemburg, 2005.
+    Licensed to PSF under a Contributor Agreement.
+
+&quot;&quot;&quot;</i><i class ='comment'>#&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>re</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>marshal</i><i class ='delimiter'>,</i> <i class ='variable'>codecs</i>
+
+<i class ='comment'># Maximum allowed size of charmap tables</i>
+<i class ='variable'>MAX_</i><i class ='variable'>TABLE_</i><i class ='variable'>SIZE</i> <i class ='delimiter'>=</i> <i class ='integer'>8192</i>
+
+<i class ='comment'># Standard undefined Unicode code point</i>
+<i class ='variable'>UNI_</i><i class ='variable'>UNDEFINED</i> <i class ='delimiter'>=</i> <i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='variable'>FFFE</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Placeholder for a missing code point</i>
+<i class ='variable'>MISSING_</i><i class ='variable'>CODE</i> <i class ='delimiter'>=</i> <i class ='variable'>-1</i>
+
+<i class ='variable'>mapRE</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;((?:0x[0-9a-fA-F]+\+?)+)&#39;</i>
+                   <i class ='variable'>r</i><i class ='charlist'>&#39;\s+&#39;</i>
+                   <i class ='variable'>r</i><i class ='charlist'>&#39;((?:(?:0x[0-9a-fA-Z]+|&lt;[A-Za-z]+&gt;)\+?)*)&#39;</i>
+                   <i class ='variable'>r</i><i class ='charlist'>&#39;\s*&#39;</i>
+                   <i class ='variable'>r</i><i class ='charlist'>&#39;(#.+)?&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>parsecodes</i><i class ='delimiter'>(</i><i class ='variable'>codes</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>=</i><i class ='variable'>len</i><i class ='delimiter'>,</i> <i class ='datatype'>range</i><i class ='delimiter'>=</i><i class ='datatype'>range</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='multilineComment'>&quot;&quot;&quot; Converts code combinations to either a single code integer
+        or a tuple of integers.
+
+        meta-codes (in angular brackets, e.g. &lt;LR&gt; and &lt;RL&gt;) are
+        ignored.
+
+        Empty codes or illegal ones are returned as None.
+
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>codes</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>MISSING_</i><i class ='variable'>CODE</i>
+    <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='variable'>codes</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i><i class ='integer'>16</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>l</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i><i class ='integer'>16</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>ValueError</i><i class ='delimiter'>:</i>
+            <i class ='variable'>l</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>MISSING_</i><i class ='variable'>CODE</i>
+    <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>x</i> <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>l</i> <i class ='keyword'>if</i> <i class ='variable'>x</i> <i class ='operator'>!=</i> <i class ='variable'>MISSING_</i><i class ='variable'>CODE</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>l</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='datatype'>tuple</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>readmap</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>enc2</i><i class ='variable'>uni</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>identity</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>unmapped</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>256</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># UTC mapping tables per convention don&#39;t include the identity</i>
+    <i class ='comment'># mappings for code points 0x00 - 0x1F and 0x7F, unless these are</i>
+    <i class ='comment'># explicitly mapped to different characters or undefined</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>32</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='delimiter'>[</i><i class ='integer'>127</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>identity</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i>
+        <i class ='variable'>unmapped</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i>
+        <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;CONTROL CHARACTER&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>lines</i><i class ='delimiter'>:</i>
+        <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i> <i class ='keyword'>or</i> <i class ='variable'>line</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>mapRE</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+            <i class ='comment'>#print &#39;* not matched: %s&#39; % repr(line)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>enc</i><i class ='delimiter'>,</i><i class ='variable'>uni</i><i class ='delimiter'>,</i><i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>enc</i> <i class ='delimiter'>=</i> <i class ='variable'>parsecodes</i><i class ='delimiter'>(</i><i class ='variable'>enc</i><i class ='delimiter'>)</i>
+        <i class ='variable'>uni</i> <i class ='delimiter'>=</i> <i class ='variable'>parsecodes</i><i class ='delimiter'>(</i><i class ='variable'>uni</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>comment</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='variable'>comment</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>enc</i><i class ='delimiter'>,</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>enc</i> <i class ='operator'>&lt;</i> <i class ='integer'>256</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>enc</i> <i class ='keyword'>in</i> <i class ='variable'>unmapped</i><i class ='delimiter'>:</i>
+                <i class ='variable'>unmapped</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>enc</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>enc</i> <i class ='operator'>==</i> <i class ='variable'>uni</i><i class ='delimiter'>:</i>
+                <i class ='variable'>identity</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>enc</i><i class ='delimiter'>)</i>
+            <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='variable'>enc</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>uni</i><i class ='delimiter'>,</i><i class ='variable'>comment</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='variable'>enc</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>uni</i><i class ='delimiter'>,</i><i class ='variable'>comment</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># If there are more identity-mapped entries than unmapped entries,</i>
+    <i class ='comment'># it pays to generate an identity dictionary first, and add explicit</i>
+    <i class ='comment'># mappings to None for the rest</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>identity</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>unmapped</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>enc</i> <i class ='keyword'>in</i> <i class ='variable'>unmapped</i><i class ='delimiter'>:</i>
+            <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='variable'>enc</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>MISSING_</i><i class ='variable'>CODE</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;IDENTITY&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>256</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>enc2</i><i class ='variable'>uni</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>hexrepr</i><i class ='delimiter'>(</i><i class ='variable'>t</i><i class ='delimiter'>,</i> <i class ='variable'>precision</i><i class ='delimiter'>=</i><i class ='integer'>4</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>t</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;None&#39;</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>t</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>TypeError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;0x%0*X&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>precision</i><i class ='delimiter'>,</i> <i class ='variable'>t</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='charlist'>&#39;(&#39;</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;, &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;0x%0*X&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>precision</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>)</i>
+                                <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>t</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;)&#39;</i>
+    <i class ='keyword'>except</i> <i class ='variable'>TypeError</i> <i class ='keyword'>as</i> <i class ='variable'>why</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;* failed to convert %r: %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>t</i><i class ='delimiter'>,</i> <i class ='variable'>why</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>raise</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>python_</i><i class ='variable'>mapdef_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>varname</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>,</i> <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>precisions</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='integer'>4</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>append</i> <i class ='delimiter'>=</i> <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;IDENTITY&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>map</i><i class ='delimiter'>:</i>
+        <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s = codecs.make_identity_dict(range(%d))&quot;</i> <i class ='operator'>%</i>
+               <i class ='delimiter'>(</i><i class ='variable'>varname</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>[</i><i class ='string'>&quot;IDENTITY&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s.update({&quot;</i> <i class ='operator'>%</i> <i class ='variable'>varname</i><i class ='delimiter'>)</i>
+        <i class ='variable'>splits</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>del</i> <i class ='variable'>map</i><i class ='delimiter'>[</i><i class ='string'>&quot;IDENTITY&quot;</i><i class ='delimiter'>]</i>
+        <i class ='variable'>identity</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s = {&quot;</i> <i class ='operator'>%</i> <i class ='variable'>varname</i><i class ='delimiter'>)</i>
+        <i class ='variable'>splits</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>identity</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+    <i class ='variable'>mappings</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>map</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='variable'>key_</i><i class ='variable'>precision</i><i class ='delimiter'>,</i> <i class ='variable'>value_</i><i class ='variable'>precision</i> <i class ='delimiter'>=</i> <i class ='variable'>precisions</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mapkey</i><i class ='delimiter'>,</i> <i class ='variable'>mapvalue</i> <i class ='keyword'>in</i> <i class ='variable'>mappings</i><i class ='delimiter'>:</i>
+        <i class ='variable'>mapcomment</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>mapkey</i><i class ='delimiter'>,</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='delimiter'>(</i><i class ='variable'>mapkey</i><i class ='delimiter'>,</i> <i class ='variable'>mapcomment</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>mapkey</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='variable'>mapcomment</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>mapvalue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mapkey</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>identity</i> <i class ='keyword'>and</i>
+            <i class ='variable'>mapkey</i> <i class ='operator'>==</i> <i class ='variable'>mapvalue</i> <i class ='keyword'>and</i>
+            <i class ='variable'>mapkey</i> <i class ='operator'>&lt;</i> <i class ='integer'>256</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='comment'># No need to include identity mappings, since these</i>
+            <i class ='comment'># are already set for the first 256 code points.</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>key</i> <i class ='delimiter'>=</i> <i class ='variable'>hexrepr</i><i class ='delimiter'>(</i><i class ='variable'>mapkey</i><i class ='delimiter'>,</i> <i class ='variable'>key_</i><i class ='variable'>precision</i><i class ='delimiter'>)</i>
+        <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>hexrepr</i><i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='variable'>value_</i><i class ='variable'>precision</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mapcomment</i> <i class ='keyword'>and</i> <i class ='variable'>comments</i><i class ='delimiter'>:</i>
+            <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %s: %s,\t#  %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='variable'>mapcomment</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %s: %s,&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>i</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>==</i> <i class ='integer'>4096</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Split the definition into parts to that the Python</i>
+            <i class ='comment'># parser doesn&#39;t dump core</i>
+            <i class ='keyword'>if</i> <i class ='variable'>splits</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;}&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;})&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s.update({&#39;</i> <i class ='operator'>%</i> <i class ='variable'>varname</i><i class ='delimiter'>)</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='variable'>splits</i> <i class ='delimiter'>=</i> <i class ='variable'>splits</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+    <i class ='keyword'>if</i> <i class ='variable'>splits</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;}&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;})&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>l</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>python_</i><i class ='variable'>tabledef_</i><i class ='variable'>code</i><i class ='delimiter'>(</i><i class ='variable'>varname</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>,</i> <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>key_</i><i class ='variable'>precision</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>append</i> <i class ='delimiter'>=</i> <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i>
+    <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s = (&#39;</i> <i class ='operator'>%</i> <i class ='variable'>varname</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Analyze map and create table dict</i>
+    <i class ='variable'>mappings</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>map</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>maxkey</i> <i class ='delimiter'>=</i> <i class ='integer'>255</i>
+    <i class ='keyword'>if</i> <i class ='charlist'>&#39;IDENTITY&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>map</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>key</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>256</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>del</i> <i class ='variable'>map</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;IDENTITY&#39;</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mapkey</i><i class ='delimiter'>,</i> <i class ='variable'>mapvalue</i> <i class ='keyword'>in</i> <i class ='variable'>mappings</i><i class ='delimiter'>:</i>
+        <i class ='variable'>mapcomment</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>mapkey</i><i class ='delimiter'>,</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='delimiter'>(</i><i class ='variable'>mapkey</i><i class ='delimiter'>,</i> <i class ='variable'>mapcomment</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>mapkey</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='variable'>mapcomment</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>mapvalue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mapkey</i> <i class ='operator'>==</i> <i class ='variable'>MISSING_</i><i class ='variable'>CODE</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>mapkey</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='variable'>mapcomment</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mapkey</i> <i class ='operator'>&gt;</i> <i class ='variable'>maxkey</i><i class ='delimiter'>:</i>
+            <i class ='variable'>maxkey</i> <i class ='delimiter'>=</i> <i class ='variable'>mapkey</i>
+    <i class ='keyword'>if</i> <i class ='variable'>maxkey</i> <i class ='operator'>&gt;</i> <i class ='variable'>MAX_</i><i class ='variable'>TABLE_</i><i class ='variable'>SIZE</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Table too large</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='comment'># Create table code</i>
+    <i class ='variable'>maxchar</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>key</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>maxkey</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>key</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>table</i><i class ='delimiter'>:</i>
+            <i class ='variable'>mapvalue</i> <i class ='delimiter'>=</i> <i class ='variable'>MISSING_</i><i class ='variable'>CODE</i>
+            <i class ='variable'>mapcomment</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;UNDEFINED&#39;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='variable'>mapcomment</i> <i class ='delimiter'>=</i> <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mapvalue</i> <i class ='operator'>==</i> <i class ='variable'>MISSING_</i><i class ='variable'>CODE</i><i class ='delimiter'>:</i>
+            <i class ='variable'>mapchar</i> <i class ='delimiter'>=</i> <i class ='variable'>UNI_</i><i class ='variable'>UNDEFINED</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>,</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='comment'># 1-n mappings not supported</i>
+                <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>mapchar</i> <i class ='delimiter'>=</i> <i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>mapvalue</i><i class ='delimiter'>)</i>
+        <i class ='variable'>maxchar</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>maxchar</i><i class ='delimiter'>,</i> <i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='variable'>mapchar</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>mapcomment</i> <i class ='keyword'>and</i> <i class ='variable'>comments</i><i class ='delimiter'>:</i>
+            <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %a \t#  %s -&gt; %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>mapchar</i><i class ='delimiter'>,</i>
+                                            <i class ='variable'>hexrepr</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>key_</i><i class ='variable'>precision</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                                            <i class ='variable'>mapcomment</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %a&#39;</i> <i class ='operator'>%</i> <i class ='variable'>mapchar</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>maxchar</i> <i class ='operator'>&lt;</i> <i class ='integer'>256</i><i class ='delimiter'>:</i>
+        <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %a \t## Widen to UCS2 for optimization&#39;</i> <i class ='operator'>%</i> <i class ='variable'>UNI_</i><i class ='variable'>UNDEFINED</i><i class ='delimiter'>)</i>
+    <i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;)&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>l</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>codegen</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>,</i> <i class ='variable'>encodingname</i><i class ='delimiter'>,</i> <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='multilineComment'>&quot;&quot;&quot; Returns Python source for the given map.
+
+        Comments are included in the source, if comments is true (default).
+
+    &quot;&quot;&quot;</i>
+    <i class ='comment'># Generate code</i>
+    <i class ='variable'>decoding_</i><i class ='variable'>map_</i><i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='variable'>python_</i><i class ='variable'>mapdef_</i><i class ='variable'>code</i><i class ='delimiter'>(</i>
+        <i class ='charlist'>&#39;decoding_map&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>map</i><i class ='delimiter'>,</i>
+        <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='variable'>comments</i><i class ='delimiter'>)</i>
+    <i class ='variable'>decoding_</i><i class ='variable'>table_</i><i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='variable'>python_</i><i class ='variable'>tabledef_</i><i class ='variable'>code</i><i class ='delimiter'>(</i>
+        <i class ='charlist'>&#39;decoding_table&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>map</i><i class ='delimiter'>,</i>
+        <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='variable'>comments</i><i class ='delimiter'>)</i>
+    <i class ='variable'>encoding_</i><i class ='variable'>map_</i><i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='variable'>python_</i><i class ='variable'>mapdef_</i><i class ='variable'>code</i><i class ='delimiter'>(</i>
+        <i class ='charlist'>&#39;encoding_map&#39;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>codecs</i><i class ='delimiter'>.</i><i class ='variable'>make_</i><i class ='variable'>encoding_</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>map</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+        <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='variable'>comments</i><i class ='delimiter'>,</i>
+        <i class ='variable'>precisions</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='integer'>4</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>decoding_</i><i class ='variable'>table_</i><i class ='variable'>code</i><i class ='delimiter'>:</i>
+        <i class ='variable'>suffix</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;table&#39;</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>suffix</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;map&#39;</i>
+
+    <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+        <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+&quot;&quot;&quot; Python Character Mapping Codec %s generated from &#39;</i><i class ='operator'>%</i><i class ='variable'>s</i><i class ='charlist'>&#39; with gencodec.py.
+
+&quot;&quot;&quot;#&quot;
+
+import codecs
+
+### Codec APIs
+
+class Codec(codecs.Codec):
+
+    def encode(self, input, errors=&#39;</i><i class ='variable'>strict</i><i class ='charlist'>&#39;):
+        return codecs.charmap_encode(input, errors, encoding_%s)
+
+    def decode(self, input, errors=&#39;</i><i class ='variable'>strict</i><i class ='charlist'>&#39;):
+        return codecs.charmap_decode(input, errors, decoding_%s)
+&#39;</i><i class ='charlist'>&#39;&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>encodingname</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>suffix</i><i class ='delimiter'>,</i> <i class ='variable'>suffix</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+class IncrementalEncoder(codecs.IncrementalEncoder):
+    def encode(self, input, final=False):
+        return codecs.charmap_encode(input, self.errors, encoding_%s)[0]
+
+class IncrementalDecoder(codecs.IncrementalDecoder):
+    def decode(self, input, final=False):
+        return codecs.charmap_decode(input, self.errors, decoding_%s)[0]&#39;</i><i class ='charlist'>&#39;&#39;</i> <i class ='operator'>%</i>
+        <i class ='delimiter'>(</i><i class ='variable'>suffix</i><i class ='delimiter'>,</i> <i class ='variable'>suffix</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;
+class StreamWriter(Codec, codecs.StreamWriter):
+    pass
+
+class StreamReader(Codec, codecs.StreamReader):
+    pass
+
+### encodings module API
+
+def getregentry():
+    return codecs.CodecInfo(
+        name=%r,
+        encode=Codec().encode,
+        decode=Codec().decode,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+        streamreader=StreamReader,
+        streamwriter=StreamWriter,
+    )
+&#39;</i><i class ='charlist'>&#39;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>encodingname</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;_&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Add decoding table or map (with preference to the table)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>decoding_</i><i class ='variable'>table_</i><i class ='variable'>code</i><i class ='delimiter'>:</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;
+### Decoding Map
+&#39;</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>decoding_</i><i class ='variable'>map_</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;
+### Decoding Table
+&#39;</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>decoding_</i><i class ='variable'>table_</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Add encoding map</i>
+    <i class ='keyword'>if</i> <i class ='variable'>decoding_</i><i class ='variable'>table_</i><i class ='variable'>code</i><i class ='delimiter'>:</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;
+### Encoding table
+encoding_table = codecs.charmap_build(decoding_table)
+&#39;</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;
+### Encoding Map
+&#39;</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>encoding_</i><i class ='variable'>map_</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Final new-line</i>
+    <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>expandtabs</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>pymap</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='variable'>map</i><i class ='delimiter'>,</i><i class ='variable'>pyfile</i><i class ='delimiter'>,</i><i class ='variable'>encodingname</i><i class ='delimiter'>,</i><i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='variable'>codegen</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='variable'>map</i><i class ='delimiter'>,</i><i class ='variable'>encodingname</i><i class ='delimiter'>,</i><i class ='variable'>comments</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>pyfile</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>marshalmap</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='variable'>map</i><i class ='delimiter'>,</i><i class ='variable'>marshalfile</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>d</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>e</i><i class ='delimiter'>,</i><i class ='delimiter'>(</i><i class ='variable'>u</i><i class ='delimiter'>,</i><i class ='variable'>c</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>map</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>d</i><i class ='delimiter'>[</i><i class ='variable'>e</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>u</i><i class ='delimiter'>,</i><i class ='variable'>c</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>marshalfile</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;wb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>marshal</i><i class ='delimiter'>.</i><i class ='variable'>dump</i><i class ='delimiter'>(</i><i class ='variable'>d</i><i class ='delimiter'>,</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>convertdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>dirprefix</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>nameprefix</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>mapnames</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mapname</i> <i class ='keyword'>in</i> <i class ='variable'>mapnames</i><i class ='delimiter'>:</i>
+        <i class ='variable'>mappathname</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>mapname</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>mappathname</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>mapname</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;_&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>nameprefix</i> <i class ='operator'>+</i> <i class ='variable'>name</i>
+        <i class ='variable'>codefile</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;.py&#39;</i>
+        <i class ='variable'>marshalfile</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;.mapping&#39;</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;converting %s to %s and %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>mapname</i><i class ='delimiter'>,</i>
+                                              <i class ='variable'>dirprefix</i> <i class ='operator'>+</i> <i class ='variable'>codefile</i><i class ='delimiter'>,</i>
+                                              <i class ='variable'>dirprefix</i> <i class ='operator'>+</i> <i class ='variable'>marshalfile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>map</i> <i class ='delimiter'>=</i> <i class ='variable'>readmap</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i><i class ='variable'>mapname</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>map</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;* map is empty; skipping&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>pymap</i><i class ='delimiter'>(</i><i class ='variable'>mappathname</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>,</i> <i class ='variable'>dirprefix</i> <i class ='operator'>+</i> <i class ='variable'>codefile</i><i class ='delimiter'>,</i><i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='variable'>comments</i><i class ='delimiter'>)</i>
+                <i class ='variable'>marshalmap</i><i class ='delimiter'>(</i><i class ='variable'>mappathname</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>,</i> <i class ='variable'>dirprefix</i> <i class ='operator'>+</i> <i class ='variable'>marshalfile</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>ValueError</i> <i class ='keyword'>as</i> <i class ='variable'>why</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;* conversion failed: %s&#39;</i> <i class ='operator'>%</i> <i class ='variable'>why</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>raise</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>rewritepythondir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>dirprefix</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>comments</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>mapnames</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>mapname</i> <i class ='keyword'>in</i> <i class ='variable'>mapnames</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>mapname</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.mapping&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>mapname</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-len</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.mapping&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='variable'>codefile</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;.py&#39;</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;converting %s to %s&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>mapname</i><i class ='delimiter'>,</i>
+                                       <i class ='variable'>dirprefix</i> <i class ='operator'>+</i> <i class ='variable'>codefile</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>mapname</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='variable'>map</i> <i class ='delimiter'>=</i> <i class ='variable'>marshal</i><i class ='delimiter'>.</i><i class ='variable'>load</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>map</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;* map is empty; skipping&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>pymap</i><i class ='delimiter'>(</i><i class ='variable'>mapname</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>,</i> <i class ='variable'>dirprefix</i> <i class ='operator'>+</i> <i class ='variable'>codefile</i><i class ='delimiter'>,</i><i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='variable'>comments</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>ValueError</i> <i class ='keyword'>as</i> <i class ='variable'>why</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;* conversion failed: %s&#39;</i> <i class ='operator'>%</i> <i class ='variable'>why</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+    <i class ='keyword'>if</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>convertdir</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>rewritepythondir</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

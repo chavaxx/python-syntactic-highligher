@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+Animated Towers of Hanoi using Tk with optional bitmap file in background.
+
+Usage: hanoi.py [n [bitmapfile]]
+
+n is the number of pieces to animate; default is 4, maximum 15.
+
+The bitmap file can be any X11 bitmap file (look in /usr/include/X11/bitmaps for
+samples); it is displayed as the background of the animation.  Default is no
+bitmap.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='variable'>Tk</i><i class ='delimiter'>,</i> <i class ='variable'>Canvas</i>
+
+<i class ='comment'># Basic Towers-of-Hanoi algorithm: move n pieces from a to b, using c</i>
+<i class ='comment'># as temporary.  For each move, call report()</i>
+<i class ='keyword'>def</i> <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>,</i> <i class ='variable'>c</i><i class ='delimiter'>,</i> <i class ='variable'>report</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>n</i> <i class ='operator'>&lt;=</i> <i class ='integer'>0</i><i class ='delimiter'>:</i> <i class ='keyword'>return</i>
+    <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>n-1</i><i class ='delimiter'>,</i> <i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>c</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>,</i> <i class ='variable'>report</i><i class ='delimiter'>)</i>
+    <i class ='variable'>report</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>)</i>
+    <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>n-1</i><i class ='delimiter'>,</i> <i class ='variable'>c</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>,</i> <i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>report</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># The graphical interface</i>
+<i class ='keyword'>class</i> <i class ='variable'>Tkhanoi</i><i class ='delimiter'>:</i>
+
+    <i class ='comment'># Create our objects</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>bitmap</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>n</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tk</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i> <i class ='delimiter'>=</i> <i class ='variable'>Canvas</i><i class ='delimiter'>(</i><i class ='variable'>tk</i><i class ='delimiter'>)</i>
+        <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>width</i><i class ='delimiter'>,</i> <i class ='variable'>height</i> <i class ='delimiter'>=</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>getint</i><i class ='delimiter'>(</i><i class ='variable'>c</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;width&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>getint</i><i class ='delimiter'>(</i><i class ='variable'>c</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;height&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Add background bitmap</i>
+        <i class ='keyword'>if</i> <i class ='variable'>bitmap</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>bitmap</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>bitmap</i><i class ='delimiter'>(</i><i class ='variable'>width</i><i class ='operator'>//</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='operator'>//</i><i class ='integer'>2</i><i class ='delimiter'>,</i>
+                                          <i class ='variable'>bitmap</i><i class ='delimiter'>=</i><i class ='variable'>bitmap</i><i class ='delimiter'>,</i>
+                                          <i class ='variable'>foreground</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;blue&#39;</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Generate pegs</i>
+        <i class ='variable'>pegwidth</i> <i class ='delimiter'>=</i> <i class ='integer'>10</i>
+        <i class ='variable'>pegheight</i> <i class ='delimiter'>=</i> <i class ='variable'>height</i><i class ='operator'>//</i><i class ='integer'>2</i>
+        <i class ='variable'>pegdist</i> <i class ='delimiter'>=</i> <i class ='variable'>width</i><i class ='operator'>//</i><i class ='integer'>3</i>
+        <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>pegdist-pegwidth</i><i class ='delimiter'>)</i><i class ='operator'>//</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='operator'>*</i><i class ='integer'>1</i><i class ='operator'>//</i><i class ='integer'>3</i>
+        <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>x1</i><i class ='operator'>+</i><i class ='variable'>pegwidth</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='operator'>+</i><i class ='variable'>pegheight</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>p</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>rectangle</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;black&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegs</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>)</i>
+        <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x1</i><i class ='operator'>+</i><i class ='variable'>pegdist</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='operator'>+</i><i class ='variable'>pegdist</i>
+        <i class ='variable'>p</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>rectangle</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;black&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegs</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>)</i>
+        <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x1</i><i class ='operator'>+</i><i class ='variable'>pegdist</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='operator'>+</i><i class ='variable'>pegdist</i>
+        <i class ='variable'>p</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>rectangle</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;black&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegs</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Generate pieces</i>
+        <i class ='variable'>pieceheight</i> <i class ='delimiter'>=</i> <i class ='variable'>pegheight</i><i class ='operator'>//</i><i class ='integer'>16</i>
+        <i class ='variable'>maxpiecewidth</i> <i class ='delimiter'>=</i> <i class ='variable'>pegdist</i><i class ='operator'>*</i><i class ='integer'>2</i><i class ='operator'>//</i><i class ='integer'>3</i>
+        <i class ='variable'>minpiecewidth</i> <i class ='delimiter'>=</i> <i class ='integer'>2</i><i class ='operator'>*</i><i class ='variable'>pegwidth</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegstate</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pieces</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>pegdist-maxpiecewidth</i><i class ='delimiter'>)</i><i class ='operator'>//</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='variable'>-pieceheight-2</i>
+        <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>x1</i><i class ='operator'>+</i><i class ='variable'>maxpiecewidth</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='operator'>+</i><i class ='variable'>pieceheight</i>
+        <i class ='variable'>dx</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>maxpiecewidth-minpiecewidth</i><i class ='delimiter'>)</i> <i class ='operator'>//</i> <i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='operator'>*</i><i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>n-1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>p</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>rectangle</i><i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;red&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pieces</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>p</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegstate</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i> <i class ='delimiter'>=</i> <i class ='variable'>x1</i> <i class ='operator'>+</i> <i class ='variable'>dx</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='variable'>-dx</i>
+            <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>y1</i> <i class ='variable'>-</i> <i class ='variable'>pieceheight-2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i><i class ='variable'>-pieceheight-2</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>after</i><i class ='delimiter'>(</i><i class ='integer'>25</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Run -- never returns</i>
+    <i class ='keyword'>def</i> <i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>report</i><i class ='delimiter'>)</i>
+            <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>report</i><i class ='delimiter'>)</i>
+            <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>report</i><i class ='delimiter'>)</i>
+            <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>report</i><i class ='delimiter'>)</i>
+            <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>report</i><i class ='delimiter'>)</i>
+            <i class ='variable'>hanoi</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>report</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Reporting callback for the actual hanoi function</i>
+    <i class ='keyword'>def</i> <i class ='variable'>report</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegstate</i><i class ='delimiter'>[</i><i class ='variable'>a</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='variable'>i</i><i class ='delimiter'>:</i> <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i> <i class ='comment'># Assertion</i>
+        <i class ='keyword'>del</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegstate</i><i class ='delimiter'>[</i><i class ='variable'>a</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+        <i class ='variable'>p</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pieces</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+        <i class ='variable'>c</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>canvas</i>
+
+        <i class ='comment'># Lift the piece above peg a</i>
+        <i class ='variable'>ax1</i><i class ='delimiter'>,</i> <i class ='variable'>ay1</i><i class ='delimiter'>,</i> <i class ='variable'>ax2</i><i class ='delimiter'>,</i> <i class ='variable'>ay2</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>bbox</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegs</i><i class ='delimiter'>[</i><i class ='variable'>a</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>bbox</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>y2</i> <i class ='operator'>&lt;</i> <i class ='variable'>ay1</i><i class ='delimiter'>:</i> <i class ='keyword'>break</i>
+            <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Move it towards peg b</i>
+        <i class ='variable'>bx1</i><i class ='delimiter'>,</i> <i class ='variable'>by1</i><i class ='delimiter'>,</i> <i class ='variable'>bx2</i><i class ='delimiter'>,</i> <i class ='variable'>by2</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>bbox</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegs</i><i class ='delimiter'>[</i><i class ='variable'>b</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>newcenter</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>bx1</i><i class ='operator'>+</i><i class ='variable'>bx2</i><i class ='delimiter'>)</i><i class ='operator'>//</i><i class ='integer'>2</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>bbox</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>)</i>
+            <i class ='variable'>center</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>x1</i><i class ='operator'>+</i><i class ='variable'>x2</i><i class ='delimiter'>)</i><i class ='operator'>//</i><i class ='integer'>2</i>
+            <i class ='keyword'>if</i> <i class ='variable'>center</i> <i class ='operator'>==</i> <i class ='variable'>newcenter</i><i class ='delimiter'>:</i> <i class ='keyword'>break</i>
+            <i class ='keyword'>if</i> <i class ='variable'>center</i> <i class ='operator'>&gt;</i> <i class ='variable'>newcenter</i><i class ='delimiter'>:</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Move it down on top of the previous piece</i>
+        <i class ='variable'>pieceheight</i> <i class ='delimiter'>=</i> <i class ='variable'>y2</i><i class ='variable'>-y1</i>
+        <i class ='variable'>newbottom</i> <i class ='delimiter'>=</i> <i class ='variable'>by2</i> <i class ='variable'>-</i> <i class ='variable'>pieceheight</i><i class ='operator'>*</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegstate</i><i class ='delimiter'>[</i><i class ='variable'>b</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='integer'>2</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i><i class ='delimiter'>,</i> <i class ='variable'>x2</i><i class ='delimiter'>,</i> <i class ='variable'>y2</i> <i class ='delimiter'>=</i> <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>bbox</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>y2</i> <i class ='operator'>&gt;=</i> <i class ='variable'>newbottom</i><i class ='delimiter'>:</i> <i class ='keyword'>break</i>
+            <i class ='variable'>c</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='variable'>p</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Update peg state</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pegstate</i><i class ='delimiter'>[</i><i class ='variable'>b</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+    <i class ='comment'># First argument is number of pegs, default 4</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='integer'>4</i>
+
+    <i class ='comment'># Second argument is bitmap file, default none</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>bitmap</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i>
+        <i class ='comment'># Reverse meaning of leading &#39;@&#39; compared to Tk</i>
+        <i class ='keyword'>if</i> <i class ='variable'>bitmap</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;@&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>bitmap</i> <i class ='delimiter'>=</i> <i class ='variable'>bitmap</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i> <i class ='variable'>bitmap</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;@&#39;</i> <i class ='operator'>+</i> <i class ='variable'>bitmap</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>bitmap</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='comment'># Create the graphical objects...</i>
+    <i class ='variable'>h</i> <i class ='delimiter'>=</i> <i class ='variable'>Tkhanoi</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='variable'>bitmap</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># ...and run!</i>
+    <i class ='variable'>h</i><i class ='delimiter'>.</i><i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Call main when run as script</i>
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

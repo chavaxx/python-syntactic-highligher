@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'># Parse Makefiles and Python Setup(.in) files.</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+
+
+<i class ='comment'># Extract variable definitions from a Makefile.</i>
+<i class ='comment'># Return a dictionary mapping names to values.</i>
+<i class ='comment'># May raise IOError.</i>
+
+<i class ='variable'>makevardef</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^([a-zA-Z0-9_]+)[ \t]*=(.*)&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>getmakevars</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>variables</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='variable'>pendingline</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>pendingline</i><i class ='delimiter'>:</i>
+                <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>pendingline</i> <i class ='operator'>+</i> <i class ='variable'>line</i>
+                <i class ='variable'>pendingline</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\\\n&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>pendingline</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-2</i><i class ='delimiter'>]</i>
+            <i class ='variable'>matchobj</i> <i class ='delimiter'>=</i> <i class ='variable'>makevardef</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>matchobj</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>
+            <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>matchobj</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+            <i class ='comment'># Strip trailing comment</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>&gt;=</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+            <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>variables</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i>
+    <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>variables</i>
+
+
+<i class ='comment'># Parse a Python Setup(.in) file.</i>
+<i class ='comment'># Return two dictionaries, the first mapping modules to their</i>
+<i class ='comment'># definitions, the second mapping variable names to their values.</i>
+<i class ='comment'># May raise IOError.</i>
+
+<i class ='variable'>setupvardef</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;^([a-zA-Z0-9_]+)=(.*)&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>getsetupinfo</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>modules</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>variables</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='variable'>pendingline</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>pendingline</i><i class ='delimiter'>:</i>
+                <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>pendingline</i> <i class ='operator'>+</i> <i class ='variable'>line</i>
+                <i class ='variable'>pendingline</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='comment'># Strip comments</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;#&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>&gt;=</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>if</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\\\n&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>pendingline</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-2</i><i class ='delimiter'>]</i>
+                <i class ='keyword'>continue</i>
+            <i class ='variable'>matchobj</i> <i class ='delimiter'>=</i> <i class ='variable'>setupvardef</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>matchobj</i><i class ='delimiter'>:</i>
+                <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>matchobj</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+                <i class ='variable'>variables</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>words</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>modules</i><i class ='delimiter'>[</i><i class ='variable'>words</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>words</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>modules</i><i class ='delimiter'>,</i> <i class ='variable'>variables</i>
+
+
+<i class ='comment'># Test the above functions.</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+    <i class ='keyword'>import</i> <i class ='variable'>os</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;usage: python parsesetup.py Makefile*|Setup* ...&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>base</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>basename</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>base</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>8</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;Makefile&#39;</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Make style parsing:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>arg</i><i class ='delimiter'>)</i>
+            <i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='variable'>getmakevars</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+            <i class ='variable'>prdict</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>base</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>5</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;Setup&#39;</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Setup style parsing:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>arg</i><i class ='delimiter'>)</i>
+            <i class ='variable'>m</i><i class ='delimiter'>,</i> <i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='variable'>getsetupinfo</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+            <i class ='variable'>prdict</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>)</i>
+            <i class ='variable'>prdict</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;is neither a Makefile nor a Setup file&#39;</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;(name must begin with &quot;Makefile&quot; or &quot;Setup&quot;)&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>prdict</i><i class ='delimiter'>(</i><i class ='variable'>d</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>keys</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>d</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>key</i> <i class ='keyword'>in</i> <i class ='variable'>keys</i><i class ='delimiter'>:</i>
+        <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>d</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%-15s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

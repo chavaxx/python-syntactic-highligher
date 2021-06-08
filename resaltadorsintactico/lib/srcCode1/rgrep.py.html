@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;Reverse grep.
+
+Usage: rgrep [-i] pattern file
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>bufsize</i> <i class ='delimiter'>=</i> <i class ='integer'>64</i> <i class ='operator'>*</i> <i class ='integer'>1024</i>
+    <i class ='variable'>reflags</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='string'>&quot;i&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>o</i><i class ='delimiter'>,</i> <i class ='variable'>a</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-i&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>reflags</i> <i class ='delimiter'>=</i> <i class ='variable'>reflags</i> <i class ='operator'>|</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>IGNORECASE</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='string'>&quot;not enough arguments&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='string'>&quot;exactly one file argument required&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>pattern</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>prog</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>pattern</i><i class ='delimiter'>,</i> <i class ='variable'>reflags</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='string'>&quot;error in regular expression: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='string'>&quot;can&#39;t open %r: %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>tell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>leftover</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>while</i> <i class ='variable'>pos</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>min</i><i class ='delimiter'>(</i><i class ='variable'>pos</i><i class ='delimiter'>,</i> <i class ='variable'>bufsize</i><i class ='delimiter'>)</i>
+            <i class ='variable'>pos</i> <i class ='delimiter'>=</i> <i class ='variable'>pos</i> <i class ='variable'>-</i> <i class ='variable'>size</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>seek</i><i class ='delimiter'>(</i><i class ='variable'>pos</i><i class ='delimiter'>)</i>
+            <i class ='variable'>buffer</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='variable'>size</i><i class ='delimiter'>)</i>
+            <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='variable'>buffer</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>del</i> <i class ='variable'>buffer</i>
+            <i class ='keyword'>if</i> <i class ='variable'>leftover</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>del</i> <i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>leftover</i>
+            <i class ='keyword'>if</i> <i class ='variable'>pos</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                <i class ='variable'>leftover</i> <i class ='delimiter'>=</i> <i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+                <i class ='keyword'>del</i> <i class ='variable'>lines</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>leftover</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>reversed</i><i class ='delimiter'>(</i><i class ='variable'>lines</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>prog</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>,</i> <i class ='variable'>code</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

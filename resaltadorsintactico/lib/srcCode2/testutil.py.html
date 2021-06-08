@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>import</i> <i class ='variable'>importlib</i><i class ='delimiter'>.</i><i class ='variable'>util</i>
+<i class ='keyword'>import</i> <i class ='variable'>io</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>pathlib</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>textwrap</i>
+<i class ='keyword'>import</i> <i class ='variable'>tokenize</i>
+<i class ='keyword'>import</i> <i class ='variable'>token</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>typing</i> <i class ='keyword'>import</i> <i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='variable'>cast</i><i class ='delimiter'>,</i> <i class ='variable'>Dict</i><i class ='delimiter'>,</i> <i class ='variable'>IO</i><i class ='delimiter'>,</i> <i class ='variable'>Type</i><i class ='delimiter'>,</i> <i class ='variable'>Final</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>build</i> <i class ='keyword'>import</i> <i class ='variable'>compile_</i><i class ='variable'>c_</i><i class ='variable'>extension</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>c_</i><i class ='variable'>generator</i> <i class ='keyword'>import</i> <i class ='variable'>CParserGenerator</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>grammar</i> <i class ='keyword'>import</i> <i class ='variable'>Grammar</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>grammar_</i><i class ='variable'>parser</i> <i class ='keyword'>import</i> <i class ='variable'>GeneratedParser</i> <i class ='keyword'>as</i> <i class ='variable'>GrammarParser</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>parser</i> <i class ='keyword'>import</i> <i class ='variable'>Parser</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>python_</i><i class ='variable'>generator</i> <i class ='keyword'>import</i> <i class ='variable'>PythonParserGenerator</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>tokenizer</i> <i class ='keyword'>import</i> <i class ='variable'>Tokenizer</i>
+
+<i class ='variable'>ALL_</i><i class ='variable'>TOKENS</i> <i class ='delimiter'>=</i> <i class ='variable'>token</i><i class ='delimiter'>.</i><i class ='variable'>tok_</i><i class ='variable'>name</i>
+<i class ='variable'>EXACT_</i><i class ='variable'>TOKENS</i> <i class ='delimiter'>=</i> <i class ='variable'>token</i><i class ='delimiter'>.</i><i class ='variable'>EXACT_</i><i class ='variable'>TOKEN_</i><i class ='variable'>TYPES</i>  <i class ='comment'># type: ignore</i>
+<i class ='variable'>NON_</i><i class ='variable'>EXACT_</i><i class ='variable'>TOKENS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i>
+    <i class ='variable'>name</i> <i class ='keyword'>for</i> <i class ='variable'>index</i><i class ='delimiter'>,</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>token</i><i class ='delimiter'>.</i><i class ='variable'>tok_</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='keyword'>if</i> <i class ='variable'>index</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>EXACT_</i><i class ='variable'>TOKENS</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>}</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>generate_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='variable'>grammar</i><i class ='delimiter'>:</i> <i class ='variable'>Grammar</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Type</i><i class ='delimiter'>[</i><i class ='variable'>Parser</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Generate a parser.</i>
+    <i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='variable'>io</i><i class ='delimiter'>.</i><i class ='variable'>StringIO</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>genr</i> <i class ='delimiter'>=</i> <i class ='variable'>PythonParserGenerator</i><i class ='delimiter'>(</i><i class ='variable'>grammar</i><i class ='delimiter'>,</i> <i class ='variable'>out</i><i class ='delimiter'>)</i>
+    <i class ='variable'>genr</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;string&gt;&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Load the generated parser class.</i>
+    <i class ='variable'>ns</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Any</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>exec</i><i class ='delimiter'>(</i><i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>getvalue</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>ns</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>ns</i><i class ='delimiter'>[</i><i class ='string'>&quot;GeneratedParser&quot;</i><i class ='delimiter'>]</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>:</i> <i class ='variable'>IO</i><i class ='delimiter'>[</i><i class ='datatype'>bytes</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>parser_</i><i class ='keyword'>class</i><i class ='delimiter'>:</i> <i class ='variable'>Type</i><i class ='delimiter'>[</i><i class ='variable'>Parser</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Any</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Run a parser on a file (stream).</i>
+    <i class ='variable'>tokenizer</i> <i class ='delimiter'>=</i> <i class ='variable'>Tokenizer</i><i class ='delimiter'>(</i><i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>generate_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>  <i class ='comment'># type: ignore # typeshed issue #3515</i>
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>parser_</i><i class ='keyword'>class</i><i class ='delimiter'>(</i><i class ='variable'>tokenizer</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>=</i><i class ='variable'>verbose</i><i class ='delimiter'>)</i>
+    <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>result</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>make_</i><i class ='variable'>syntax_</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>result</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>parse_</i><i class ='variable'>string</i><i class ='delimiter'>(</i>
+    <i class ='variable'>source</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>parser_</i><i class ='keyword'>class</i><i class ='delimiter'>:</i> <i class ='variable'>Type</i><i class ='delimiter'>[</i><i class ='variable'>Parser</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='delimiter'>,</i> <i class ='variable'>dedent</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+<i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Any</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Run the parser on a string.</i>
+    <i class ='keyword'>if</i> <i class ='variable'>dedent</i><i class ='delimiter'>:</i>
+        <i class ='variable'>source</i> <i class ='delimiter'>=</i> <i class ='variable'>textwrap</i><i class ='delimiter'>.</i><i class ='variable'>dedent</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+    <i class ='variable'>file</i> <i class ='delimiter'>=</i> <i class ='variable'>io</i><i class ='delimiter'>.</i><i class ='variable'>StringIO</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>run_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>parser_</i><i class ='keyword'>class</i><i class ='delimiter'>,</i> <i class ='variable'>verbose</i><i class ='delimiter'>=</i><i class ='variable'>verbose</i><i class ='delimiter'>)</i>  <i class ='comment'># type: ignore # typeshed issue #3515</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Type</i><i class ='delimiter'>[</i><i class ='variable'>Parser</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Combine parse_string() and generate_parser().</i>
+    <i class ='variable'>grammar</i> <i class ='delimiter'>=</i> <i class ='variable'>parse_</i><i class ='variable'>string</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>,</i> <i class ='variable'>GrammarParser</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>generate_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='variable'>grammar</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>import_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>full_</i><i class ='variable'>name</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>path</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Any</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Import a python module from a path&quot;&quot;&quot;</i>
+
+    <i class ='variable'>spec</i> <i class ='delimiter'>=</i> <i class ='variable'>importlib</i><i class ='delimiter'>.</i><i class ='variable'>util</i><i class ='delimiter'>.</i><i class ='variable'>spec_</i><i class ='variable'>from_</i><i class ='variable'>file_</i><i class ='variable'>location</i><i class ='delimiter'>(</i><i class ='variable'>full_</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>path</i><i class ='delimiter'>)</i>
+    <i class ='variable'>mod</i> <i class ='delimiter'>=</i> <i class ='variable'>importlib</i><i class ='delimiter'>.</i><i class ='variable'>util</i><i class ='delimiter'>.</i><i class ='variable'>module_</i><i class ='variable'>from_</i><i class ='variable'>spec</i><i class ='delimiter'>(</i><i class ='variable'>spec</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># We assume this is not None and has an exec_module() method.</i>
+    <i class ='comment'># See https://docs.python.org/3/reference/import.html?highlight=exec_module#loading</i>
+    <i class ='variable'>loader</i> <i class ='delimiter'>=</i> <i class ='variable'>cast</i><i class ='delimiter'>(</i><i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='variable'>spec</i><i class ='delimiter'>.</i><i class ='variable'>loader</i><i class ='delimiter'>)</i>
+    <i class ='variable'>loader</i><i class ='delimiter'>.</i><i class ='variable'>exec_</i><i class ='variable'>module</i><i class ='delimiter'>(</i><i class ='variable'>mod</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>mod</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>generate_</i><i class ='variable'>c_</i><i class ='variable'>parser_</i><i class ='variable'>source</i><i class ='delimiter'>(</i><i class ='variable'>grammar</i><i class ='delimiter'>:</i> <i class ='variable'>Grammar</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+    <i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='variable'>io</i><i class ='delimiter'>.</i><i class ='variable'>StringIO</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>genr</i> <i class ='delimiter'>=</i> <i class ='variable'>CParserGenerator</i><i class ='delimiter'>(</i><i class ='variable'>grammar</i><i class ='delimiter'>,</i> <i class ='variable'>ALL_</i><i class ='variable'>TOKENS</i><i class ='delimiter'>,</i> <i class ='variable'>EXACT_</i><i class ='variable'>TOKENS</i><i class ='delimiter'>,</i> <i class ='variable'>NON_</i><i class ='variable'>EXACT_</i><i class ='variable'>TOKENS</i><i class ='delimiter'>,</i> <i class ='variable'>out</i><i class ='delimiter'>)</i>
+    <i class ='variable'>genr</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;string&gt;&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>getvalue</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>generate_</i><i class ='variable'>parser_</i><i class ='variable'>c_</i><i class ='variable'>extension</i><i class ='delimiter'>(</i>
+    <i class ='variable'>grammar</i><i class ='delimiter'>:</i> <i class ='variable'>Grammar</i><i class ='delimiter'>,</i> <i class ='variable'>path</i><i class ='delimiter'>:</i> <i class ='variable'>pathlib</i><i class ='delimiter'>.</i><i class ='variable'>PurePath</i><i class ='delimiter'>,</i> <i class ='variable'>debug</i><i class ='delimiter'>:</i> <i class ='datatype'>bool</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+<i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Any</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Generate a parser c extension for the given grammar in the given path
+
+    Returns a module object with a parse_string() method.
+    TODO: express that using a Protocol.
+    &quot;&quot;&quot;</i>
+    <i class ='comment'># Make sure that the working directory is empty: reusing non-empty temporary</i>
+    <i class ='comment'># directories when generating extensions can lead to segmentation faults.</i>
+    <i class ='comment'># Check issue #95 (https://github.com/gvanrossum/pegen/issues/95) for more</i>
+    <i class ='comment'># context.</i>
+    <i class ='keyword'>assert</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i>
+    <i class ='variable'>source</i> <i class ='delimiter'>=</i> <i class ='variable'>path</i> <i class ='operator'>/</i> <i class ='string'>&quot;parse.c&quot;</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>encoding</i><i class ='delimiter'>=</i><i class ='string'>&quot;utf-8&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>file</i><i class ='delimiter'>:</i>
+        <i class ='variable'>genr</i> <i class ='delimiter'>=</i> <i class ='variable'>CParserGenerator</i><i class ='delimiter'>(</i>
+            <i class ='variable'>grammar</i><i class ='delimiter'>,</i> <i class ='variable'>ALL_</i><i class ='variable'>TOKENS</i><i class ='delimiter'>,</i> <i class ='variable'>EXACT_</i><i class ='variable'>TOKENS</i><i class ='delimiter'>,</i> <i class ='variable'>NON_</i><i class ='variable'>EXACT_</i><i class ='variable'>TOKENS</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>debug</i><i class ='delimiter'>=</i><i class ='variable'>debug</i>
+        <i class ='delimiter'>)</i>
+        <i class ='variable'>genr</i><i class ='delimiter'>.</i><i class ='variable'>generate</i><i class ='delimiter'>(</i><i class ='string'>&quot;parse.c&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>compile_</i><i class ='variable'>c_</i><i class ='variable'>extension</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>=</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>print_</i><i class ='variable'>memstats</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+    <i class ='variable'>MiB</i><i class ='delimiter'>:</i> <i class ='variable'>Final</i> <i class ='delimiter'>=</i> <i class ='integer'>2</i> <i class ='operator'>**</i> <i class ='integer'>20</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>import</i> <i class ='variable'>psutil</i>  <i class ='comment'># type: ignore</i>
+    <i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Memory stats:&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>process</i> <i class ='delimiter'>=</i> <i class ='variable'>psutil</i><i class ='delimiter'>.</i><i class ='variable'>Process</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>meminfo</i> <i class ='delimiter'>=</i> <i class ='variable'>process</i><i class ='delimiter'>.</i><i class ='variable'>memory_</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>res</i><i class ='delimiter'>[</i><i class ='string'>&quot;rss&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>meminfo</i><i class ='delimiter'>.</i><i class ='variable'>rss</i> <i class ='operator'>/</i> <i class ='variable'>MiB</i>
+    <i class ='variable'>res</i><i class ='delimiter'>[</i><i class ='string'>&quot;vms&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>meminfo</i><i class ='delimiter'>.</i><i class ='variable'>vms</i> <i class ='operator'>/</i> <i class ='variable'>MiB</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>platform</i> <i class ='operator'>==</i> <i class ='string'>&quot;win32&quot;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>res</i><i class ='delimiter'>[</i><i class ='string'>&quot;maxrss&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>meminfo</i><i class ='delimiter'>.</i><i class ='variable'>peak_</i><i class ='variable'>wset</i> <i class ='operator'>/</i> <i class ='variable'>MiB</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='comment'># See https://stackoverflow.com/questions/938733/total-memory-used-by-python-process</i>
+        <i class ='keyword'>import</i> <i class ='variable'>resource</i>  <i class ='comment'># Since it doesn&#39;t exist on Windows.</i>
+
+        <i class ='variable'>rusage</i> <i class ='delimiter'>=</i> <i class ='variable'>resource</i><i class ='delimiter'>.</i><i class ='variable'>getrusage</i><i class ='delimiter'>(</i><i class ='variable'>resource</i><i class ='delimiter'>.</i><i class ='variable'>RUSAGE_</i><i class ='variable'>SELF</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>platform</i> <i class ='operator'>==</i> <i class ='string'>&quot;darwin&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>factor</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>factor</i> <i class ='delimiter'>=</i> <i class ='integer'>1024</i>  <i class ='comment'># Linux</i>
+        <i class ='variable'>res</i><i class ='delimiter'>[</i><i class ='string'>&quot;maxrss&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>rusage</i><i class ='delimiter'>.</i><i class ='variable'>ru_</i><i class ='variable'>maxrss</i> <i class ='operator'>*</i> <i class ='variable'>factor</i> <i class ='operator'>/</i> <i class ='variable'>MiB</i>
+    <i class ='keyword'>for</i> <i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>value</i> <i class ='keyword'>in</i> <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;  {key:12.12s}: {value:10.0f} MiB&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

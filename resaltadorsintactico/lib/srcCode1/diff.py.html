@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='multilineComment'>&quot;&quot;&quot; Command line interface to difflib.py providing diffs in four formats:
+
+* ndiff:    lists every line and highlights interline changes.
+* context:  highlights clusters of changes in a before/after format.
+* unified:  highlights clusters of changes in an inline format.
+* html:     generates side by side comparison with change highlights.
+
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>difflib</i><i class ='delimiter'>,</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>from</i> <i class ='variable'>datetime</i> <i class ='keyword'>import</i> <i class ='variable'>datetime</i><i class ='delimiter'>,</i> <i class ='variable'>timezone</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>file_</i><i class ='variable'>mtime</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>t</i> <i class ='delimiter'>=</i> <i class ='variable'>datetime</i><i class ='delimiter'>.</i><i class ='variable'>fromtimestamp</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>stat</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>st_</i><i class ='variable'>mtime</i><i class ='delimiter'>,</i>
+                               <i class ='variable'>timezone</i><i class ='delimiter'>.</i><i class ='variable'>utc</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>t</i><i class ='delimiter'>.</i><i class ='variable'>astimezone</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>isoformat</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-c&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Produce a context format diff (default)&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-u&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Produce a unified format diff&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-m&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Produce HTML side by side diff &#39;</i>
+                             <i class ='charlist'>&#39;(can use -c and -l in conjunction)&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-n&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Produce a ndiff format diff&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-l&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--lines&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>=</i><i class ='datatype'>int</i><i class ='delimiter'>,</i> <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='integer'>3</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Set number of context lines (default 3)&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;fromfile&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;tofile&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>options</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>lines</i>
+    <i class ='variable'>fromfile</i> <i class ='delimiter'>=</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>fromfile</i>
+    <i class ='variable'>tofile</i> <i class ='delimiter'>=</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>tofile</i>
+
+    <i class ='variable'>fromdate</i> <i class ='delimiter'>=</i> <i class ='variable'>file_</i><i class ='variable'>mtime</i><i class ='delimiter'>(</i><i class ='variable'>fromfile</i><i class ='delimiter'>)</i>
+    <i class ='variable'>todate</i> <i class ='delimiter'>=</i> <i class ='variable'>file_</i><i class ='variable'>mtime</i><i class ='delimiter'>(</i><i class ='variable'>tofile</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fromfile</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>ff</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fromlines</i> <i class ='delimiter'>=</i> <i class ='variable'>ff</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>tofile</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>tf</i><i class ='delimiter'>:</i>
+        <i class ='variable'>tolines</i> <i class ='delimiter'>=</i> <i class ='variable'>tf</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>u</i><i class ='delimiter'>:</i>
+        <i class ='variable'>diff</i> <i class ='delimiter'>=</i> <i class ='variable'>difflib</i><i class ='delimiter'>.</i><i class ='variable'>unified_</i><i class ='variable'>diff</i><i class ='delimiter'>(</i><i class ='variable'>fromlines</i><i class ='delimiter'>,</i> <i class ='variable'>tolines</i><i class ='delimiter'>,</i> <i class ='variable'>fromfile</i><i class ='delimiter'>,</i> <i class ='variable'>tofile</i><i class ='delimiter'>,</i> <i class ='variable'>fromdate</i><i class ='delimiter'>,</i> <i class ='variable'>todate</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>=</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>:</i>
+        <i class ='variable'>diff</i> <i class ='delimiter'>=</i> <i class ='variable'>difflib</i><i class ='delimiter'>.</i><i class ='variable'>ndiff</i><i class ='delimiter'>(</i><i class ='variable'>fromlines</i><i class ='delimiter'>,</i> <i class ='variable'>tolines</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>m</i><i class ='delimiter'>:</i>
+        <i class ='variable'>diff</i> <i class ='delimiter'>=</i> <i class ='variable'>difflib</i><i class ='delimiter'>.</i><i class ='variable'>HtmlDiff</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>make_</i><i class ='variable'>file</i><i class ='delimiter'>(</i><i class ='variable'>fromlines</i><i class ='delimiter'>,</i><i class ='variable'>tolines</i><i class ='delimiter'>,</i><i class ='variable'>fromfile</i><i class ='delimiter'>,</i><i class ='variable'>tofile</i><i class ='delimiter'>,</i><i class ='variable'>context</i><i class ='delimiter'>=</i><i class ='variable'>options</i><i class ='delimiter'>.</i><i class ='variable'>c</i><i class ='delimiter'>,</i><i class ='variable'>numlines</i><i class ='delimiter'>=</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>diff</i> <i class ='delimiter'>=</i> <i class ='variable'>difflib</i><i class ='delimiter'>.</i><i class ='variable'>context_</i><i class ='variable'>diff</i><i class ='delimiter'>(</i><i class ='variable'>fromlines</i><i class ='delimiter'>,</i> <i class ='variable'>tolines</i><i class ='delimiter'>,</i> <i class ='variable'>fromfile</i><i class ='delimiter'>,</i> <i class ='variable'>tofile</i><i class ='delimiter'>,</i> <i class ='variable'>fromdate</i><i class ='delimiter'>,</i> <i class ='variable'>todate</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>=</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>writelines</i><i class ='delimiter'>(</i><i class ='variable'>diff</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

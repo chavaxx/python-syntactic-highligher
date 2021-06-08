@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!./python</i>
+<i class ='multilineComment'>&quot;&quot;&quot;Run Python tests against multiple installations of OpenSSL and LibreSSL
+
+The script
+
+  (1) downloads OpenSSL / LibreSSL tar bundle
+  (2) extracts it to ./src
+  (3) compiles OpenSSL / LibreSSL
+  (4) installs OpenSSL / LibreSSL into ../multissl/$LIB/$VERSION/
+  (5) forces a recompilation of Python modules using the
+      header and library files from ../multissl/$LIB/$VERSION/
+  (6) runs Python&#39;s test suite
+
+The script must be run with Python&#39;s build directory as current working
+directory.
+
+The script uses LD_RUN_PATH, LD_LIBRARY_PATH, CPPFLAGS and LDFLAGS to bend
+search paths for header files and shared libraries. It&#39;s known to work on
+Linux with GCC and clang.
+
+Please keep this script compatible with Python 2.7, and 3.4 to 3.7.
+
+(c) 2013-2017 Christian Heimes &lt;christian@python.org&gt;
+&quot;&quot;&quot;</i>
+<i class ='keyword'>from</i> <i class ='hexadecimal'>__f</i><i class ='variable'>uture__</i> <i class ='keyword'>import</i> <i class ='variable'>print_</i><i class ='variable'>function</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>from</i> <i class ='variable'>datetime</i> <i class ='keyword'>import</i> <i class ='variable'>datetime</i>
+<i class ='keyword'>import</i> <i class ='variable'>logging</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>from</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>request</i> <i class ='keyword'>import</i> <i class ='variable'>urlopen</i>
+    <i class ='keyword'>from</i> <i class ='variable'>urllib</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>import</i> <i class ='variable'>HTTPError</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>from</i> <i class ='variable'>urllib2</i> <i class ='keyword'>import</i> <i class ='variable'>urlopen</i><i class ='delimiter'>,</i> <i class ='variable'>HTTPError</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>shutil</i>
+<i class ='keyword'>import</i> <i class ='variable'>string</i>
+<i class ='keyword'>import</i> <i class ='variable'>subprocess</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>tarfile</i>
+
+
+<i class ='variable'>log</i> <i class ='delimiter'>=</i> <i class ='variable'>logging</i><i class ='delimiter'>.</i><i class ='variable'>getLogger</i><i class ='delimiter'>(</i><i class ='string'>&quot;multissl&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>OPENSSL_</i><i class ='variable'>OLD_</i><i class ='variable'>VERSIONS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+<i class ='delimiter'>]</i>
+
+<i class ='variable'>OPENSSL_</i><i class ='variable'>RECENT_</i><i class ='variable'>VERSIONS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='string'>&quot;1.1.1k&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;3.0.0-alpha17&quot;</i>
+<i class ='delimiter'>]</i>
+
+<i class ='variable'>LIBRESSL_</i><i class ='variable'>OLD_</i><i class ='variable'>VERSIONS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+<i class ='delimiter'>]</i>
+
+<i class ='variable'>LIBRESSL_</i><i class ='variable'>RECENT_</i><i class ='variable'>VERSIONS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+<i class ='delimiter'>]</i>
+
+<i class ='comment'># store files in ../multissl</i>
+<i class ='variable'>HERE</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>abspath</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>PYTHONROOT</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>abspath</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>HERE</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;..&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;..&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>MULTISSL_</i><i class ='variable'>DIR</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>abspath</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>PYTHONROOT</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;..&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;multissl&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i>
+    <i class ='variable'>prog</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;multissl&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;Run CPython tests with multiple OpenSSL and LibreSSL &quot;</i>
+        <i class ='string'>&quot;versions.&quot;</i>
+    <i class ='delimiter'>)</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--debug&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Enable debug logging&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--disable-ancient&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Don&#39;t test OpenSSL and LibreSSL versions without upstream support&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--openssl&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>nargs</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;OpenSSL versions, defaults to &#39;{}&#39; (ancient: &#39;{}&#39;) if no &quot;</i>
+        <i class ='string'>&quot;OpenSSL and LibreSSL versions are given.&quot;</i>
+    <i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>OPENSSL_</i><i class ='variable'>RECENT_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>,</i> <i class ='variable'>OPENSSL_</i><i class ='variable'>OLD_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--libressl&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>nargs</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;LibreSSL versions, defaults to &#39;{}&#39; (ancient: &#39;{}&#39;) if no &quot;</i>
+        <i class ='string'>&quot;OpenSSL and LibreSSL versions are given.&quot;</i>
+    <i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>LIBRESSL_</i><i class ='variable'>RECENT_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>,</i> <i class ='variable'>LIBRESSL_</i><i class ='variable'>OLD_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>)</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--tests&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>nargs</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;*&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Python tests to run, defaults to all SSL related tests.&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--base-directory&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='variable'>MULTISSL_</i><i class ='variable'>DIR</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Base directory for OpenSSL / LibreSSL sources and builds.&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--no-network&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_false&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;network&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Disable network tests.&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--steps&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>choices</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;library&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tests&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;tests&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;Which steps to perform. &#39;library&#39; downloads and compiles OpenSSL &quot;</i>
+        <i class ='string'>&quot;or LibreSSL. &#39;module&#39; also compiles Python modules. &#39;tests&#39; builds &quot;</i>
+        <i class ='string'>&quot;all and runs the test suite.&quot;</i>
+    <i class ='delimiter'>)</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--system&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Override the automatic system type detection.&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--force&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;force&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Force build and installation.&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='charlist'>&#39;--keep-sources&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;store_true&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;keep_sources&#39;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Keep original sources for debugging.&quot;</i>
+<i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>AbstractBuilder</i><i class ='delimiter'>(</i><i class ='variable'>object</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>library</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>url_</i><i class ='variable'>templates</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>src_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>build_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>depend_</i><i class ='variable'>target</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>install_</i><i class ='variable'>target</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;install&#39;</i>
+    <i class ='variable'>jobs</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>cpu_</i><i class ='variable'>count</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>module_</i><i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='string'>&quot;Modules/_ssl.c&quot;</i><i class ='delimiter'>,</i>
+                    <i class ='string'>&quot;Modules/_hashopenssl.c&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>module_</i><i class ='variable'>libs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='string'>&quot;_ssl&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;_hashlib&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>version</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i> <i class ='delimiter'>=</i> <i class ='variable'>version</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i>
+        <i class ='comment'># installation directory</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>install_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i>
+            <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>base_</i><i class ='variable'>directory</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>library</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>version</i>
+        <i class ='delimiter'>)</i>
+        <i class ='comment'># source file</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>base_</i><i class ='variable'>directory</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;src&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>file</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>template</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>version</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># build directory (removed after install)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>template</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>version</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>system</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>system</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;&lt;{0.__class__.__name__} for {0.version}&gt;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__e</i><i class ='variable'>q__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>other</i><i class ='delimiter'>,</i> <i class ='variable'>AbstractBuilder</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>NotImplemented</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>(</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>library</i> <i class ='operator'>==</i> <i class ='variable'>other</i><i class ='delimiter'>.</i><i class ='variable'>library</i>
+            <i class ='keyword'>and</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i> <i class ='operator'>==</i> <i class ='variable'>other</i><i class ='delimiter'>.</i><i class ='variable'>version</i>
+        <i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>hash__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>hash</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>library</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>short_</i><i class ='variable'>version</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Short version for OpenSSL download URL&quot;&quot;&quot;</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>openssl_</i><i class ='variable'>cli</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;openssl CLI binary&quot;&quot;&quot;</i>
+        <i class ='keyword'>return</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>install_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='string'>&quot;bin&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;openssl&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>openssl_</i><i class ='variable'>version</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;output of &#39;bin/openssl version&#39;&quot;&quot;&quot;</i>
+        <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>openssl_</i><i class ='variable'>cli</i><i class ='delimiter'>,</i> <i class ='string'>&quot;version&quot;</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>pyssl_</i><i class ='variable'>version</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Value of ssl.OPENSSL_VERSION&quot;&quot;&quot;</i>
+        <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;-c&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;import ssl; print(ssl.OPENSSL_VERSION)&#39;</i>
+        <i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>include_</i><i class ='variable'>dir</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>install_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='string'>&quot;include&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>lib_</i><i class ='variable'>dir</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>install_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='string'>&quot;lib&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>has_</i><i class ='variable'>openssl</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>openssl_</i><i class ='variable'>cli</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>has_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>cmd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;Call &#39;{}&#39;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='string'>&quot; &quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='variable'>env</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>cmd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;Call &#39;{}&#39;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='string'>&quot; &quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>env</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>env</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>.</i><i class ='variable'>copy</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>env</i><i class ='delimiter'>[</i><i class ='string'>&quot;LD_LIBRARY_PATH&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lib_</i><i class ='variable'>dir</i>
+        <i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>output</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='variable'>env</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>out</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='string'>&quot;utf-8&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_d</i><i class ='variable'>ownload_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Download sources&quot;&quot;&quot;</i>
+        <i class ='variable'>src_</i><i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>src_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>makedirs</i><i class ='delimiter'>(</i><i class ='variable'>src_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+        <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>for</i> <i class ='variable'>url_</i><i class ='variable'>template</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>url_</i><i class ='variable'>templates</i><i class ='delimiter'>:</i>
+            <i class ='variable'>url</i> <i class ='delimiter'>=</i> <i class ='variable'>url_</i><i class ='variable'>template</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>short_</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+            <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;Downloading from {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>url</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>req</i> <i class ='delimiter'>=</i> <i class ='variable'>urlopen</i><i class ='delimiter'>(</i><i class ='variable'>url</i><i class ='delimiter'>)</i>
+                <i class ='comment'># KISS, read all, write all</i>
+                <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>req</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>except</i> <i class ='variable'>HTTPError</i> <i class ='keyword'>as</i> <i class ='variable'>e</i><i class ='delimiter'>:</i>
+                <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i>
+                    <i class ='string'>&quot;Download from {} has from failed: {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>url</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='delimiter'>)</i>
+                <i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;Successfully downloaded from {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>url</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>break</i>
+        <i class ='keyword'>if</i> <i class ='variable'>data</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='string'>&quot;All download URLs have failed&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;Storing {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='string'>&quot;wb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>unpack_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Unpack tar.gz bundle&quot;&quot;&quot;</i>
+        <i class ='comment'># cleanup</i>
+        <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>shutil</i><i class ='delimiter'>.</i><i class ='variable'>rmtree</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+        <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>makedirs</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>tf</i> <i class ='delimiter'>=</i> <i class ='variable'>tarfile</i><i class ='delimiter'>.</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+        <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>template</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+        <i class ='variable'>base</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;/&#39;</i>
+        <i class ='comment'># force extraction into build dir</i>
+        <i class ='variable'>members</i> <i class ='delimiter'>=</i> <i class ='variable'>tf</i><i class ='delimiter'>.</i><i class ='variable'>getmembers</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>member</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>members</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>member</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='variable'>name</i><i class ='delimiter'>:</i>
+                <i class ='variable'>members</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>member</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='keyword'>not</i> <i class ='variable'>member</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='variable'>base</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='variable'>member</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>base</i><i class ='delimiter'>)</i>
+            <i class ='variable'>member</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>member</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>[</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>base</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>lstrip</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;/&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unpacking files to {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tf</i><i class ='delimiter'>.</i><i class ='variable'>extractall</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>members</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_b</i><i class ='variable'>uild_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>config_</i><i class ='variable'>args</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Now build openssl&quot;&quot;&quot;</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;Running build in {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cwd</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i>
+        <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+            <i class ='string'>&quot;./config&quot;</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>config_</i><i class ='variable'>args</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;shared&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;--debug&quot;</i><i class ='delimiter'>,</i>
+            <i class ='string'>&quot;--prefix={}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>install_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+        <i class ='delimiter'>]</i>
+        <i class ='comment'># cmd.extend([&quot;no-deprecated&quot;, &quot;--api=1.1.0&quot;])</i>
+        <i class ='variable'>env</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>.</i><i class ='variable'>copy</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='comment'># set rpath</i>
+        <i class ='variable'>env</i><i class ='delimiter'>[</i><i class ='string'>&quot;LD_RUN_PATH&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lib_</i><i class ='variable'>dir</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>system</i><i class ='delimiter'>:</i>
+            <i class ='variable'>env</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;SYSTEM&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>system</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i> <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>cwd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='variable'>env</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>depend_</i><i class ='variable'>target</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i>
+                <i class ='delimiter'>[</i><i class ='string'>&quot;make&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;-j1&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>depend_</i><i class ='variable'>target</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>cwd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='variable'>env</i>
+            <i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;make&quot;</i><i class ='delimiter'>,</i> <i class ='fstring'>f&quot;-j{self.jobs}&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>cwd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='variable'>env</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>make_</i><i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i>
+            <i class ='delimiter'>[</i><i class ='string'>&quot;make&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;-j1&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>install_</i><i class ='variable'>target</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+            <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i>
+        <i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>post_</i><i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>keep_</i><i class ='variable'>sources</i><i class ='delimiter'>:</i>
+            <i class ='variable'>shutil</i><i class ='delimiter'>.</i><i class ='variable'>rmtree</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>post_</i><i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>openssl_</i><i class ='variable'>cli</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>has_</i><i class ='variable'>openssl</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>force</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>has_</i><i class ='variable'>src</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_d</i><i class ='variable'>ownload_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;Already has src {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>src_</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>unpack_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_b</i><i class ='variable'>uild_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>make_</i><i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;Already has installation {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>install_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># validate installation</i>
+        <i class ='variable'>version</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>openssl_</i><i class ='variable'>version</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>version</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>recompile_</i><i class ='variable'>pymods</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>warning</i><i class ='delimiter'>(</i><i class ='string'>&quot;Using build from {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># force a rebuild of all modules that use OpenSSL APIs</i>
+        <i class ='keyword'>for</i> <i class ='variable'>fname</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>module_</i><i class ='variable'>files</i><i class ='delimiter'>:</i>
+            <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>utime</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i>
+        <i class ='comment'># remove all build artefacts</i>
+        <i class ='keyword'>for</i> <i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>dirs</i><i class ='delimiter'>,</i> <i class ='variable'>files</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>walk</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;build&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>module_</i><i class ='variable'>libs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>unlink</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># overwrite header and library search paths</i>
+        <i class ='variable'>env</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>environ</i><i class ='delimiter'>.</i><i class ='variable'>copy</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>env</i><i class ='delimiter'>[</i><i class ='string'>&quot;CPPFLAGS&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;-I{}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>include_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+        <i class ='variable'>env</i><i class ='delimiter'>[</i><i class ='string'>&quot;LDFLAGS&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;-L{}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lib_</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+        <i class ='comment'># set rpath</i>
+        <i class ='variable'>env</i><i class ='delimiter'>[</i><i class ='string'>&quot;LD_RUN_PATH&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>lib_</i><i class ='variable'>dir</i>
+
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;Rebuilding Python modules&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='string'>&quot;setup.py&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;build&quot;</i><i class ='delimiter'>]</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i> <i class ='variable'>env</i><i class ='delimiter'>=</i><i class ='variable'>env</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>imports</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>check_</i><i class ='variable'>imports</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='string'>&quot;-c&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;import _ssl; import _hashlib&quot;</i><i class ='delimiter'>]</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>check_</i><i class ='variable'>pyssl</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>version</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>pyssl_</i><i class ='variable'>version</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>version</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValueError</i><i class ='delimiter'>(</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>python_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>tests</i><i class ='delimiter'>,</i> <i class ='variable'>network</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>tests</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Lib/test/ssltests.py&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-j0&#39;</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i> <i class ='operator'>&lt;</i> <i class ='delimiter'>(</i><i class ='integer'>3</i><i class ='delimiter'>,</i> <i class ='integer'>3</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-m&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;test.regrtest&#39;</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-m&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;test&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-j0&#39;</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>network</i><i class ='delimiter'>:</i>
+            <i class ='variable'>cmd</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;-u&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;network&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-u&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;urlfetch&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cmd</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;-w&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;-r&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cmd</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>tests</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>,</i> <i class ='variable'>stdout</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>BuildOpenSSL</i><i class ='delimiter'>(</i><i class ='variable'>AbstractBuilder</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>library</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;OpenSSL&quot;</i>
+    <i class ='variable'>url_</i><i class ='variable'>templates</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i>
+        <i class ='string'>&quot;https://www.openssl.org/source/openssl-{v}.tar.gz&quot;</i><i class ='delimiter'>,</i>
+        <i class ='string'>&quot;https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz&quot;</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>src_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;openssl-{}.tar.gz&quot;</i>
+    <i class ='variable'>build_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;openssl-{}&quot;</i>
+    <i class ='comment'># only install software, skip docs</i>
+    <i class ='variable'>install_</i><i class ='variable'>target</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;install_sw&#39;</i>
+    <i class ='variable'>depend_</i><i class ='variable'>target</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;depend&#39;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>post_</i><i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;3.0&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>post_</i><i class ='variable'>install_300</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_b</i><i class ='variable'>uild_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>config_</i><i class ='variable'>args</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;3.0&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>config_</i><i class ='variable'>args</i> <i class ='delimiter'>+=</i> <i class ='delimiter'>(</i><i class ='string'>&quot;enable-fips&quot;</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i>
+        <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_b</i><i class ='variable'>uild_</i><i class ='variable'>src</i><i class ='delimiter'>(</i><i class ='variable'>config_</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>post_</i><i class ='variable'>install_300</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># create ssl/ subdir with example configs</i>
+        <i class ='comment'># Install FIPS module</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>subprocess_</i><i class ='variable'>call</i><i class ='delimiter'>(</i>
+            <i class ='delimiter'>[</i><i class ='string'>&quot;make&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;-j1&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;install_ssldirs&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;install_fips&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+            <i class ='variable'>cwd</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>build_</i><i class ='variable'>dir</i>
+        <i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>property</i>
+    <i class ='keyword'>def</i> <i class ='variable'>short_</i><i class ='variable'>version</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Short version for OpenSSL download URL&quot;&quot;&quot;</i>
+        <i class ='variable'>mo</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='rstring'>r&quot;^(\d+)\.(\d+)\.(\d+)&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+        <i class ='variable'>parsed</i> <i class ='delimiter'>=</i> <i class ='datatype'>tuple</i><i class ='delimiter'>(</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>m</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>m</i> <i class ='keyword'>in</i> <i class ='variable'>mo</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>parsed</i> <i class ='operator'>&lt;</i> <i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='string'>&quot;0.9.x&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>parsed</i> <i class ='operator'>&gt;=</i> <i class ='delimiter'>(</i><i class ='integer'>3</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='comment'># OpenSSL 3.0.0 -&gt; /old/3.0/</i>
+            <i class ='variable'>parsed</i> <i class ='delimiter'>=</i> <i class ='variable'>parsed</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;.&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='variable'>parsed</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>BuildLibreSSL</i><i class ='delimiter'>(</i><i class ='variable'>AbstractBuilder</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>library</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;LibreSSL&quot;</i>
+    <i class ='variable'>url_</i><i class ='variable'>templates</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i>
+        <i class ='string'>&quot;https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz&quot;</i><i class ='delimiter'>,</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>src_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;libressl-{}.tar.gz&quot;</i>
+    <i class ='variable'>build_</i><i class ='variable'>template</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;libressl-{}&quot;</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>configure_</i><i class ='variable'>make</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Makefile&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Running ./configure&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i>
+            <i class ='charlist'>&#39;./configure&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--config-cache&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--quiet&#39;</i><i class ='delimiter'>,</i>
+            <i class ='charlist'>&#39;--with-pydebug&#39;</i>
+        <i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Running make&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>subprocess</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>call</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;make&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--quiet&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>openssl</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>libressl</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>openssl</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>OPENSSL_</i><i class ='variable'>RECENT_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>)</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>libressl</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>LIBRESSL_</i><i class ='variable'>RECENT_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>disable_</i><i class ='variable'>ancient</i><i class ='delimiter'>:</i>
+            <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>openssl</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>OPENSSL_</i><i class ='variable'>OLD_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>)</i>
+            <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>libressl</i><i class ='delimiter'>.</i><i class ='variable'>extend</i><i class ='delimiter'>(</i><i class ='variable'>LIBRESSL_</i><i class ='variable'>OLD_</i><i class ='variable'>VERSIONS</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>logging</i><i class ='delimiter'>.</i><i class ='variable'>basicConfig</i><i class ='delimiter'>(</i>
+        <i class ='variable'>level</i><i class ='delimiter'>=</i><i class ='variable'>logging</i><i class ='delimiter'>.</i><i class ='variable'>DEBUG</i> <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>debug</i> <i class ='keyword'>else</i> <i class ='variable'>logging</i><i class ='delimiter'>.</i><i class ='variable'>INFO</i><i class ='delimiter'>,</i>
+        <i class ='variable'>format</i><i class ='delimiter'>=</i><i class ='string'>&quot;*** %(levelname)s %(message)s&quot;</i>
+    <i class ='delimiter'>)</i>
+
+    <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='variable'>datetime</i><i class ='delimiter'>.</i><i class ='variable'>now</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>steps</i> <i class ='keyword'>in</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tests&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;setup.py&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;Modules/_ssl.c&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>PYTHONROOT</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i>
+                    <i class ='string'>&quot;Must be executed from CPython build dir&quot;</i>
+                <i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>samefile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;python&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>executable</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i>
+                <i class ='string'>&quot;Must be executed with ./python from CPython build dir&quot;</i>
+            <i class ='delimiter'>)</i>
+        <i class ='comment'># check for configure and run make</i>
+        <i class ='variable'>configure_</i><i class ='variable'>make</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># download and register builder</i>
+    <i class ='variable'>builds</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>version</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>openssl</i><i class ='delimiter'>:</i>
+        <i class ='variable'>build</i> <i class ='delimiter'>=</i> <i class ='variable'>BuildOpenSSL</i><i class ='delimiter'>(</i>
+            <i class ='variable'>version</i><i class ='delimiter'>,</i>
+            <i class ='variable'>args</i>
+        <i class ='delimiter'>)</i>
+        <i class ='variable'>build</i><i class ='delimiter'>.</i><i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>builds</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>build</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>version</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>libressl</i><i class ='delimiter'>:</i>
+        <i class ='variable'>build</i> <i class ='delimiter'>=</i> <i class ='variable'>BuildLibreSSL</i><i class ='delimiter'>(</i>
+            <i class ='variable'>version</i><i class ='delimiter'>,</i>
+            <i class ='variable'>args</i>
+        <i class ='delimiter'>)</i>
+        <i class ='variable'>build</i><i class ='delimiter'>.</i><i class ='variable'>install</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>builds</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>build</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>steps</i> <i class ='keyword'>in</i> <i class ='delimiter'>{</i><i class ='charlist'>&#39;modules&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tests&#39;</i><i class ='delimiter'>}</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>build</i> <i class ='keyword'>in</i> <i class ='variable'>builds</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>build</i><i class ='delimiter'>.</i><i class ='variable'>recompile_</i><i class ='variable'>pymods</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='variable'>build</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>pyssl</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>steps</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;tests&#39;</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>build</i><i class ='delimiter'>.</i><i class ='variable'>run_</i><i class ='variable'>python_</i><i class ='variable'>tests</i><i class ='delimiter'>(</i>
+                        <i class ='variable'>tests</i><i class ='delimiter'>=</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>tests</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>network</i><i class ='delimiter'>=</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>network</i><i class ='delimiter'>,</i>
+                    <i class ='delimiter'>)</i>
+            <i class ='keyword'>except</i> <i class ='variable'>Exception</i> <i class ='keyword'>as</i> <i class ='variable'>e</i><i class ='delimiter'>:</i>
+                <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>exception</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s failed&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>build</i><i class ='delimiter'>)</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;{} failed: {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>build</i><i class ='delimiter'>,</i> <i class ='variable'>e</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>log</i><i class ='delimiter'>.</i><i class ='variable'>info</i><i class ='delimiter'>(</i><i class ='string'>&quot;\n{} finished in {}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i>
+            <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>steps</i><i class ='delimiter'>.</i><i class ='variable'>capitalize</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+            <i class ='variable'>datetime</i><i class ='delimiter'>.</i><i class ='variable'>now</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='variable'>start</i>
+        <i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Python: &#39;</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>steps</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;tests&#39;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>tests</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Executed Tests:&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>tests</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Executed all SSL tests.&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;OpenSSL / LibreSSL versions:&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>build</i> <i class ='keyword'>in</i> <i class ='variable'>builds</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;    * {0.library} {0.version}&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>build</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

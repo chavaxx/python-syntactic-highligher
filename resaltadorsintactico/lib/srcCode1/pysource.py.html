@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;\
+List python source files.
+
+There are three functions to check whether a file is a Python source, listed
+here with increasing complexity:
+
+- has_python_ext() checks whether a file name ends in &#39;.py[w]&#39;.
+- look_like_python() checks whether the file is not binary and either has
+  the &#39;.py[w]&#39; extension or the first line contains the word &#39;python&#39;.
+- can_be_compiled() checks whether the file can be compiled by compile().
+
+The file also must be of appropriate size - not bigger than a megabyte.
+
+walk_python_files() recursively lists all Python files under the given directories.
+&quot;&quot;&quot;</i>
+<i class ='hexadecimal'>__a</i><i class ='variable'>uthor__</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;Oleg Broytmann, Georg Brandl&quot;</i>
+
+<i class ='hexadecimal'>__a</i><i class ='variable'>ll__</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='string'>&quot;has_python_ext&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;looks_like_python&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;can_be_compiled&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;walk_python_files&quot;</i><i class ='delimiter'>]</i>
+
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>re</i>
+
+<i class ='variable'>binary_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>br</i><i class ='charlist'>&#39;[\x00-\x08\x0E-\x1F\x7F]&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>debug</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>debug</i><i class ='delimiter'>:</i> <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>stat</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>st_</i><i class ='variable'>size</i>
+    <i class ='keyword'>except</i> <i class ='variable'>OSError</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i> <i class ='comment'># Permission denied - ignore the file</i>
+        <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s: permission denied: %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>size</i> <i class ='operator'>&gt;</i> <i class ='integer'>1024</i><i class ='operator'>*</i><i class ='integer'>1024</i><i class ='delimiter'>:</i> <i class ='comment'># too big</i>
+        <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s: the file is too big: %d bytes&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>,</i> <i class ='variable'>size</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i> <i class ='comment'># Access denied, or a special file - ignore it</i>
+        <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s: access denied: %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>has_</i><i class ='variable'>python_</i><i class ='variable'>ext</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>fullpath</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='variable'>fullpath</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.pyw&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>looks_</i><i class ='variable'>like_</i><i class ='variable'>python</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>infile</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>infile</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>infile</i><i class ='delimiter'>:</i>
+        <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>infile</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>binary_</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># file appears to be binary</i>
+        <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s: appears to be binary&quot;</i> <i class ='operator'>%</i> <i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>fullpath</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='variable'>fullpath</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.pyw&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>b</i><i class ='string'>&quot;python&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>line</i><i class ='delimiter'>:</i>
+        <i class ='comment'># disguised Python script (e.g. CGI)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>can_</i><i class ='variable'>be_</i><i class ='variable'>compiled</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>infile</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>infile</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>infile</i><i class ='delimiter'>:</i>
+        <i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='variable'>infile</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>,</i> <i class ='variable'>fullpath</i><i class ='delimiter'>,</i> <i class ='string'>&quot;exec&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>Exception</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i>
+        <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s: cannot compile: %s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>walk_</i><i class ='variable'>python_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='variable'>paths</i><i class ='delimiter'>,</i> <i class ='variable'>is_</i><i class ='variable'>python</i><i class ='delimiter'>=</i><i class ='variable'>looks_</i><i class ='variable'>like_</i><i class ='variable'>python</i><i class ='delimiter'>,</i> <i class ='variable'>exclude_</i><i class ='variable'>dirs</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;\
+    Recursively yield all Python source files below the given paths.
+
+    paths: a list of files and/or directories to be checked.
+    is_python: a function that takes a file name and checks whether it is a
+               Python source file
+    exclude_dirs: a list of directory base names that should be excluded in
+                  the search
+    &quot;&quot;&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>exclude_</i><i class ='variable'>dirs</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>exclude_</i><i class ='variable'>dirs</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='variable'>paths</i><i class ='delimiter'>:</i>
+        <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;testing: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>path</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>is_</i><i class ='variable'>python</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>yield</i> <i class ='variable'>path</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;    it is a directory&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>dirpath</i><i class ='delimiter'>,</i> <i class ='variable'>dirnames</i><i class ='delimiter'>,</i> <i class ='variable'>filenames</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>walk</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>for</i> <i class ='variable'>exclude</i> <i class ='keyword'>in</i> <i class ='variable'>exclude_</i><i class ='variable'>dirs</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>exclude</i> <i class ='keyword'>in</i> <i class ='variable'>dirnames</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>dirnames</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>exclude</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>filenames</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>fullpath</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>dirpath</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;testing: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>is_</i><i class ='variable'>python</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                        <i class ='keyword'>yield</i> <i class ='variable'>fullpath</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>print_</i><i class ='variable'>debug</i><i class ='delimiter'>(</i><i class ='string'>&quot;    unknown type&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Two simple examples/tests</i>
+    <i class ='keyword'>for</i> <i class ='variable'>fullpath</i> <i class ='keyword'>in</i> <i class ='variable'>walk_</i><i class ='variable'>python_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;----------&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>fullpath</i> <i class ='keyword'>in</i> <i class ='variable'>walk_</i><i class ='variable'>python_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>is_</i><i class ='variable'>python</i><i class ='delimiter'>=</i><i class ='variable'>can_</i><i class ='variable'>be_</i><i class ='variable'>compiled</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

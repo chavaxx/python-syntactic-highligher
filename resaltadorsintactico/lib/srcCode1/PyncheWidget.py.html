@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;Main Pynche (Pythonically Natural Color and Hue Editor) widget.
+
+This window provides the basic decorations, primarily including the menubar.
+It is used to bring up other windows.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='operator'>*</i>
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='variable'>messagebox</i><i class ='delimiter'>,</i> <i class ='variable'>filedialog</i>
+<i class ='keyword'>import</i> <i class ='variable'>ColorDB</i>
+
+<i class ='comment'># Milliseconds between interrupt checks</i>
+<i class ='variable'>KEEPALIVE_</i><i class ='variable'>TIMER</i> <i class ='delimiter'>=</i> <i class ='integer'>500</i>
+
+
+
+<i class ='keyword'>class</i> <i class ='variable'>PyncheWidget</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>version</i><i class ='delimiter'>,</i> <i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>extrapath</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i> <i class ='delimiter'>=</i> <i class ='variable'>switchboard</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>version</i> <i class ='delimiter'>=</i> <i class ='variable'>version</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>textwin</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>listwin</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__de</i><i class ='variable'>tailswin</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>helpwin</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__d</i><i class ='variable'>ialogstate</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='variable'>modal</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>modal</i> <i class ='delimiter'>=</i> <i class ='keyword'>not</i> <i class ='keyword'>not</i> <i class ='variable'>master</i>
+        <i class ='comment'># If a master was given, we are running as a modal dialog servant to</i>
+        <i class ='comment'># some other application.  We rearrange our UI in this case (there&#39;s</i>
+        <i class ='comment'># no File menu and we get `Okay&#39; and `Cancel&#39; buttons), and we do a</i>
+        <i class ='comment'># grab_set() to make ourselves modal</i>
+        <i class ='keyword'>if</i> <i class ='variable'>modal</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i> <i class ='delimiter'>=</i> <i class ='variable'>tkroot</i> <i class ='delimiter'>=</i> <i class ='variable'>Toplevel</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>class_</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Pynche&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>grab_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>withdraw</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='comment'># Is there already a default root for Tk, say because we&#39;re</i>
+            <i class ='comment'># running under Guido&#39;s IDE? :-) Two conditions say no, either the</i>
+            <i class ='comment'># _default_root is None or it is unset.</i>
+            <i class ='variable'>tkroot</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>tkinter</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;_default_root&#39;</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>tkroot</i><i class ='delimiter'>:</i>
+                <i class ='variable'>tkroot</i> <i class ='delimiter'>=</i> <i class ='variable'>Tk</i><i class ='delimiter'>(</i><i class ='variable'>className</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Pynche&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i> <i class ='delimiter'>=</i> <i class ='variable'>tkroot</i>
+            <i class ='comment'># but this isn&#39;t our top level widget, so make it invisible</i>
+            <i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>withdraw</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='comment'># create the menubar</i>
+        <i class ='variable'>menubar</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menubar</i> <i class ='delimiter'>=</i> <i class ='variable'>Menu</i><i class ='delimiter'>(</i><i class ='variable'>tkroot</i><i class ='delimiter'>)</i>
+        <i class ='comment'>#</i>
+        <i class ='comment'># File menu</i>
+        <i class ='comment'>#</i>
+        <i class ='variable'>filemenu</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__f</i><i class ='variable'>ilemenu</i> <i class ='delimiter'>=</i> <i class ='variable'>Menu</i><i class ='delimiter'>(</i><i class ='variable'>menubar</i><i class ='delimiter'>,</i> <i class ='variable'>tearoff</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>filemenu</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>command</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Load palette...&#39;</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>load</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>modal</i><i class ='delimiter'>:</i>
+            <i class ='variable'>filemenu</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>command</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Quit&#39;</i><i class ='delimiter'>,</i>
+                                 <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>quit</i><i class ='delimiter'>,</i>
+                                 <i class ='variable'>accelerator</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Alt-Q&#39;</i><i class ='delimiter'>,</i>
+                                 <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='comment'>#</i>
+        <i class ='comment'># View menu</i>
+        <i class ='comment'>#</i>
+        <i class ='variable'>views</i> <i class ='delimiter'>=</i> <i class ='variable'>make_</i><i class ='variable'>view_</i><i class ='variable'>popups</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i><i class ='delimiter'>,</i> <i class ='variable'>extrapath</i><i class ='delimiter'>)</i>
+        <i class ='variable'>viewmenu</i> <i class ='delimiter'>=</i> <i class ='variable'>Menu</i><i class ='delimiter'>(</i><i class ='variable'>menubar</i><i class ='delimiter'>,</i> <i class ='variable'>tearoff</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>v</i> <i class ='keyword'>in</i> <i class ='variable'>views</i><i class ='delimiter'>:</i>
+            <i class ='variable'>viewmenu</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>command</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='variable'>v</i><i class ='delimiter'>.</i><i class ='variable'>menutext</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                                 <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>v</i><i class ='delimiter'>.</i><i class ='variable'>popup</i><i class ='delimiter'>,</i>
+                                 <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='variable'>v</i><i class ='delimiter'>.</i><i class ='variable'>underline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'>#</i>
+        <i class ='comment'># Help menu</i>
+        <i class ='comment'>#</i>
+        <i class ='variable'>helpmenu</i> <i class ='delimiter'>=</i> <i class ='variable'>Menu</i><i class ='delimiter'>(</i><i class ='variable'>menubar</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;help&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>tearoff</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>helpmenu</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>command</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;About Pynche...&#39;</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>popup_</i><i class ='variable'>about</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>helpmenu</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>command</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Help...&#39;</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>popup_</i><i class ='variable'>usage</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='comment'>#</i>
+        <i class ='comment'># Tie them all together</i>
+        <i class ='comment'>#</i>
+        <i class ='variable'>menubar</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>cascade</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;File&#39;</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>menu</i><i class ='delimiter'>=</i><i class ='variable'>filemenu</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>menubar</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>cascade</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;View&#39;</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>menu</i><i class ='delimiter'>=</i><i class ='variable'>viewmenu</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>menubar</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>cascade</i><i class ='delimiter'>(</i><i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Help&#39;</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>menu</i><i class ='delimiter'>=</i><i class ='variable'>helpmenu</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>underline</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># now create the top level window</i>
+        <i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>Toplevel</i><i class ='delimiter'>(</i><i class ='variable'>tkroot</i><i class ='delimiter'>,</i> <i class ='variable'>class_</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Pynche&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>menu</i><i class ='delimiter'>=</i><i class ='variable'>menubar</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>protocol</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;WM_DELETE_WINDOW&#39;</i><i class ='delimiter'>,</i>
+                      <i class ='variable'>modal</i> <i class ='keyword'>and</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__be</i><i class ='variable'>ll</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>quit</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>title</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Pynche %s&#39;</i> <i class ='operator'>%</i> <i class ='variable'>version</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>iconname</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Pynche&#39;</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Only bind accelerators for the File-&gt;Quit menu item if running as a</i>
+        <i class ='comment'># standalone app</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>modal</i><i class ='delimiter'>:</i>
+            <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Alt-q&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>quit</i><i class ='delimiter'>)</i>
+            <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Alt-Q&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>quit</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='comment'># We&#39;re a modal dialog so we have a new row of buttons</i>
+            <i class ='variable'>bframe</i> <i class ='delimiter'>=</i> <i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='variable'>RAISED</i><i class ='delimiter'>)</i>
+            <i class ='variable'>bframe</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>4</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>columnspan</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;EW&#39;</i><i class ='delimiter'>,</i>
+                        <i class ='variable'>ipady</i><i class ='delimiter'>=</i><i class ='integer'>5</i><i class ='delimiter'>)</i>
+            <i class ='variable'>okay</i> <i class ='delimiter'>=</i> <i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>bframe</i><i class ='delimiter'>,</i>
+                          <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Okay&#39;</i><i class ='delimiter'>,</i>
+                          <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>okay</i><i class ='delimiter'>)</i>
+            <i class ='variable'>okay</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cancel</i> <i class ='delimiter'>=</i> <i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>bframe</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Cancel&#39;</i><i class ='delimiter'>,</i>
+                            <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>ncel</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cancel</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>LEFT</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>quit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>quit</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__be</i><i class ='variable'>ll</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>bell</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>okay</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>withdraw_</i><i class ='variable'>views</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>grab_</i><i class ='variable'>release</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>quit</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__ca</i><i class ='variable'>ncel</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>canceled</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>okay</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>keepalive</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Exercise the Python interpreter regularly so keyboard interrupts get</i>
+        <i class ='comment'># through.</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>createtimerhandler</i><i class ='delimiter'>(</i><i class ='variable'>KEEPALIVE_</i><i class ='variable'>TIMER</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>keepalive</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>modal</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>keepalive</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>tkroot</i><i class ='delimiter'>.</i><i class ='variable'>mainloop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>window</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>popup_</i><i class ='variable'>about</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>from</i> <i class ='variable'>Main</i> <i class ='keyword'>import</i> <i class ='hexadecimal'>__</i><i class ='variable'>version__</i>
+        <i class ='variable'>messagebox</i><i class ='delimiter'>.</i><i class ='variable'>showinfo</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;About Pynche &#39;</i> <i class ='operator'>+</i> <i class ='hexadecimal'>__</i><i class ='variable'>version__</i><i class ='delimiter'>,</i>
+                              <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+Pynche %s
+The PYthonically Natural
+Color and Hue Editor
+
+For information
+contact: Barry A. Warsaw
+email:   bwarsaw@python.org&#39;</i><i class ='charlist'>&#39;&#39;</i> <i class ='operator'>%</i> <i class ='hexadecimal'>__</i><i class ='variable'>version__</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>popup_</i><i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>helpwin</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>helpwin</i> <i class ='delimiter'>=</i> <i class ='variable'>Helpwin</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>quit</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>helpwin</i><i class ='delimiter'>.</i><i class ='variable'>deiconify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>load</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='variable'>idir</i><i class ='delimiter'>,</i> <i class ='variable'>ifile</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>colordb</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>filename</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>file</i> <i class ='delimiter'>=</i> <i class ='variable'>filedialog</i><i class ='delimiter'>.</i><i class ='variable'>askopenfilename</i><i class ='delimiter'>(</i>
+                <i class ='variable'>filetypes</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Text files&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;*.txt&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>(</i><i class ='charlist'>&#39;All files&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;*&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+                           <i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+                <i class ='variable'>initialdir</i><i class ='delimiter'>=</i><i class ='variable'>idir</i><i class ='delimiter'>,</i>
+                <i class ='variable'>initialfile</i><i class ='delimiter'>=</i><i class ='variable'>ifile</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>file</i><i class ='delimiter'>:</i>
+                <i class ='comment'># cancel button</i>
+                <i class ='keyword'>return</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>colordb</i> <i class ='delimiter'>=</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>get_</i><i class ='variable'>colordb</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>except</i> <i class ='variable'>IOError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>messagebox</i><i class ='delimiter'>.</i><i class ='variable'>showerror</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Read error&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+Could not open file for reading:
+%s&#39;</i><i class ='charlist'>&#39;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>if</i> <i class ='variable'>colordb</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                <i class ='variable'>messagebox</i><i class ='delimiter'>.</i><i class ='variable'>showerror</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Unrecognized color file type&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+Unrecognized color file type in file:
+%s&#39;</i><i class ='charlist'>&#39;&#39;</i> <i class ='operator'>%</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>continue</i>
+            <i class ='keyword'>break</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>set_</i><i class ='variable'>colordb</i><i class ='delimiter'>(</i><i class ='variable'>colordb</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>withdraw</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>withdraw</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>deiconify</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>deiconify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Helpwin</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>quitfunc</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>from</i> <i class ='variable'>Main</i> <i class ='keyword'>import</i> <i class ='variable'>docstring</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>Toplevel</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>class_</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Pynche&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>protocol</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;WM_DELETE_WINDOW&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>withdraw</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>title</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Pynche Help Window&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>iconname</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Pynche Help Window&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Alt-q&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>quitfunc</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Alt-Q&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>quitfunc</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Alt-w&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>withdraw</i><i class ='delimiter'>)</i>
+        <i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;Alt-W&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>withdraw</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># more elaborate help is available in the README file</i>
+        <i class ='variable'>readmefile</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;README&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>readmefile</i><i class ='delimiter'>)</i>
+                <i class ='variable'>contents</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='comment'># wax the last page, it contains Emacs cruft</i>
+                <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>contents</i><i class ='delimiter'>.</i><i class ='variable'>rfind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\f&#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>contents</i> <i class ='delimiter'>=</i> <i class ='variable'>contents</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>finally</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>IOError</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Couldn&#39;t open Pynche&#39;s README, &quot;</i>
+                             <i class ='charlist'>&#39;using docstring instead.\n&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>contents</i> <i class ='delimiter'>=</i> <i class ='variable'>docstring</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>Text</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='variable'>SUNKEN</i><i class ='delimiter'>,</i>
+                                  <i class ='variable'>width</i><i class ='delimiter'>=</i><i class ='integer'>80</i><i class ='delimiter'>,</i> <i class ='variable'>height</i><i class ='delimiter'>=</i><i class ='integer'>24</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>focus_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='float'>0.0</i><i class ='delimiter'>,</i> <i class ='variable'>contents</i><i class ='delimiter'>)</i>
+        <i class ='variable'>scrollbar</i> <i class ='delimiter'>=</i> <i class ='variable'>Scrollbar</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>)</i>
+        <i class ='variable'>scrollbar</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>Y</i><i class ='delimiter'>,</i> <i class ='variable'>side</i><i class ='delimiter'>=</i><i class ='variable'>RIGHT</i><i class ='delimiter'>)</i>
+        <i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>BOTH</i><i class ='delimiter'>,</i> <i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='variable'>YES</i><i class ='delimiter'>)</i>
+        <i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>yscrollcommand</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='variable'>scrollbar</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;set&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>scrollbar</i><i class ='delimiter'>.</i><i class ='variable'>configure</i><i class ='delimiter'>(</i><i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;yview&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>withdraw</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>withdraw</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>deiconify</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i><i class ='delimiter'>.</i><i class ='variable'>deiconify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+
+<i class ='keyword'>import</i> <i class ='variable'>functools</i>
+<i class ='delimiter'>@</i><i class ='variable'>functools</i><i class ='delimiter'>.</i><i class ='variable'>total_</i><i class ='variable'>ordering</i>
+<i class ='keyword'>class</i> <i class ='variable'>PopupViewer</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>module</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>root</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>module</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i> <i class ='delimiter'>=</i> <i class ='variable'>switchboard</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i> <i class ='delimiter'>=</i> <i class ='variable'>root</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menutext</i> <i class ='delimiter'>=</i> <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>ADDTOVIEW</i>
+        <i class ='comment'># find the underline character</i>
+        <i class ='variable'>underline</i> <i class ='delimiter'>=</i> <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>ADDTOVIEW</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>underline</i> <i class ='operator'>==</i> <i class ='variable'>-1</i><i class ='delimiter'>:</i>
+            <i class ='variable'>underline</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menutext</i> <i class ='delimiter'>=</i> <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>ADDTOVIEW</i><i class ='delimiter'>.</i><i class ='variable'>replace</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>underline</i> <i class ='delimiter'>=</i> <i class ='variable'>underline</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>window</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>menutext</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menutext</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>underline</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>underline</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>popup</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>window</i><i class ='delimiter'>:</i>
+            <i class ='comment'># class and module must have the same name</i>
+            <i class ='variable'>class_</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>m</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>window</i> <i class ='delimiter'>=</i> <i class ='variable'>class_</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>root</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>view</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>window</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>window</i><i class ='delimiter'>.</i><i class ='variable'>deiconify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__e</i><i class ='variable'>q__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>PopupViewer</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menutext</i> <i class ='operator'>==</i> <i class ='variable'>other</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menutext</i>
+        <i class ='keyword'>return</i> <i class ='variable'>NotImplemented</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>lt__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>PopupViewer</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menutext</i> <i class ='operator'>&lt;</i> <i class ='variable'>other</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>menutext</i>
+        <i class ='keyword'>return</i> <i class ='variable'>NotImplemented</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>view_</i><i class ='variable'>popups</i><i class ='delimiter'>(</i><i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>extrapath</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>viewers</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='comment'># where we are in the file system</i>
+    <i class ='variable'>dirs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>extrapath</i>
+    <i class ='keyword'>for</i> <i class ='variable'>dir</i> <i class ='keyword'>in</i> <i class ='variable'>dirs</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>dir</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>dir</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;.&#39;</i>
+        <i class ='keyword'>for</i> <i class ='variable'>file</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>file</i><i class ='delimiter'>[</i><i class ='variable'>-9</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;Viewer.py&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>file</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-3</i><i class ='delimiter'>]</i>
+                <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>module</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>__</i><i class ='variable'>import__</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># Pynche is running from inside a package, so get the</i>
+                    <i class ='comment'># module using the explicit path.</i>
+                    <i class ='variable'>pkg</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>__</i><i class ='variable'>import__</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;pynche.&#39;</i><i class ='operator'>+</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>module</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>pkg</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>hasattr</i><i class ='delimiter'>(</i><i class ='variable'>module</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;ADDTOVIEW&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>module</i><i class ='delimiter'>.</i><i class ='variable'>ADDTOVIEW</i><i class ='delimiter'>:</i>
+                    <i class ='comment'># this is an external viewer</i>
+                    <i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='variable'>PopupViewer</i><i class ='delimiter'>(</i><i class ='variable'>module</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>root</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>viewers</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+    <i class ='comment'># sort alphabetically</i>
+    <i class ='variable'>viewers</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>viewers</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

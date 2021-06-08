@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;This script generates a Python codec module from a Windows Code Page.
+
+It uses the function MultiByteToWideChar to generate a decoding table.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>ctypes</i>
+<i class ='keyword'>from</i> <i class ='variable'>ctypes</i> <i class ='keyword'>import</i> <i class ='variable'>wintypes</i>
+<i class ='keyword'>from</i> <i class ='variable'>gencodec</i> <i class ='keyword'>import</i> <i class ='variable'>codegen</i>
+<i class ='keyword'>import</i> <i class ='variable'>unicodedata</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>genwinmap</i><i class ='delimiter'>(</i><i class ='variable'>codepage</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>MultiByteToWideChar</i> <i class ='delimiter'>=</i> <i class ='variable'>ctypes</i><i class ='delimiter'>.</i><i class ='variable'>windll</i><i class ='delimiter'>.</i><i class ='variable'>kernel32</i><i class ='delimiter'>.</i><i class ='variable'>MultiByteToWideChar</i>
+    <i class ='variable'>MultiByteToWideChar</i><i class ='delimiter'>.</i><i class ='variable'>argtypes</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>wintypes</i><i class ='delimiter'>.</i><i class ='variable'>UINT</i><i class ='delimiter'>,</i> <i class ='variable'>wintypes</i><i class ='delimiter'>.</i><i class ='variable'>DWORD</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>wintypes</i><i class ='delimiter'>.</i><i class ='variable'>LPCSTR</i><i class ='delimiter'>,</i> <i class ='variable'>ctypes</i><i class ='delimiter'>.</i><i class ='variable'>c_</i><i class ='datatype'>int</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>wintypes</i><i class ='delimiter'>.</i><i class ='variable'>LPWSTR</i><i class ='delimiter'>,</i> <i class ='variable'>ctypes</i><i class ='delimiter'>.</i><i class ='variable'>c_</i><i class ='datatype'>int</i><i class ='delimiter'>]</i>
+    <i class ='variable'>MultiByteToWideChar</i><i class ='delimiter'>.</i><i class ='variable'>restype</i> <i class ='delimiter'>=</i> <i class ='variable'>ctypes</i><i class ='delimiter'>.</i><i class ='variable'>c_</i><i class ='datatype'>int</i>
+
+    <i class ='variable'>enc2</i><i class ='variable'>uni</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>32</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='delimiter'>[</i><i class ='integer'>127</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;CONTROL CHARACTER&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>256</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>buf</i> <i class ='delimiter'>=</i> <i class ='variable'>ctypes</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>unicode_</i><i class ='variable'>buffer</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>ret</i> <i class ='delimiter'>=</i> <i class ='variable'>MultiByteToWideChar</i><i class ='delimiter'>(</i>
+            <i class ='variable'>codepage</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i>
+            <i class ='datatype'>bytes</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i>
+            <i class ='variable'>buf</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>ret</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='string'>&quot;invalid code page&quot;</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>buf</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;\x00&#39;</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>unicodedata</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>buf</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>ValueError</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>except</i> <i class ='variable'>KeyError</i><i class ='delimiter'>:</i>
+                <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+
+        <i class ='variable'>enc2</i><i class ='variable'>uni</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='variable'>buf</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>enc2</i><i class ='variable'>uni</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>genwincodec</i><i class ='delimiter'>(</i><i class ='variable'>codepage</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>platform</i>
+    <i class ='variable'>map</i> <i class ='delimiter'>=</i> <i class ='variable'>genwinmap</i><i class ='delimiter'>(</i><i class ='variable'>codepage</i><i class ='delimiter'>)</i>
+    <i class ='variable'>encodingname</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;cp%d&#39;</i> <i class ='operator'>%</i> <i class ='variable'>codepage</i>
+    <i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='variable'>codegen</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>map</i><i class ='delimiter'>,</i> <i class ='variable'>encodingname</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Replace first lines with our own docstring</i>
+    <i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+&quot;&quot;&quot;Python Character Mapping Codec %s generated on Windows:
+%s with the command:
+  python Tools/unicode/genwincodec.py %s
+&quot;&quot;&quot;#&quot;
+&#39;</i><i class ='charlist'>&#39;&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>encodingname</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>platform</i><i class ='delimiter'>.</i><i class ='variable'>win32_</i><i class ='variable'>ver</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>codepage</i>
+      <i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='variable'>code</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&quot;&quot;&quot;#&quot;&#39;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+    <i class ='variable'>genwincodec</i><i class ='delimiter'>(</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

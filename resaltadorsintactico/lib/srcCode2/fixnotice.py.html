@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;(Ostensibly) fix copyright notices in files.
+
+Actually, this script will simply replace a block of text in a file from one
+string to another.  It will only do this once though, i.e. not globally
+throughout the file.  It writes a backup file and then does an os.rename()
+dance for atomicity.
+
+Usage: fixnotices.py [options] [filenames]
+Options:
+    -h / --help
+        Print this message and exit
+
+    --oldnotice=file
+        Use the notice in the file as the old (to be replaced) string, instead
+        of the hard coded value in the script.
+
+    --newnotice=file
+        Use the notice in the file as the new (replacement) string, instead of
+        the hard coded value in the script.
+
+    --dry-run
+        Don&#39;t actually make the changes, but print out the list of files that
+        would change.  When used with -v, a status will be printed for every
+        file.
+
+    -v / --verbose
+        Print a message for every file looked at, indicating whether the file
+        is changed or not.
+&quot;&quot;&quot;</i>
+
+<i class ='variable'>OLD_</i><i class ='variable'>NOTICE</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;/***********************************************************
+Copyright (c) 2000, BeOpen.com.
+Copyright (c) 1995-2000, Corporation for National Research Initiatives.
+Copyright (c) 1990-1995, Stichting Mathematisch Centrum.
+All rights reserved.
+
+See the file &quot;</i><i class ='variable'>Misc</i><i class ='operator'>/</i><i class ='variable'>COPYRIGHT</i><i class ='string'>&quot; for information on usage and
+redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+******************************************************************/
+&quot;</i><i class ='string'>&quot;&quot;</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+
+<i class ='variable'>NEW_</i><i class ='variable'>NOTICE</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>
+<i class ='variable'>DRYRUN</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+<i class ='variable'>VERBOSE</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i> <i class ='operator'>%</i> <i class ='variable'>globals</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>global</i> <i class ='variable'>DRYRUN</i><i class ='delimiter'>,</i> <i class ='variable'>OLD_</i><i class ='variable'>NOTICE</i><i class ='delimiter'>,</i> <i class ='variable'>NEW_</i><i class ='variable'>NOTICE</i><i class ='delimiter'>,</i> <i class ='variable'>VERBOSE</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;hv&#39;</i><i class ='delimiter'>,</i>
+                                   <i class ='delimiter'>[</i><i class ='charlist'>&#39;help&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;oldnotice=&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;newnotice=&#39;</i><i class ='delimiter'>,</i>
+                                    <i class ='charlist'>&#39;dry-run&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;verbose&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>opt</i><i class ='delimiter'>,</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-h&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--help&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;-v&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;--verbose&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>VERBOSE</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;--dry-run&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>DRYRUN</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;--oldnotice&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+                <i class ='variable'>OLD_</i><i class ='variable'>NOTICE</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;--newnotice&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+                <i class ='variable'>NEW_</i><i class ='variable'>NOTICE</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='variable'>OLD_</i><i class ='variable'>NOTICE</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>VERBOSE</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;no change:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>DRYRUN</i> <i class ='keyword'>or</i> <i class ='variable'>VERBOSE</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;   change:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>DRYRUN</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Don&#39;t actually change the file</i>
+        <i class ='keyword'>return</i>
+    <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>NEW_</i><i class ='variable'>NOTICE</i> <i class ='operator'>+</i> <i class ='variable'>data</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>OLD_</i><i class ='variable'>NOTICE</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='variable'>new</i> <i class ='delimiter'>=</i> <i class ='variable'>file</i> <i class ='operator'>+</i> <i class ='string'>&quot;.new&quot;</i>
+    <i class ='variable'>backup</i> <i class ='delimiter'>=</i> <i class ='variable'>file</i> <i class ='operator'>+</i> <i class ='string'>&quot;.bak&quot;</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>new</i><i class ='delimiter'>,</i> <i class ='string'>&quot;w&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>rename</i><i class ='delimiter'>(</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>backup</i><i class ='delimiter'>)</i>
+    <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>rename</i><i class ='delimiter'>(</i><i class ='variable'>new</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

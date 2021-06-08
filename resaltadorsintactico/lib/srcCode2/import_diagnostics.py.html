@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='multilineComment'>&quot;&quot;&quot;Miscellaneous diagnostics for the import system&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>from</i> <i class ='variable'>pprint</i> <i class ='keyword'>import</i> <i class ='variable'>pprint</i>
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_d</i><i class ='variable'>ump_</i><i class ='variable'>state</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>attributes</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;sys.{}:&quot;</i><i class ='delimiter'>.</i><i class ='variable'>format</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>pprint</i><i class ='delimiter'>(</i><i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_add_d</i><i class ='variable'>ump_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>cmd</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='string'>&quot;attributes&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>metavar</i><i class ='delimiter'>=</i><i class ='string'>&quot;ATTR&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>nargs</i><i class ='delimiter'>=</i><i class ='string'>&quot;+&quot;</i><i class ='delimiter'>,</i>
+                     <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;sys module attribute to display&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>COMMANDS</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i>
+  <i class ='delimiter'>(</i><i class ='string'>&quot;dump&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;Dump import state&quot;</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>_d</i><i class ='variable'>ump_</i><i class ='variable'>state</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>_add_d</i><i class ='variable'>ump_</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>make_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sub</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>subparsers</i><i class ='delimiter'>(</i><i class ='variable'>title</i><i class ='delimiter'>=</i><i class ='string'>&quot;Commands&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>description</i><i class ='delimiter'>,</i> <i class ='variable'>implementation</i><i class ='delimiter'>,</i> <i class ='variable'>add_</i><i class ='variable'>args</i> <i class ='keyword'>in</i> <i class ='variable'>COMMANDS</i><i class ='delimiter'>:</i>
+        <i class ='variable'>cmd</i> <i class ='delimiter'>=</i> <i class ='variable'>sub</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='variable'>description</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cmd</i><i class ='delimiter'>.</i><i class ='variable'>set_</i><i class ='variable'>defaults</i><i class ='delimiter'>(</i><i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>implementation</i><i class ='delimiter'>)</i>
+        <i class ='variable'>add_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='variable'>cmd</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>parser</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>parser</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>make_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>parser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>command</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

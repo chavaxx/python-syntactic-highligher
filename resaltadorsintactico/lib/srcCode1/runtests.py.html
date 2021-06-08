@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'># Fictitious test runner for the project</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='variable'>os</i>
+
+<i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>version_</i><i class ='variable'>info</i> <i class ='operator'>&gt;</i> <i class ='delimiter'>(</i><i class ='integer'>3</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># copy test suite over to &quot;build/lib&quot; and convert it</i>
+    <i class ='keyword'>from</i> <i class ='variable'>distutils</i><i class ='delimiter'>.</i><i class ='variable'>util</i> <i class ='keyword'>import</i> <i class ='variable'>copydir_</i><i class ='variable'>run_2</i><i class ='variable'>to3</i>
+    <i class ='variable'>testroot</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>dirname</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__f</i><i class ='variable'>ile__</i><i class ='delimiter'>)</i>
+    <i class ='variable'>newroot</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>testroot</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;..&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;build/lib/test&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>copydir_</i><i class ='variable'>run_2</i><i class ='variable'>to3</i><i class ='delimiter'>(</i><i class ='variable'>testroot</i><i class ='delimiter'>,</i> <i class ='variable'>newroot</i><i class ='delimiter'>)</i>
+    <i class ='comment'># in the following imports, pick up the converted modules</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>newroot</i>
+
+<i class ='comment'># run the tests here...</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>test_</i><i class ='variable'>foo</i> <i class ='keyword'>import</i> <i class ='variable'>FooTest</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>unittest</i>
+<i class ='variable'>unittest</i><i class ='delimiter'>.</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

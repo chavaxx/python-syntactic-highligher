@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='comment'># objgraph</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Read &quot;nm -o&quot; input of a set of libraries or modules and print various</i>
+<i class ='comment'># interesting listings, such as:</i>
+<i class ='comment'>#</i>
+<i class ='comment'># - which names are used but not defined in the set (and used where),</i>
+<i class ='comment'># - which names are defined in the set (and where),</i>
+<i class ='comment'># - which modules use which other modules,</i>
+<i class ='comment'># - which modules are used by which other modules.</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Usage: objgraph [-cdu] [file] ...</i>
+<i class ='comment'># -c: print callers per objectfile</i>
+<i class ='comment'># -d: print callees per objectfile</i>
+<i class ='comment'># -u: print usage of undefined symbols</i>
+<i class ='comment'># If none of -cdu is specified, all are assumed.</i>
+<i class ='comment'># Use &quot;nm -o&quot; to generate the input</i>
+<i class ='comment'># e.g.: nm -o /lib/libc.a | objgraph</i>
+
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+
+<i class ='comment'># Types of symbols.</i>
+<i class ='comment'>#</i>
+<i class ='variable'>definitions</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;TRGDSBAEC&#39;</i>
+<i class ='variable'>externals</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;UV&#39;</i>
+<i class ='variable'>ignore</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;Nntrgdsbavuc&#39;</i>
+
+<i class ='comment'># Regular expression to parse &quot;nm -o&quot; output.</i>
+<i class ='comment'>#</i>
+<i class ='variable'>matcher</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;(.*):\t?........ (.) (.*)$&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Store &quot;item&quot; in &quot;dict&quot; under &quot;key&quot;.</i>
+<i class ='comment'># The dictionary maps keys to lists of items.</i>
+<i class ='comment'># If there is no list for the key yet, it is created.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='datatype'>dict</i><i class ='delimiter'>,</i> <i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>key</i> <i class ='keyword'>in</i> <i class ='datatype'>dict</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>dict</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>dict</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>item</i><i class ='delimiter'>]</i>
+
+<i class ='comment'># Return a flattened version of a list of strings: the concatenation</i>
+<i class ='comment'># of its elements with intervening spaces.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>flat</i><i class ='delimiter'>(</i><i class ='datatype'>list</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+    <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i> <i class ='operator'>+</i> <i class ='charlist'>&#39; &#39;</i> <i class ='operator'>+</i> <i class ='variable'>item</i>
+    <i class ='keyword'>return</i> <i class ='variable'>s</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+
+<i class ='comment'># Global variables mapping defined/undefined names to files and back.</i>
+<i class ='comment'>#</i>
+<i class ='variable'>file2</i><i class ='variable'>undef</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+<i class ='variable'>def2</i><i class ='variable'>file</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+<i class ='variable'>file2</i><i class ='keyword'>def</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+<i class ='variable'>undef2</i><i class ='variable'>file</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+<i class ='comment'># Read one input file and merge the data into the tables.</i>
+<i class ='comment'># Argument is an open file.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>readinput</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+        <i class ='comment'># If you get any output from this line,</i>
+        <i class ='comment'># it is probably caused by an unexpected input line:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>matcher</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>s</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i> <i class ='variable'>s</i><i class ='delimiter'>;</i> <i class ='keyword'>continue</i> <i class ='comment'># Shouldn&#39;t happen</i>
+        <i class ='delimiter'>(</i><i class ='variable'>ra</i><i class ='delimiter'>,</i> <i class ='variable'>rb</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>r1</i><i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>r1</i><i class ='variable'>b</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>r2</i><i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>r2</i><i class ='variable'>b</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>r3</i><i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>r3</i><i class ='variable'>b</i><i class ='delimiter'>)</i> <i class ='delimiter'>=</i> <i class ='variable'>matcher</i><i class ='delimiter'>.</i><i class ='variable'>regs</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>4</i><i class ='delimiter'>]</i>
+        <i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>type</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i><i class ='delimiter'>[</i><i class ='variable'>r1</i><i class ='variable'>a</i><i class ='delimiter'>:</i><i class ='variable'>r1</i><i class ='variable'>b</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>[</i><i class ='variable'>r3</i><i class ='variable'>a</i><i class ='delimiter'>:</i><i class ='variable'>r3</i><i class ='variable'>b</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>s</i><i class ='delimiter'>[</i><i class ='variable'>r2</i><i class ='variable'>a</i><i class ='delimiter'>:</i><i class ='variable'>r2</i><i class ='variable'>b</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>type</i> <i class ='keyword'>in</i> <i class ='variable'>definitions</i><i class ='delimiter'>:</i>
+            <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='variable'>def2</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>fn</i><i class ='delimiter'>)</i>
+            <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='variable'>file2</i><i class ='keyword'>def</i><i class ='delimiter'>,</i> <i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>type</i> <i class ='keyword'>in</i> <i class ='variable'>externals</i><i class ='delimiter'>:</i>
+            <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='variable'>file2</i><i class ='variable'>undef</i><i class ='delimiter'>,</i> <i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+            <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='variable'>undef2</i><i class ='variable'>file</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>fn</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='keyword'>not</i> <i class ='variable'>type</i> <i class ='keyword'>in</i> <i class ='variable'>ignore</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>fn</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;:&#39;</i> <i class ='operator'>+</i> <i class ='variable'>name</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;: unknown type &#39;</i> <i class ='operator'>+</i> <i class ='variable'>type</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Print all names that were undefined in some module and where they are</i>
+<i class ='comment'># defined.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>printcallee</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>flist</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>file2</i><i class ='variable'>undef</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>flist</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;:&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>elist</i> <i class ='delimiter'>=</i> <i class ='variable'>file2</i><i class ='variable'>undef</i><i class ='delimiter'>[</i><i class ='variable'>filename</i><i class ='delimiter'>]</i>
+        <i class ='variable'>elist</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>elist</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;=</i> <i class ='integer'>8</i><i class ='delimiter'>:</i>
+                <i class ='variable'>tabs</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;\t&#39;</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>tabs</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;\t\t&#39;</i>
+            <i class ='keyword'>if</i> <i class ='variable'>ext</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>def2</i><i class ='variable'>file</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t&#39;</i> <i class ='operator'>+</i> <i class ='variable'>ext</i> <i class ='operator'>+</i> <i class ='variable'>tabs</i> <i class ='operator'>+</i> <i class ='charlist'>&#39; *undefined&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t&#39;</i> <i class ='operator'>+</i> <i class ='variable'>ext</i> <i class ='operator'>+</i> <i class ='variable'>tabs</i> <i class ='operator'>+</i> <i class ='variable'>flat</i><i class ='delimiter'>(</i><i class ='variable'>def2</i><i class ='variable'>file</i><i class ='delimiter'>[</i><i class ='variable'>ext</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Print for each module the names of the other modules that use it.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>printcaller</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>file2</i><i class ='keyword'>def</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+        <i class ='variable'>callers</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>for</i> <i class ='variable'>label</i> <i class ='keyword'>in</i> <i class ='variable'>file2</i><i class ='keyword'>def</i><i class ='delimiter'>[</i><i class ='variable'>filename</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>label</i> <i class ='keyword'>in</i> <i class ='variable'>undef2</i><i class ='variable'>file</i><i class ='delimiter'>:</i>
+                <i class ='variable'>callers</i> <i class ='delimiter'>=</i> <i class ='variable'>callers</i> <i class ='operator'>+</i> <i class ='variable'>undef2</i><i class ='variable'>file</i><i class ='delimiter'>[</i><i class ='variable'>label</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>callers</i><i class ='delimiter'>:</i>
+            <i class ='variable'>callers</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;:&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>lastfn</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i>
+            <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>callers</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>fn</i> <i class ='operator'>!=</i> <i class ='variable'>lastfn</i><i class ='delimiter'>:</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t&#39;</i> <i class ='operator'>+</i> <i class ='variable'>fn</i><i class ='delimiter'>)</i>
+                <i class ='variable'>lastfn</i> <i class ='delimiter'>=</i> <i class ='variable'>fn</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;: unused&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Print undefined names and where they are used.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>printundef</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>undefs</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>file2</i><i class ='variable'>undef</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>file2</i><i class ='variable'>undef</i><i class ='delimiter'>[</i><i class ='variable'>filename</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>ext</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>def2</i><i class ='variable'>file</i><i class ='delimiter'>:</i>
+                <i class ='variable'>store</i><i class ='delimiter'>(</i><i class ='variable'>undefs</i><i class ='delimiter'>,</i> <i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='variable'>elist</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>undefs</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>elist</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>ext</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;:&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>flist</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>undefs</i><i class ='delimiter'>[</i><i class ='variable'>ext</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>flist</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\t&#39;</i> <i class ='operator'>+</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Print warning messages about names defined in more than one file.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>warndups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>savestdout</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i>
+    <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>def2</i><i class ='variable'>file</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>names</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>def2</i><i class ='variable'>file</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;warning:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;multiply defined:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>flat</i><i class ='delimiter'>(</i><i class ='variable'>def2</i><i class ='variable'>file</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i> <i class ='delimiter'>=</i> <i class ='variable'>savestdout</i>
+
+<i class ='comment'># Main program</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>optlist</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;cdu&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Usage:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>basename</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;[-cdu] [file] ...&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-c: print callers per objectfile&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-d: print callees per objectfile&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-u: print usage of undefined symbols&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;If none of -cdu is specified, all are assumed.&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Use &quot;nm -o&quot; to generate the input&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;e.g.: nm -o /lib/libc.a | objgraph&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+    <i class ='variable'>optu</i> <i class ='delimiter'>=</i> <i class ='variable'>optc</i> <i class ='delimiter'>=</i> <i class ='variable'>optd</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>opt</i><i class ='delimiter'>,</i> <i class ='variable'>void</i> <i class ='keyword'>in</i> <i class ='variable'>optlist</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-u&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>optu</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-c&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>optc</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-d&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>optd</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>if</i> <i class ='variable'>optu</i> <i class ='operator'>==</i> <i class ='variable'>optc</i> <i class ='operator'>==</i> <i class ='variable'>optd</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='variable'>optu</i> <i class ='delimiter'>=</i> <i class ='variable'>optc</i> <i class ='delimiter'>=</i> <i class ='variable'>optd</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>filename</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>readinput</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='variable'>readinput</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='variable'>warndups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='comment'>#</i>
+    <i class ='variable'>more</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='variable'>optu</i> <i class ='operator'>+</i> <i class ='variable'>optc</i> <i class ='operator'>+</i> <i class ='variable'>optd</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>optd</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>more</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;---------------All callees------------------&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>printcallee</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>optu</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>more</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;---------------Undefined callees------------&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>printundef</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>optc</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>more</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;---------------All Callers------------------&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>printcaller</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+<i class ='comment'># Call the main program.</i>
+<i class ='comment'># Use its return value as exit status.</i>
+<i class ='comment'># Catch interrupts to avoid stack trace.</i>
+<i class ='comment'>#</i>
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>KeyboardInterrupt</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

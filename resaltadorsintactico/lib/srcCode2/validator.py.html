@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>from</i> <i class ='variable'>pegen</i> <i class ='keyword'>import</i> <i class ='variable'>grammar</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>grammar</i> <i class ='keyword'>import</i> <i class ='delimiter'>(</i>
+    <i class ='variable'>Alt</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Cut</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Gather</i><i class ='delimiter'>,</i>
+    <i class ='variable'>GrammarVisitor</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Group</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Lookahead</i><i class ='delimiter'>,</i>
+    <i class ='variable'>NamedItem</i><i class ='delimiter'>,</i>
+    <i class ='variable'>NameLeaf</i><i class ='delimiter'>,</i>
+    <i class ='variable'>NegativeLookahead</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Opt</i><i class ='delimiter'>,</i>
+    <i class ='variable'>PositiveLookahead</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Repeat0</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Repeat1</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Rhs</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Rule</i><i class ='delimiter'>,</i>
+    <i class ='variable'>StringLeaf</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>ValidationError</i><i class ='delimiter'>(</i><i class ='variable'>Exception</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>pass</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>GrammarValidator</i><i class ='delimiter'>(</i><i class ='variable'>GrammarVisitor</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>grammar</i><i class ='delimiter'>:</i> <i class ='variable'>grammar</i><i class ='delimiter'>.</i><i class ='variable'>Grammar</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>grammar</i> <i class ='delimiter'>=</i> <i class ='variable'>grammar</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rulename</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>validate_</i><i class ='variable'>rule</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rulename</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Rule</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rulename</i> <i class ='delimiter'>=</i> <i class ='variable'>rulename</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>node</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rulename</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>SubRuleValidator</i><i class ='delimiter'>(</i><i class ='variable'>GrammarValidator</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='variable'>visit_</i><i class ='variable'>Rhs</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Rule</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>index</i><i class ='delimiter'>,</i> <i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>node</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>alts_</i><i class ='variable'>to_</i><i class ='variable'>consider</i> <i class ='delimiter'>=</i> <i class ='variable'>node</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>[</i><i class ='variable'>index</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+            <i class ='keyword'>for</i> <i class ='variable'>other_</i><i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>alts_</i><i class ='variable'>to_</i><i class ='variable'>consider</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>check_</i><i class ='variable'>intersection</i><i class ='delimiter'>(</i><i class ='variable'>alt</i><i class ='delimiter'>,</i> <i class ='variable'>other_</i><i class ='variable'>alt</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>check_</i><i class ='variable'>intersection</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>first_</i><i class ='variable'>alt</i><i class ='delimiter'>:</i> <i class ='variable'>Alt</i><i class ='delimiter'>,</i> <i class ='variable'>second_</i><i class ='variable'>alt</i><i class ='delimiter'>:</i> <i class ='variable'>Alt</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>second_</i><i class ='variable'>alt</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>first_</i><i class ='variable'>alt</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>ValidationError</i><i class ='delimiter'>(</i>
+                    <i class ='fstring'>f&quot;In {self.rulename} there is an alternative that will &quot;</i>
+                    <i class ='fstring'>f&quot;never be visited:\n{second_alt}&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>validate_</i><i class ='variable'>grammar</i><i class ='delimiter'>(</i><i class ='variable'>the_</i><i class ='variable'>grammar</i><i class ='delimiter'>:</i> <i class ='variable'>grammar</i><i class ='delimiter'>.</i><i class ='variable'>Grammar</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>validator_</i><i class ='variable'>cls</i> <i class ='keyword'>in</i> <i class ='variable'>GrammarValidator</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>subclasses__</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>validator</i> <i class ='delimiter'>=</i> <i class ='variable'>validator_</i><i class ='variable'>cls</i><i class ='delimiter'>(</i><i class ='variable'>the_</i><i class ='variable'>grammar</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>rule_</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>rule</i> <i class ='keyword'>in</i> <i class ='variable'>the_</i><i class ='variable'>grammar</i><i class ='delimiter'>.</i><i class ='variable'>rules</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>validator</i><i class ='delimiter'>.</i><i class ='variable'>validate_</i><i class ='variable'>rule</i><i class ='delimiter'>(</i><i class ='variable'>rule_</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>rule</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

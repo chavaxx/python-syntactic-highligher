@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+A Python version of the classic &quot;</i><i class ='variable'>bottles</i> <i class ='variable'>of</i> <i class ='variable'>beer</i> <i class ='variable'>on</i> <i class ='variable'>the</i> <i class ='variable'>wall</i><i class ='string'>&quot; programming
+example.
+
+By Guido van Rossum, demystified after a version by Fredrik Lundh.
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='integer'>100</i>
+<i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+    <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>bottle</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>n</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i> <i class ='keyword'>return</i> <i class ='string'>&quot;no more bottles of beer&quot;</i>
+    <i class ='keyword'>if</i> <i class ='variable'>n</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i> <i class ='keyword'>return</i> <i class ='string'>&quot;one bottle of beer&quot;</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='string'>&quot; bottles of beer&quot;</i>
+
+<i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>bottle</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='string'>&quot;on the wall,&quot;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>bottle</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='string'>&quot;.&quot;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Take one down, pass it around,&quot;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>bottle</i><i class ='delimiter'>(</i><i class ='variable'>i-1</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='string'>&quot;on the wall.&quot;</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

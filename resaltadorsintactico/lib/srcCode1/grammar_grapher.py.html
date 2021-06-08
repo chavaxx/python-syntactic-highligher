@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3.8</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot; Convert a grammar into a dot-file suitable for use with GraphViz
+
+    For example:
+        Generate the GraphViz file:
+        # scripts/grammar_grapher.py data/python.gram &gt; python.gv
+
+        Then generate the graph...
+
+        # twopi python.gv -Tpng &gt; python_twopi.png
+
+        or
+
+        # dot python.gv -Tpng &gt; python_dot.png
+
+        NOTE: The _dot_ and _twopi_ tools seem to produce the most useful results.
+              The _circo_ tool is the worst of the bunch. Don&#39;t even bother.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>typing</i> <i class ='keyword'>import</i> <i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='variable'>List</i>
+
+<i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='string'>&quot;.&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>build</i> <i class ='keyword'>import</i> <i class ='variable'>build_</i><i class ='variable'>parser</i>
+<i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>grammar</i> <i class ='keyword'>import</i> <i class ='delimiter'>(</i>
+    <i class ='variable'>Alt</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Cut</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Grammar</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Group</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Leaf</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Lookahead</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Rule</i><i class ='delimiter'>,</i>
+    <i class ='variable'>NameLeaf</i><i class ='delimiter'>,</i>
+    <i class ='variable'>NamedItem</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Opt</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Repeat</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Rhs</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+
+<i class ='variable'>argparser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i><i class ='variable'>prog</i><i class ='delimiter'>=</i><i class ='string'>&quot;graph_grammar&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='string'>&quot;Graph a grammar tree&quot;</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;-s&quot;</i><i class ='delimiter'>,</i>
+    <i class ='string'>&quot;--start&quot;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>choices</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='string'>&quot;exec&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;eval&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;single&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='string'>&quot;exec&quot;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Choose the grammar&#39;s start rule (exec, eval or single)&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i><i class ='string'>&quot;grammar_file&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;The grammar file to graph&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>:</i> <i class ='variable'>Any</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>Any</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Alt</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='hexadecimal'>_</i><i class ='variable'>ref</i> <i class ='keyword'>for</i> <i class ='hexadecimal'>_</i><i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>items</i> <i class ='keyword'>for</i> <i class ='hexadecimal'>_</i><i class ='variable'>ref</i> <i class ='keyword'>in</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='hexadecimal'>_</i><i class ='variable'>item</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Cut</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Group</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Lookahead</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>NamedItem</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>item</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># NOTE NameLeaf must be before Leaf</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>NameLeaf</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='operator'>==</i> <i class ='string'>&quot;ENDMARKER&quot;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Leaf</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Opt</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Repeat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Rhs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>[</i><i class ='hexadecimal'>_</i><i class ='variable'>ref</i> <i class ='keyword'>for</i> <i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>alts</i> <i class ='keyword'>for</i> <i class ='hexadecimal'>_</i><i class ='variable'>ref</i> <i class ='keyword'>in</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>alt</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;Unknown item: {type(item)}&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>grammar</i><i class ='delimiter'>,</i> <i class ='variable'>parser</i><i class ='delimiter'>,</i> <i class ='variable'>tokenizer</i> <i class ='delimiter'>=</i> <i class ='variable'>build_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>grammar_</i><i class ='variable'>file</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>Exception</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;ERROR: Failed to parse grammar file&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>references</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>rule</i> <i class ='keyword'>in</i> <i class ='variable'>grammar</i><i class ='delimiter'>.</i><i class ='variable'>rules</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>references</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>references_</i><i class ='variable'>for_</i><i class ='variable'>item</i><i class ='delimiter'>(</i><i class ='variable'>rule</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Flatten the start node if has only a single reference</i>
+    <i class ='variable'>root_</i><i class ='variable'>node</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='string'>&quot;exec&quot;</i><i class ='delimiter'>:</i> <i class ='string'>&quot;file&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;eval&quot;</i><i class ='delimiter'>:</i> <i class ='string'>&quot;eval&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;single&quot;</i><i class ='delimiter'>:</i> <i class ='string'>&quot;interactive&quot;</i><i class ='delimiter'>}</i><i class ='delimiter'>[</i><i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>]</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;digraph g1 {&quot;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\toverlap=&quot;scale&quot;;&#39;</i><i class ='delimiter'>)</i>  <i class ='comment'># Force twopi to scale the graph to avoid overlaps</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='charlist'>&#39;\troot=&quot;{root_node}&quot;;&#39;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;\t{root_node} [color=green, shape=circle];&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>refs</i> <i class ='keyword'>in</i> <i class ='variable'>references</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ref</i> <i class ='keyword'>in</i> <i class ='variable'>refs</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;\t{name} -&gt; {ref};&quot;</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;}&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

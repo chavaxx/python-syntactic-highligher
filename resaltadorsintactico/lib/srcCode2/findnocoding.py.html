@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;List all those Python files that require a coding directive
+
+Usage: findnocoding.py dir1 [dir2...]
+&quot;&quot;&quot;</i>
+
+<i class ='hexadecimal'>__a</i><i class ='variable'>uthor__</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;Oleg Broytmann, Georg Brandl&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>,</i> <i class ='variable'>getopt</i>
+
+<i class ='comment'># our pysource module finds Python source files</i>
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>pysource</i>
+<i class ='keyword'>except</i> <i class ='variable'>ImportError</i><i class ='delimiter'>:</i>
+    <i class ='comment'># emulate the module with a simple os.walk</i>
+    <i class ='keyword'>class</i> <i class ='variable'>pysource</i><i class ='delimiter'>:</i>
+        <i class ='variable'>has_</i><i class ='variable'>python_</i><i class ='variable'>ext</i> <i class ='delimiter'>=</i> <i class ='variable'>looks_</i><i class ='variable'>like_</i><i class ='variable'>python</i> <i class ='delimiter'>=</i> <i class ='variable'>can_</i><i class ='variable'>be_</i><i class ='variable'>compiled</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>def</i> <i class ='variable'>walk_</i><i class ='variable'>python_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>paths</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>path</i> <i class ='keyword'>in</i> <i class ='variable'>paths</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>yield</i> <i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>elif</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>for</i> <i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>dirs</i><i class ='delimiter'>,</i> <i class ='variable'>files</i> <i class ='keyword'>in</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>walk</i><i class ='delimiter'>(</i><i class ='variable'>path</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                        <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+                            <i class ='keyword'>if</i> <i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                                <i class ='keyword'>yield</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>root</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='variable'>pysource</i> <i class ='delimiter'>=</i> <i class ='variable'>pysource</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;The pysource module is not available; &quot;</i>
+                         <i class ='string'>&quot;no sophisticated Python source file search will be done.&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>decl_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>rb</i><i class ='charlist'>&#39;^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)&#39;</i><i class ='delimiter'>)</i>
+<i class ='variable'>blank_</i><i class ='variable'>re</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>rb</i><i class ='charlist'>&#39;^[ \t\f]*(?:[#\r\n]|$)&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>declaration</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>match</i> <i class ='delimiter'>=</i> <i class ='variable'>decl_</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>match</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>match</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>b</i><i class ='charlist'>&#39;&#39;</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>has_</i><i class ='variable'>correct_</i><i class ='variable'>encoding</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>codec</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>codec</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>UnicodeDecodeError</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>needs_</i><i class ='variable'>declaration</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>infile</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;rb&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i><i class ='delimiter'>:</i> <i class ='comment'># Oops, the file was removed - ignore it</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>with</i> <i class ='variable'>infile</i><i class ='delimiter'>:</i>
+        <i class ='variable'>line1</i> <i class ='delimiter'>=</i> <i class ='variable'>infile</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>line2</i> <i class ='delimiter'>=</i> <i class ='variable'>infile</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>get_</i><i class ='variable'>declaration</i><i class ='delimiter'>(</i><i class ='variable'>line1</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i>
+            <i class ='variable'>blank_</i><i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line1</i><i class ='delimiter'>)</i> <i class ='keyword'>and</i> <i class ='variable'>get_</i><i class ='variable'>declaration</i><i class ='delimiter'>(</i><i class ='variable'>line2</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='comment'># the file does have an encoding declaration, so trust it</i>
+            <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+        <i class ='comment'># check the whole file for non utf-8 characters</i>
+        <i class ='variable'>rest</i> <i class ='delimiter'>=</i> <i class ='variable'>infile</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>has_</i><i class ='variable'>correct_</i><i class ='variable'>encoding</i><i class ='delimiter'>(</i><i class ='variable'>line1</i><i class ='operator'>+</i><i class ='variable'>line2</i><i class ='operator'>+</i><i class ='variable'>rest</i><i class ='delimiter'>,</i> <i class ='string'>&quot;utf-8&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+
+<i class ='variable'>usage</i> <i class ='delimiter'>=</i> <i class ='multilineComment'>&quot;&quot;&quot;Usage: %s [-cd] paths...
+    -c: recognize Python source files trying to compile them
+    -d: debug output&quot;&quot;&quot;</i> <i class ='operator'>%</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;cd&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>usage</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>is_</i><i class ='variable'>python</i> <i class ='delimiter'>=</i> <i class ='variable'>pysource</i><i class ='delimiter'>.</i><i class ='variable'>looks_</i><i class ='variable'>like_</i><i class ='variable'>python</i>
+    <i class ='variable'>debug</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>o</i><i class ='delimiter'>,</i> <i class ='variable'>a</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-c&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>is_</i><i class ='variable'>python</i> <i class ='delimiter'>=</i> <i class ='variable'>pysource</i><i class ='delimiter'>.</i><i class ='variable'>can_</i><i class ='variable'>be_</i><i class ='variable'>compiled</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-d&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>debug</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>usage</i><i class ='delimiter'>,</i> <i class ='variable'>file</i><i class ='delimiter'>=</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>fullpath</i> <i class ='keyword'>in</i> <i class ='variable'>pysource</i><i class ='delimiter'>.</i><i class ='variable'>walk_</i><i class ='variable'>python_</i><i class ='variable'>files</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='variable'>is_</i><i class ='variable'>python</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>debug</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Testing for coding: %s&quot;</i> <i class ='operator'>%</i> <i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+        <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='variable'>needs_</i><i class ='variable'>declaration</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>result</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>fullpath</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

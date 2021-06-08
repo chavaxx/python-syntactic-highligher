@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='comment'># Print the product of age and size of each file, in suitable units.</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Usage: byteyears [ -a | -m | -c ] file ...</i>
+<i class ='comment'>#</i>
+<i class ='comment'># Options -[amc] select atime, mtime (default) or ctime as age.</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>,</i> <i class ='variable'>time</i>
+<i class ='keyword'>from</i> <i class ='variable'>stat</i> <i class ='keyword'>import</i> <i class ='operator'>*</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='comment'># Use lstat() to stat files if it exists, else stat()</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>statfunc</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>lstat</i>
+    <i class ='keyword'>except</i> <i class ='variable'>AttributeError</i><i class ='delimiter'>:</i>
+        <i class ='variable'>statfunc</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>stat</i>
+
+    <i class ='comment'># Parse options</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-m&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>itime</i> <i class ='delimiter'>=</i> <i class ='variable'>ST_</i><i class ='variable'>MTIME</i>
+        <i class ='keyword'>del</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-c&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>itime</i> <i class ='delimiter'>=</i> <i class ='variable'>ST_</i><i class ='variable'>CTIME</i>
+        <i class ='keyword'>del</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-a&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>itime</i> <i class ='delimiter'>=</i> <i class ='variable'>ST_</i><i class ='variable'>CTIME</i>
+        <i class ='keyword'>del</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>itime</i> <i class ='delimiter'>=</i> <i class ='variable'>ST_</i><i class ='variable'>MTIME</i>
+
+    <i class ='variable'>secs_</i><i class ='variable'>per_</i><i class ='variable'>year</i> <i class ='delimiter'>=</i> <i class ='float'>365.0</i> <i class ='operator'>*</i> <i class ='float'>24.0</i> <i class ='operator'>*</i> <i class ='float'>3600.0</i>   <i class ='comment'># Scale factor</i>
+    <i class ='variable'>now</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>                       <i class ='comment'># Current time, for age computations</i>
+    <i class ='variable'>status</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>                              <i class ='comment'># Exit status, set to 1 on errors</i>
+
+    <i class ='comment'># Compute max file name length</i>
+    <i class ='variable'>maxlen</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>maxlen</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>maxlen</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Process each argument in turn</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>st</i> <i class ='delimiter'>=</i> <i class ='variable'>statfunc</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>OSError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;can&#39;t stat %r: %r\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>status</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+            <i class ='variable'>st</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>st</i><i class ='delimiter'>:</i>
+            <i class ='variable'>anytime</i> <i class ='delimiter'>=</i> <i class ='variable'>st</i><i class ='delimiter'>[</i><i class ='variable'>itime</i><i class ='delimiter'>]</i>
+            <i class ='variable'>size</i> <i class ='delimiter'>=</i> <i class ='variable'>st</i><i class ='delimiter'>[</i><i class ='variable'>ST_</i><i class ='variable'>SIZE</i><i class ='delimiter'>]</i>
+            <i class ='variable'>age</i> <i class ='delimiter'>=</i> <i class ='variable'>now</i> <i class ='variable'>-</i> <i class ='variable'>anytime</i>
+            <i class ='variable'>byteyears</i> <i class ='delimiter'>=</i> <i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>size</i><i class ='delimiter'>)</i> <i class ='operator'>*</i> <i class ='datatype'>float</i><i class ='delimiter'>(</i><i class ='variable'>age</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='variable'>secs_</i><i class ='variable'>per_</i><i class ='variable'>year</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>.</i><i class ='variable'>ljust</i><i class ='delimiter'>(</i><i class ='variable'>maxlen</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>byteyears</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>rjust</i><i class ='delimiter'>(</i><i class ='integer'>8</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>status</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='comment'># Module ndiff version 1.7.0</i>
+<i class ='comment'># Released to the public domain 08-Dec-2000,</i>
+<i class ='comment'># by Tim Peters (tim.one@home.com).</i>
+
+<i class ='comment'># Provided as-is; use at your own risk; no warranty; no promises; enjoy!</i>
+
+<i class ='comment'># ndiff.py is now simply a front-end to the difflib.ndiff() function.</i>
+<i class ='comment'># Originally, it contained the difflib.SequenceMatcher class as well.</i>
+<i class ='comment'># This completes the raiding of reusable code from this formerly</i>
+<i class ='comment'># self-contained script.</i>
+
+<i class ='string'>&quot;&quot;</i><i class ='string'>&quot;ndiff [-q] file1 file2
+    or
+ndiff (-r1 | -r2) &lt; ndiff_output &gt; file1_or_file2
+
+Print a human-friendly file difference report to stdout.  Both inter-
+and intra-line differences are noted.  In the second form, recreate file1
+(-r1) or file2 (-r2) on stdout, from an ndiff report on stdin.
+
+In the first form, if -q (&quot;</i><i class ='variable'>quiet</i><i class ='string'>&quot;) is not specified, the first two lines
+of output are
+
+-: file1
++: file2
+
+Each remaining line begins with a two-letter code:
+
+    &quot;</i><i class ='variable'>-</i> <i class ='string'>&quot;    line unique to file1
+    &quot;</i><i class ='operator'>+</i> <i class ='string'>&quot;    line unique to file2
+    &quot;</i>  <i class ='string'>&quot;    line common to both files
+    &quot;</i><i class ='errorAscii'>?</i> <i class ='string'>&quot;    line not present in either input file
+
+Lines beginning with &quot;</i><i class ='errorAscii'>?</i> <i class ='string'>&quot; attempt to guide the eye to intraline
+differences, and were not present in either input file.  These lines can be
+confusing if the source files contain tab characters.
+
+The first file can be recovered by retaining only lines that begin with
+&quot;</i>  <i class ='string'>&quot; or &quot;</i><i class ='variable'>-</i> <i class ='string'>&quot;, and deleting those 2-character prefixes; use ndiff with -r1.
+
+The second file can be recovered similarly, but by retaining only &quot;</i>  <i class ='string'>&quot; and
+&quot;</i><i class ='operator'>+</i> <i class ='string'>&quot; lines; use ndiff with -r2; or, on Unix, the second file can be
+recovered by piping the output through
+
+    sed -n &#39;/^[+ ] /s/^..//p&#39;
+&quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='hexadecimal'>__</i><i class ='variable'>version__</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>7</i><i class ='delimiter'>,</i> <i class ='integer'>0</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>difflib</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>fail</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>out</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i>
+    <i class ='variable'>out</i><i class ='delimiter'>(</i><i class ='variable'>msg</i> <i class ='operator'>+</i> <i class ='string'>&quot;\n\n&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>out</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+<i class ='comment'># open a file &amp; return the file object; gripe and return 0 if it</i>
+<i class ='comment'># couldn&#39;t be opened</i>
+<i class ='keyword'>def</i> <i class ='variable'>fopen</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>detail</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>fail</i><i class ='delimiter'>(</i><i class ='string'>&quot;couldn&#39;t open &quot;</i> <i class ='operator'>+</i> <i class ='variable'>fname</i> <i class ='operator'>+</i> <i class ='string'>&quot;: &quot;</i> <i class ='operator'>+</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>detail</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># open two files &amp; spray the diff to stdout; return false iff a problem</i>
+<i class ='keyword'>def</i> <i class ='variable'>fcompare</i><i class ='delimiter'>(</i><i class ='variable'>f1</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>f2</i><i class ='variable'>name</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>f1</i> <i class ='delimiter'>=</i> <i class ='variable'>fopen</i><i class ='delimiter'>(</i><i class ='variable'>f1</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='variable'>f2</i> <i class ='delimiter'>=</i> <i class ='variable'>fopen</i><i class ='delimiter'>(</i><i class ='variable'>f2</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>f1</i> <i class ='keyword'>or</i> <i class ='keyword'>not</i> <i class ='variable'>f2</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='integer'>0</i>
+
+    <i class ='variable'>a</i> <i class ='delimiter'>=</i> <i class ='variable'>f1</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>;</i> <i class ='variable'>f1</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>f2</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>;</i> <i class ='variable'>f2</i><i class ='delimiter'>.</i><i class ='variable'>close</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>difflib</i><i class ='delimiter'>.</i><i class ='variable'>ndiff</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>,</i> <i class ='variable'>b</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>return</i> <i class ='integer'>1</i>
+
+<i class ='comment'># crack args (sys.argv[1:] is normal) &amp; compare;</i>
+<i class ='comment'># return false iff a problem</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='string'>&quot;qr:&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>detail</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>fail</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>detail</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>noisy</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='variable'>qseen</i> <i class ='delimiter'>=</i> <i class ='variable'>rseen</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>opt</i><i class ='delimiter'>,</i> <i class ='variable'>val</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='string'>&quot;-q&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>qseen</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+            <i class ='variable'>noisy</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>opt</i> <i class ='operator'>==</i> <i class ='string'>&quot;-r&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>rseen</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+            <i class ='variable'>whichfile</i> <i class ='delimiter'>=</i> <i class ='variable'>val</i>
+    <i class ='keyword'>if</i> <i class ='variable'>qseen</i> <i class ='keyword'>and</i> <i class ='variable'>rseen</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>fail</i><i class ='delimiter'>(</i><i class ='string'>&quot;can&#39;t specify both -q and -r&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>rseen</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>fail</i><i class ='delimiter'>(</i><i class ='string'>&quot;no args allowed with -r option&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>whichfile</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;1&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;2&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>restore</i><i class ='delimiter'>(</i><i class ='variable'>whichfile</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i> <i class ='integer'>1</i>
+        <i class ='keyword'>return</i> <i class ='variable'>fail</i><i class ='delimiter'>(</i><i class ='string'>&quot;-r value must be 1 or 2&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i> <i class ='operator'>!=</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>fail</i><i class ='delimiter'>(</i><i class ='string'>&quot;need 2 filename args&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>f1</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>f2</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i>
+    <i class ='keyword'>if</i> <i class ='variable'>noisy</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>f1</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;+:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>f2</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>fcompare</i><i class ='delimiter'>(</i><i class ='variable'>f1</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>f2</i><i class ='variable'>name</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># read ndiff output from stdin, and print file1 (which==&#39;1&#39;) or</i>
+<i class ='comment'># file2 (which==&#39;2&#39;) to stdout</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>restore</i><i class ='delimiter'>(</i><i class ='variable'>which</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>restored</i> <i class ='delimiter'>=</i> <i class ='variable'>difflib</i><i class ='delimiter'>.</i><i class ='variable'>restore</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>which</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>writelines</i><i class ='delimiter'>(</i><i class ='variable'>restored</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='string'>&quot;-profile&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>import</i> <i class ='variable'>profile</i><i class ='delimiter'>,</i> <i class ='variable'>pstats</i>
+        <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='string'>&quot;-profile&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>statf</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;ndiff.pro&quot;</i>
+        <i class ='variable'>profile</i><i class ='delimiter'>.</i><i class ='variable'>run</i><i class ='delimiter'>(</i><i class ='string'>&quot;main(args)&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>statf</i><i class ='delimiter'>)</i>
+        <i class ='variable'>stats</i> <i class ='delimiter'>=</i> <i class ='variable'>pstats</i><i class ='delimiter'>.</i><i class ='variable'>Stats</i><i class ='delimiter'>(</i><i class ='variable'>statf</i><i class ='delimiter'>)</i>
+        <i class ='variable'>stats</i><i class ='delimiter'>.</i><i class ='variable'>strip_</i><i class ='variable'>dirs</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>sort_</i><i class ='variable'>stats</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;time&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>print_</i><i class ='variable'>stats</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

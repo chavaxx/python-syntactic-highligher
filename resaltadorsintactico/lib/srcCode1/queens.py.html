@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+N queens problem.
+
+The (well-known) problem is due to Niklaus Wirth.
+
+This solution is inspired by Dijkstra (Structured Programming).  It is
+a classic recursive backtracking approach.
+&quot;&quot;&quot;</i>
+
+<i class ='variable'>N</i> <i class ='delimiter'>=</i> <i class ='integer'>8</i>                                   <i class ='comment'># Default; command line overrides</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>Queens</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>=</i><i class ='variable'>N</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>n</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>reset</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>reset</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='keyword'>None</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>n</i>             <i class ='comment'># Where is the queen in column x</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>row</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>n</i>              <i class ='comment'># Is row[y] safe?</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>up</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='operator'>*</i><i class ='variable'>n-1</i><i class ='delimiter'>)</i>         <i class ='comment'># Is upward diagonal[x-y] safe?</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>down</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='operator'>*</i><i class ='variable'>n-1</i><i class ='delimiter'>)</i>       <i class ='comment'># Is downward diagonal[x+y] safe?</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nfound</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>                 <i class ='comment'># Instrumentation</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>solve</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>               <i class ='comment'># Recursive solver</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>safe</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>place</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>x</i><i class ='operator'>+</i><i class ='integer'>1</i> <i class ='operator'>==</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>solve</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>safe</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>row</i><i class ='delimiter'>[</i><i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>up</i><i class ='delimiter'>[</i><i class ='variable'>x-y</i><i class ='delimiter'>]</i> <i class ='keyword'>and</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>down</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='operator'>+</i><i class ='variable'>y</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>place</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>y</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>y</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>row</i><i class ='delimiter'>[</i><i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>up</i><i class ='delimiter'>[</i><i class ='variable'>x-y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>down</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='operator'>+</i><i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>remove</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>y</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>row</i><i class ='delimiter'>[</i><i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>up</i><i class ='delimiter'>[</i><i class ='variable'>x-y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>down</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='operator'>+</i><i class ='variable'>y</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+
+    <i class ='variable'>silent</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>                          <i class ='comment'># If true, count solutions only</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>display</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nfound</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nfound</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>silent</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;+-&#39;</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;--&#39;</i><i class ='operator'>*</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n-1</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>,</i> <i class ='variable'>-1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;|&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>y</i><i class ='delimiter'>[</i><i class ='variable'>x</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='variable'>y</i><i class ='delimiter'>:</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Q&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;.&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;|&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;+-&#39;</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;--&#39;</i><i class ='operator'>*</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>n</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;+&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i>
+    <i class ='variable'>silent</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>N</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;-n&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>silent</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>del</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>q</i> <i class ='delimiter'>=</i> <i class ='variable'>Queens</i><i class ='delimiter'>(</i><i class ='variable'>n</i><i class ='delimiter'>)</i>
+    <i class ='variable'>q</i><i class ='delimiter'>.</i><i class ='variable'>silent</i> <i class ='delimiter'>=</i> <i class ='variable'>silent</i>
+    <i class ='variable'>q</i><i class ='delimiter'>.</i><i class ='variable'>solve</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;Found&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>q</i><i class ='delimiter'>.</i><i class ='variable'>nfound</i><i class ='delimiter'>,</i> <i class ='string'>&quot;solutions.&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

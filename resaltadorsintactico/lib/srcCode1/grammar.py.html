@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>from</i> <i class ='hexadecimal'>__f</i><i class ='variable'>uture__</i> <i class ='keyword'>import</i> <i class ='variable'>annotations</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>abc</i> <i class ='keyword'>import</i> <i class ='variable'>abstractmethod</i>
+<i class ='keyword'>from</i> <i class ='variable'>typing</i> <i class ='keyword'>import</i> <i class ='delimiter'>(</i>
+    <i class ='variable'>AbstractSet</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Any</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Dict</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Iterable</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Iterator</i><i class ='delimiter'>,</i>
+    <i class ='variable'>List</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Optional</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Set</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Tuple</i><i class ='delimiter'>,</i>
+    <i class ='variable'>TYPE_</i><i class ='variable'>CHECKING</i><i class ='delimiter'>,</i>
+    <i class ='variable'>Union</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='variable'>TYPE_</i><i class ='variable'>CHECKING</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>from</i> <i class ='variable'>pegen</i><i class ='delimiter'>.</i><i class ='variable'>parser_</i><i class ='variable'>generator</i> <i class ='keyword'>import</i> <i class ='variable'>ParserGenerator</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>GrammarError</i><i class ='delimiter'>(</i><i class ='variable'>Exception</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>pass</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>GrammarVisitor</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>:</i> <i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>:</i> <i class ='variable'>Any</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Any</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Visit a node.&quot;&quot;&quot;</i>
+        <i class ='variable'>method</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;visit_&quot;</i> <i class ='operator'>+</i> <i class ='variable'>node</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__c</i><i class ='variable'>lass__</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>name__</i>
+        <i class ='variable'>visitor</i> <i class ='delimiter'>=</i> <i class ='variable'>getattr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>method</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>generic_</i><i class ='variable'>visit</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>visitor</i><i class ='delimiter'>(</i><i class ='variable'>node</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>generic_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Iterable</i><i class ='delimiter'>[</i><i class ='variable'>Any</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>:</i> <i class ='variable'>Any</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>:</i> <i class ='variable'>Any</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='multilineComment'>&quot;&quot;&quot;Called if no explicit visitor function exists for a node.&quot;&quot;&quot;</i>
+        <i class ='keyword'>for</i> <i class ='variable'>value</i> <i class ='keyword'>in</i> <i class ='variable'>node</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='datatype'>list</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>value</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>value</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='operator'>**</i><i class ='variable'>kwargs</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Grammar</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Iterable</i><i class ='delimiter'>[</i><i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>metas</i><i class ='delimiter'>:</i> <i class ='variable'>Iterable</i><i class ='delimiter'>[</i><i class ='variable'>Tuple</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rules</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='variable'>rule</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>:</i> <i class ='variable'>rule</i> <i class ='keyword'>for</i> <i class ='variable'>rule</i> <i class ='keyword'>in</i> <i class ='variable'>rules</i><i class ='delimiter'>}</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>metas</i> <i class ='delimiter'>=</i> <i class ='datatype'>dict</i><i class ='delimiter'>(</i><i class ='variable'>metas</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>rule</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>rule</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rules</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='string'>&quot;Grammar(&quot;</i><i class ='delimiter'>]</i>
+        <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;  [&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>rule</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rules</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;    {repr(rule)},&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;  ],&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;  {repr(list(self.metas.items()))}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>lines</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;)&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>lines</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='keyword'>from</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rules</i><i class ='delimiter'>.</i><i class ='variable'>values</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='comment'># Global flag whether we want actions in __str__() -- default off.</i>
+<i class ='variable'>SIMPLE_</i><i class ='variable'>STR</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Rule</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>rhs</i><i class ='delimiter'>:</i> <i class ='variable'>Rhs</i><i class ='delimiter'>,</i> <i class ='variable'>memo</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='variable'>object</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>type</i> <i class ='delimiter'>=</i> <i class ='variable'>type</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i> <i class ='delimiter'>=</i> <i class ='variable'>rhs</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>memo</i> <i class ='delimiter'>=</i> <i class ='datatype'>bool</i><i class ='delimiter'>(</i><i class ='variable'>memo</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>visited</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nullable</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>left_</i><i class ='variable'>recursive</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>leader</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>is_</i><i class ='variable'>loop</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;_loop&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>is_</i><i class ='variable'>gather</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;_gather&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>SIMPLE_</i><i class ='variable'>STR</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>type</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='fstring'>f&quot;{self.name}: {self.rhs}&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='fstring'>f&quot;{self.name}[{self.type}]: {self.rhs}&quot;</i>
+        <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>res</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>88</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>res</i>
+        <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot;:&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='string'>&quot;:&quot;</i><i class ='delimiter'>]</i>
+        <i class ='variable'>lines</i> <i class ='delimiter'>+=</i> <i class ='delimiter'>[</i><i class ='fstring'>f&quot;    | {alt}&quot;</i> <i class ='keyword'>for</i> <i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;\n&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>lines</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Rule({self.name!r}, {self.type!r}, {self.rhs!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Rhs</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>visited</i><i class ='delimiter'>:</i>
+            <i class ='comment'># A left-recursive rule is considered non-nullable.</i>
+            <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>visited</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nullable</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>rules</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nullable</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>flatten</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Rhs</i><i class ='delimiter'>:</i>
+        <i class ='comment'># If it&#39;s a single parenthesized group, flatten it.</i>
+        <i class ='variable'>rhs</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i>
+        <i class ='keyword'>if</i> <i class ='delimiter'>(</i>
+            <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>is_</i><i class ='variable'>loop</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>and</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i>
+            <i class ='keyword'>and</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i>
+            <i class ='keyword'>and</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>item</i><i class ='delimiter'>,</i> <i class ='variable'>Group</i><i class ='delimiter'>)</i>
+        <i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>rhs</i> <i class ='delimiter'>=</i> <i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i>
+        <i class ='keyword'>return</i> <i class ='variable'>rhs</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>collect_</i><i class ='variable'>todo</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>gen</i><i class ='delimiter'>:</i> <i class ='variable'>ParserGenerator</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>rhs</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>flatten</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>collect_</i><i class ='variable'>todo</i><i class ='delimiter'>(</i><i class ='variable'>gen</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Leaf</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterable</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>False</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>abstractmethod</i>
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>NotImplementedError</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>abstractmethod</i>
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>NotImplementedError</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>NameLeaf</i><i class ='delimiter'>(</i><i class ='variable'>Leaf</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;The value is the name.&quot;&quot;&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='operator'>==</i> <i class ='string'>&quot;ENDMARKER&quot;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='string'>&quot;$&quot;</i>
+        <i class ='keyword'>return</i> <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;NameLeaf({self.value!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i> <i class ='keyword'>in</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>rules</i><i class ='delimiter'>[</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>rules</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Token or unknown; never empty.</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>{</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i><i class ='delimiter'>}</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>StringLeaf</i><i class ='delimiter'>(</i><i class ='variable'>Leaf</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;The value is a string literal, including quotes.&quot;&quot;&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;StringLeaf({self.value!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='comment'># The string token &#39;&#39; is considered empty.</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>not</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>value</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Rhs</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>alts</i><i class ='delimiter'>:</i> <i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>Alt</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alts</i> <i class ='delimiter'>=</i> <i class ='variable'>alts</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>memo</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='variable'>Tuple</i><i class ='delimiter'>[</i><i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot; | &quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>alt</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Rhs({self.alts!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>Alt</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alts</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>alt</i><i class ='delimiter'>.</i><i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>rules</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>names</i><i class ='delimiter'>:</i> <i class ='variable'>Set</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>:</i>
+            <i class ='variable'>names</i> <i class ='operator'>|</i><i class ='delimiter'>=</i> <i class ='variable'>alt</i><i class ='delimiter'>.</i><i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>names</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>collect_</i><i class ='variable'>todo</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>gen</i><i class ='delimiter'>:</i> <i class ='variable'>ParserGenerator</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>alt</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>alts</i><i class ='delimiter'>:</i>
+            <i class ='variable'>alt</i><i class ='delimiter'>.</i><i class ='variable'>collect_</i><i class ='variable'>todo</i><i class ='delimiter'>(</i><i class ='variable'>gen</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Alt</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>items</i><i class ='delimiter'>:</i> <i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>NamedItem</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='delimiter'>,</i> <i class ='variable'>icut</i><i class ='delimiter'>:</i> <i class ='datatype'>int</i> <i class ='delimiter'>=</i> <i class ='variable'>-1</i><i class ='delimiter'>,</i> <i class ='variable'>action</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>items</i> <i class ='delimiter'>=</i> <i class ='variable'>items</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>icut</i> <i class ='delimiter'>=</i> <i class ='variable'>icut</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>action</i> <i class ='delimiter'>=</i> <i class ='variable'>action</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='variable'>core</i> <i class ='delimiter'>=</i> <i class ='string'>&quot; &quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>item</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>SIMPLE_</i><i class ='variable'>STR</i> <i class ='keyword'>and</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>action</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;{core} {{ {self.action} }}&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>core</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>icut</i> <i class ='operator'>&gt;=</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+            <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;icut={self.icut}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>action</i><i class ='delimiter'>:</i>
+            <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;action={self.action!r}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Alt({&#39;, &#39;.join(args)})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>NamedItem</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>items</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>rules</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>names</i><i class ='delimiter'>:</i> <i class ='variable'>Set</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>:</i>
+            <i class ='variable'>names</i> <i class ='operator'>|</i><i class ='delimiter'>=</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>nullable</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+        <i class ='keyword'>return</i> <i class ='variable'>names</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>collect_</i><i class ='variable'>todo</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>gen</i><i class ='delimiter'>:</i> <i class ='variable'>ParserGenerator</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>item</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>:</i>
+            <i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>collect_</i><i class ='variable'>todo</i><i class ='delimiter'>(</i><i class ='variable'>gen</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>NamedItem</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>item</i><i class ='delimiter'>:</i> <i class ='variable'>Item</i><i class ='delimiter'>,</i> <i class ='variable'>type</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>name</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>item</i> <i class ='delimiter'>=</i> <i class ='variable'>item</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>type</i> <i class ='delimiter'>=</i> <i class ='variable'>type</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nullable</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>SIMPLE_</i><i class ='variable'>STR</i> <i class ='keyword'>and</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;{self.name}={self.item}&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>item</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;NamedItem({self.name!r}, {self.item!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Item</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>item</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nullable</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>rules</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>nullable</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>item</i><i class ='delimiter'>.</i><i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>collect_</i><i class ='variable'>todo</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>gen</i><i class ='delimiter'>:</i> <i class ='variable'>ParserGenerator</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>gen</i><i class ='delimiter'>.</i><i class ='variable'>callmakervisitor</i><i class ='delimiter'>.</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>item</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Forced</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Plain</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i> <i class ='delimiter'>=</i> <i class ='variable'>node</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;&amp;&amp;{self.node}&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Plain</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Lookahead</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Plain</i><i class ='delimiter'>,</i> <i class ='variable'>sign</i><i class ='delimiter'>:</i> <i class ='datatype'>str</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i> <i class ='delimiter'>=</i> <i class ='variable'>node</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>sign</i> <i class ='delimiter'>=</i> <i class ='variable'>sign</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;{self.sign}{self.node}&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Plain</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>PositiveLookahead</i><i class ='delimiter'>(</i><i class ='variable'>Lookahead</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Plain</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>node</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&amp;&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;PositiveLookahead({self.node!r})&quot;</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>NegativeLookahead</i><i class ='delimiter'>(</i><i class ='variable'>Lookahead</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Plain</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>super</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>node</i><i class ='delimiter'>,</i> <i class ='string'>&quot;!&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;NegativeLookahead({self.node!r})&quot;</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Opt</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Item</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i> <i class ='delimiter'>=</i> <i class ='variable'>node</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>)</i>
+        <i class ='comment'># TODO: Decide whether to use [X] or X? based on type of X</i>
+        <i class ='keyword'>if</i> <i class ='string'>&quot; &quot;</i> <i class ='keyword'>in</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;[{s}]&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;{s}?&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Opt({self.node!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Item</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>.</i><i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Repeat</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;Shared base class for x* and x+.&quot;&quot;&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Plain</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i> <i class ='delimiter'>=</i> <i class ='variable'>node</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>memo</i><i class ='delimiter'>:</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='variable'>Tuple</i><i class ='delimiter'>[</i><i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>abstractmethod</i>
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>NotImplementedError</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Plain</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>.</i><i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Repeat0</i><i class ='delimiter'>(</i><i class ='variable'>Repeat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>)</i>
+        <i class ='comment'># TODO: Decide whether to use (X)* or X* based on type of X</i>
+        <i class ='keyword'>if</i> <i class ='string'>&quot; &quot;</i> <i class ='keyword'>in</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;({s})*&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;{s}*&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Repeat0({self.node!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Repeat1</i><i class ='delimiter'>(</i><i class ='variable'>Repeat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i><i class ='delimiter'>)</i>
+        <i class ='comment'># TODO: Decide whether to use (X)+ or X+ based on type of X</i>
+        <i class ='keyword'>if</i> <i class ='string'>&quot; &quot;</i> <i class ='keyword'>in</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;({s})+&quot;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='fstring'>f&quot;{s}+&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Repeat1({self.node!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Gather</i><i class ='delimiter'>(</i><i class ='variable'>Repeat</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>separator</i><i class ='delimiter'>:</i> <i class ='variable'>Plain</i><i class ='delimiter'>,</i> <i class ='variable'>node</i><i class ='delimiter'>:</i> <i class ='variable'>Plain</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>separator</i> <i class ='delimiter'>=</i> <i class ='variable'>separator</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>node</i> <i class ='delimiter'>=</i> <i class ='variable'>node</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;{self.separator!s}.{self.node!s}+&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Gather({self.separator!r}, {self.node!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>False</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Group</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rhs</i><i class ='delimiter'>:</i> <i class ='variable'>Rhs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i> <i class ='delimiter'>=</i> <i class ='variable'>rhs</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;({self.rhs})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Group({self.rhs!r})&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Rhs</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>yield</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>rules</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>rhs</i><i class ='delimiter'>.</i><i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Cut</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;Cut()&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>str</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='fstring'>f&quot;~&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>iter__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>Iterator</i><i class ='delimiter'>[</i><i class ='variable'>Tuple</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>False</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__e</i><i class ='variable'>q__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>:</i> <i class ='variable'>object</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>other</i><i class ='delimiter'>,</i> <i class ='variable'>Cut</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>return</i> <i class ='variable'>NotImplemented</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>nullable_</i><i class ='variable'>visit</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>rules</i><i class ='delimiter'>:</i> <i class ='variable'>Dict</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Rule</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='datatype'>bool</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='keyword'>True</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>initial_</i><i class ='variable'>names</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i> <i class ='delimiter'>-&gt;</i> <i class ='variable'>AbstractSet</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='variable'>Plain</i> <i class ='delimiter'>=</i> <i class ='variable'>Union</i><i class ='delimiter'>[</i><i class ='variable'>Leaf</i><i class ='delimiter'>,</i> <i class ='variable'>Group</i><i class ='delimiter'>]</i>
+<i class ='variable'>Item</i> <i class ='delimiter'>=</i> <i class ='variable'>Union</i><i class ='delimiter'>[</i><i class ='variable'>Plain</i><i class ='delimiter'>,</i> <i class ='variable'>Opt</i><i class ='delimiter'>,</i> <i class ='variable'>Repeat</i><i class ='delimiter'>,</i> <i class ='variable'>Forced</i><i class ='delimiter'>,</i> <i class ='variable'>Lookahead</i><i class ='delimiter'>,</i> <i class ='variable'>Rhs</i><i class ='delimiter'>,</i> <i class ='variable'>Cut</i><i class ='delimiter'>]</i>
+<i class ='variable'>RuleName</i> <i class ='delimiter'>=</i> <i class ='variable'>Tuple</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='datatype'>str</i><i class ='delimiter'>]</i>
+<i class ='variable'>MetaTuple</i> <i class ='delimiter'>=</i> <i class ='variable'>Tuple</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>,</i> <i class ='variable'>Optional</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i>
+<i class ='variable'>MetaList</i> <i class ='delimiter'>=</i> <i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>MetaTuple</i><i class ='delimiter'>]</i>
+<i class ='variable'>RuleList</i> <i class ='delimiter'>=</i> <i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>Rule</i><i class ='delimiter'>]</i>
+<i class ='variable'>NamedItemList</i> <i class ='delimiter'>=</i> <i class ='variable'>List</i><i class ='delimiter'>[</i><i class ='variable'>NamedItem</i><i class ='delimiter'>]</i>
+<i class ='variable'>LookaheadOrCut</i> <i class ='delimiter'>=</i> <i class ='variable'>Union</i><i class ='delimiter'>[</i><i class ='variable'>Lookahead</i><i class ='delimiter'>,</i> <i class ='variable'>Cut</i><i class ='delimiter'>]</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

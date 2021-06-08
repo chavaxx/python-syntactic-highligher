@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>from</i> <i class ='variable'>unicodedata</i> <i class ='keyword'>import</i> <i class ='variable'>ucd_3_2_0</i> <i class ='keyword'>as</i> <i class ='variable'>unicodedata</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>category</i><i class ='delimiter'>(</i><i class ='variable'>cats</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>110000</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>unicodedata</i><i class ='delimiter'>.</i><i class ='variable'>category</i><i class ='delimiter'>(</i><i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>cats</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>gen_</i><i class ='variable'>bidirectional</i><i class ='delimiter'>(</i><i class ='variable'>cats</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>110000</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>unicodedata</i><i class ='delimiter'>.</i><i class ='variable'>bidirectional</i><i class ='delimiter'>(</i><i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>cats</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>compact_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>l</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>single</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='datatype'>tuple</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>prev</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='variable'>span</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>e</i> <i class ='keyword'>in</i> <i class ='variable'>l</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>prev</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>prev</i> <i class ='delimiter'>=</i> <i class ='variable'>e</i>
+            <i class ='variable'>span</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>prev</i><i class ='operator'>+</i><i class ='variable'>span</i><i class ='operator'>+</i><i class ='integer'>1</i> <i class ='operator'>!=</i> <i class ='variable'>e</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>span</i> <i class ='operator'>&gt;</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+                <i class ='datatype'>tuple</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>prev</i><i class ='delimiter'>,</i><i class ='variable'>prev</i><i class ='operator'>+</i><i class ='variable'>span</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>prev</i><i class ='delimiter'>,</i> <i class ='variable'>prev</i><i class ='operator'>+</i><i class ='variable'>span</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>single</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>i</i><i class ='delimiter'>)</i>
+            <i class ='variable'>prev</i> <i class ='delimiter'>=</i> <i class ='variable'>e</i>
+            <i class ='variable'>span</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>span</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>if</i> <i class ='variable'>span</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>tuple</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>prev</i><i class ='delimiter'>,</i><i class ='variable'>prev</i><i class ='operator'>+</i><i class ='variable'>span</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>single</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>prev</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>single</i> <i class ='keyword'>and</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='datatype'>tuple</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>tuple</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;range(%d,%d)&quot;</i> <i class ='operator'>%</i> <i class ='datatype'>tuple</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='datatype'>tuple</i> <i class ='delimiter'>=</i> <i class ='string'>&quot; + &quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='string'>&quot;list(range(%d,%d))&quot;</i> <i class ='operator'>%</i> <i class ='variable'>t</i> <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>single</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;set(%s)&quot;</i> <i class ='operator'>%</i> <i class ='datatype'>tuple</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='datatype'>tuple</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='string'>&quot;set(%r)&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>single</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='string'>&quot;set(%r + %s)&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>single</i><i class ='delimiter'>,</i> <i class ='datatype'>tuple</i><i class ='delimiter'>)</i>
+
+<i class ='comment'>############## Read the tables in the RFC #######################</i>
+
+<i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='string'>&quot;rfc3454.txt&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+    <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>readlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>tables</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+<i class ='variable'>curname</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+<i class ='keyword'>for</i> <i class ='variable'>l</i> <i class ='keyword'>in</i> <i class ='variable'>data</i><i class ='delimiter'>:</i>
+    <i class ='variable'>l</i> <i class ='delimiter'>=</i> <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>l</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>continue</i>
+    <i class ='comment'># Skip RFC page breaks</i>
+    <i class ='keyword'>if</i> <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='string'>&quot;Hoffman &amp; Blanchet&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;RFC 3454&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>continue</i>
+    <i class ='comment'># Find start/end lines</i>
+    <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='string'>&quot;----- (Start|End) Table ([A-Z](.[0-9])+) -----&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>l</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='string'>&quot;Start&quot;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>curname</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i><i class ='delimiter'>(</i><i class ='string'>&quot;Double Start&quot;</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>curname</i><i class ='delimiter'>,</i> <i class ='variable'>l</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>curname</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+            <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+            <i class ='variable'>tables</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>curname</i><i class ='delimiter'>,</i> <i class ='variable'>table</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>curname</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i><i class ='delimiter'>(</i><i class ='string'>&quot;End without start&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>l</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>curname</i> <i class ='operator'>!=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unexpected end&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>l</i><i class ='delimiter'>)</i>
+            <i class ='variable'>curname</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+            <i class ='keyword'>continue</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>curname</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>continue</i>
+    <i class ='comment'># Now we are in a table</i>
+    <i class ='variable'>fields</i> <i class ='delimiter'>=</i> <i class ='variable'>l</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot;;&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>fields</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='comment'># Drop comment field</i>
+        <i class ='variable'>fields</i> <i class ='delimiter'>=</i> <i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>fields</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fields</i> <i class ='delimiter'>=</i> <i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot;-&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>fields</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+            <i class ='comment'># range</i>
+            <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+                <i class ='variable'>start</i><i class ='delimiter'>,</i> <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='variable'>fields</i>
+            <i class ='keyword'>except</i> <i class ='variable'>ValueError</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>raise</i> <i class ='variable'>RuntimeError</i><i class ='delimiter'>(</i><i class ='string'>&quot;Unpacking problem&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>l</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='variable'>fields</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+        <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>start</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i>
+        <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>end</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>start</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>i</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>code</i><i class ='delimiter'>,</i> <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>fields</i>
+        <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i><i class ='delimiter'>.</i><i class ='variable'>strip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>value</i><i class ='delimiter'>:</i>
+            <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>v</i> <i class ='keyword'>in</i> <i class ='variable'>value</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='string'>&quot; &quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='comment'># table B.1</i>
+            <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>table</i><i class ='delimiter'>[</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>,</i> <i class ='integer'>16</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>value</i>
+
+<i class ='comment'>########### Generate compact Python versions of the tables #############</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;# This file is generated by mkstringprep.py. DO NOT EDIT.
+\&quot;\&quot;\&quot;Library that exposes various tables found in the StringPrep RFC 3454.
+
+There are two kinds of tables: sets, for which a member test is provided,
+and mappings, for which a mapping function is provided.
+\&quot;\&quot;\&quot;
+
+from unicodedata import ucd_3_2_0 as unicodedata
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;assert unicodedata.unidata_version == %r&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>unicodedata</i><i class ='delimiter'>.</i><i class ='variable'>unidata_</i><i class ='variable'>version</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># A.1 is the table of unassigned characters</i>
+<i class ='comment'># XXX Plane 15 PUA is listed as unassigned in Python.</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;A.1&quot;</i>
+<i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>Cn</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>category</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;Cn&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># FDD0..FDEF are process internal codes</i>
+<i class ='variable'>Cn</i> <i class ='delimiter'>-=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='variable'>FDD0</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='variable'>FDF0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='comment'># not a character</i>
+<i class ='variable'>Cn</i> <i class ='delimiter'>-=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='variable'>FFFE</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>110000</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>10000</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>Cn</i> <i class ='delimiter'>-=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='variable'>FFFF</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>110000</i><i class ='delimiter'>,</i> <i class ='hexadecimal'>0x</i><i class ='integer'>10000</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># assert table == Cn</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+def in_table_a1(code):
+    if unicodedata.category(code) != &#39;Cn&#39;: return False
+    c = ord(code)
+    if 0xFDD0 &lt;= c &lt; 0xFDF0: return False
+    return (c &amp; 0xFFFF) not in (0xFFFE, 0xFFFF)
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># B.1 cannot easily be derived</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;B.1&quot;</i>
+<i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+b1_set = &quot;&quot;&quot;</i> <i class ='operator'>+</i> <i class ='variable'>compact_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='multilineComment'>&quot;&quot;&quot;
+def in_table_b1(code):
+    return ord(code) in b1_set
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># B.2 and B.3 is case folding.</i>
+<i class ='comment'># It takes CaseFolding.txt into account, which is</i>
+<i class ='comment'># not available in the Python database. Since</i>
+<i class ='comment'># B.2 is derived from B.3, we process B.3 first.</i>
+<i class ='comment'># B.3 supposedly *is* CaseFolding-3.2.0.txt.</i>
+
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table_</i><i class ='variable'>b2</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;B.2&quot;</i>
+
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table_</i><i class ='variable'>b3</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;B.3&quot;</i>
+
+<i class ='comment'># B.3 is mostly Python&#39;s .lower, except for a number</i>
+<i class ='comment'># of special cases, e.g. considering canonical forms.</i>
+
+<i class ='variable'>b3_</i><i class ='variable'>exceptions</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+<i class ='keyword'>for</i> <i class ='variable'>k</i><i class ='delimiter'>,</i><i class ='variable'>v</i> <i class ='keyword'>in</i> <i class ='variable'>table_</i><i class ='variable'>b2</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>ord</i><i class ='delimiter'>,</i> <i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>k</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>!=</i> <i class ='variable'>v</i><i class ='delimiter'>:</i>
+        <i class ='variable'>b3_</i><i class ='variable'>exceptions</i><i class ='delimiter'>[</i><i class ='variable'>k</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>chr</i><i class ='delimiter'>,</i><i class ='variable'>v</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>b3</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>b3_</i><i class ='variable'>exceptions</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+b3_exceptions = {&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+<i class ='keyword'>for</i> <i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>kv</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>b3</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;0x%x:%a,&quot;</i> <i class ='operator'>%</i> <i class ='variable'>kv</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>%</i> <i class ='integer'>4</i> <i class ='operator'>==</i> <i class ='integer'>3</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;}&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+def map_table_b3(code):
+    r = b3_exceptions.get(ord(code))
+    if r is not None: return r
+    return code.lower()
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>map_</i><i class ='variable'>table_</i><i class ='variable'>b3</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>r</i> <i class ='delimiter'>=</i> <i class ='variable'>b3_</i><i class ='variable'>exceptions</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>ord</i><i class ='delimiter'>(</i><i class ='variable'>code</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>r</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i> <i class ='keyword'>return</i> <i class ='variable'>r</i>
+    <i class ='keyword'>return</i> <i class ='variable'>code</i><i class ='delimiter'>.</i><i class ='variable'>lower</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># B.2 is case folding for NFKC. This is the same as B.3,</i>
+<i class ='comment'># except where NormalizeWithKC(Fold(a)) !=</i>
+<i class ='comment'># NormalizeWithKC(Fold(NormalizeWithKC(Fold(a))))</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>map_</i><i class ='variable'>table_</i><i class ='variable'>b2</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>al</i> <i class ='delimiter'>=</i> <i class ='variable'>map_</i><i class ='variable'>table_</i><i class ='variable'>b3</i><i class ='delimiter'>(</i><i class ='variable'>a</i><i class ='delimiter'>)</i>
+    <i class ='variable'>b</i> <i class ='delimiter'>=</i> <i class ='variable'>unicodedata</i><i class ='delimiter'>.</i><i class ='variable'>normalize</i><i class ='delimiter'>(</i><i class ='string'>&quot;NFKC&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>al</i><i class ='delimiter'>)</i>
+    <i class ='variable'>bl</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='variable'>map_</i><i class ='variable'>table_</i><i class ='variable'>b3</i><i class ='delimiter'>(</i><i class ='variable'>ch</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>ch</i> <i class ='keyword'>in</i> <i class ='variable'>b</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>c</i> <i class ='delimiter'>=</i> <i class ='variable'>unicodedata</i><i class ='delimiter'>.</i><i class ='variable'>normalize</i><i class ='delimiter'>(</i><i class ='string'>&quot;NFKC&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>bl</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>b</i> <i class ='operator'>!=</i> <i class ='variable'>c</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>c</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>al</i>
+
+<i class ='variable'>specials</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+<i class ='keyword'>for</i> <i class ='variable'>k</i><i class ='delimiter'>,</i><i class ='variable'>v</i> <i class ='keyword'>in</i> <i class ='variable'>table_</i><i class ='variable'>b2</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>ord</i><i class ='delimiter'>,</i> <i class ='variable'>map_</i><i class ='variable'>table_</i><i class ='variable'>b2</i><i class ='delimiter'>(</i><i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>k</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>!=</i> <i class ='variable'>v</i><i class ='delimiter'>:</i>
+        <i class ='variable'>specials</i><i class ='delimiter'>[</i><i class ='variable'>k</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>v</i>
+
+<i class ='comment'># B.3 should not add any additional special cases</i>
+<i class ='keyword'>assert</i> <i class ='variable'>specials</i> <i class ='operator'>==</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def map_table_b2(a):
+    al = map_table_b3(a)
+    b = unicodedata.normalize(&quot;</i><i class ='variable'>NFKC</i><i class ='string'>&quot;, al)
+    bl = &quot;</i><i class ='string'>&quot;.join([map_table_b3(ch) for ch in b])
+    c = unicodedata.normalize(&quot;</i><i class ='variable'>NFKC</i><i class ='string'>&quot;, bl)
+    if b != c:
+        return c
+    else:
+        return al
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.1.1 is a table with a single character</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.1.1&quot;</i>
+<i class ='keyword'>assert</i> <i class ='variable'>table</i> <i class ='operator'>==</i> <i class ='delimiter'>{</i><i class ='hexadecimal'>0x</i><i class ='integer'>20</i><i class ='delimiter'>:</i><i class ='hexadecimal'>0x</i><i class ='integer'>20</i><i class ='delimiter'>}</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_c11(code):
+    return code == &quot;</i> <i class ='string'>&quot;
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.1.2 is the rest of all space characters</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.1.2&quot;</i>
+
+<i class ='comment'># table = set(table.keys())</i>
+<i class ='comment'># Zs = set(gen_category([&quot;Zs&quot;])) - {0x20}</i>
+<i class ='comment'># assert Zs == table</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_c12(code):
+    return unicodedata.category(code) == &quot;</i><i class ='variable'>Zs</i><i class ='string'>&quot; and code != &quot;</i> <i class ='string'>&quot;
+
+def in_table_c11_c12(code):
+    return unicodedata.category(code) == &quot;</i><i class ='variable'>Zs</i><i class ='string'>&quot;
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.2.1 ASCII control characters</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table_</i><i class ='variable'>c21</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.2.1&quot;</i>
+
+<i class ='variable'>Cc</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>category</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;Cc&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>Cc_</i><i class ='variable'>ascii</i> <i class ='delimiter'>=</i> <i class ='variable'>Cc</i> <i class ='operator'>&amp;</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>128</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>table_</i><i class ='variable'>c21</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table_</i><i class ='variable'>c21</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>assert</i> <i class ='variable'>Cc_</i><i class ='variable'>ascii</i> <i class ='operator'>==</i> <i class ='variable'>table_</i><i class ='variable'>c21</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_c21(code):
+    return ord(code) &lt; 128 and unicodedata.category(code) == &quot;</i><i class ='variable'>Cc</i><i class ='string'>&quot;
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.2.2 Non-ASCII control characters. It also includes</i>
+<i class ='comment'># a number of characters in category Cf.</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table_</i><i class ='variable'>c22</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.2.2&quot;</i>
+
+<i class ='variable'>Cc_</i><i class ='variable'>nonascii</i> <i class ='delimiter'>=</i> <i class ='variable'>Cc</i> <i class ='variable'>-</i> <i class ='variable'>Cc_</i><i class ='variable'>ascii</i>
+<i class ='variable'>table_</i><i class ='variable'>c22</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table_</i><i class ='variable'>c22</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>assert</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>Cc_</i><i class ='variable'>nonascii</i> <i class ='variable'>-</i> <i class ='variable'>table_</i><i class ='variable'>c22</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='integer'>0</i>
+
+<i class ='variable'>specials</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>table_</i><i class ='variable'>c22</i> <i class ='variable'>-</i> <i class ='variable'>Cc_</i><i class ='variable'>nonascii</i><i class ='delimiter'>)</i>
+<i class ='variable'>specials</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;c22_specials = &quot;&quot;&quot;</i> <i class ='operator'>+</i> <i class ='variable'>compact_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>specials</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_c22(code):
+    c = ord(code)
+    if c &lt; 128: return False
+    if unicodedata.category(code) == &quot;</i><i class ='variable'>Cc</i><i class ='string'>&quot;: return True
+    return c in c22_specials
+
+def in_table_c21_c22(code):
+    return unicodedata.category(code) == &quot;</i><i class ='variable'>Cc</i><i class ='string'>&quot; or \\
+           ord(code) in c22_specials
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.3 Private use</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.3&quot;</i>
+
+<i class ='variable'>Co</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>category</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;Co&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>assert</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>Co</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_c3(code):
+    return unicodedata.category(code) == &quot;</i><i class ='variable'>Co</i><i class ='string'>&quot;
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.4 Non-character code points, xFFFE, xFFFF</i>
+<i class ='comment'># plus process internal codes</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.4&quot;</i>
+
+<i class ='variable'>nonchar</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='variable'>FDD0</i><i class ='delimiter'>,</i><i class ='hexadecimal'>0x</i><i class ='variable'>FDF0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>nonchar</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='variable'>FFFE</i><i class ='delimiter'>,</i><i class ='hexadecimal'>0x</i><i class ='integer'>110000</i><i class ='delimiter'>,</i><i class ='hexadecimal'>0x</i><i class ='integer'>10000</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>nonchar</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='hexadecimal'>0x</i><i class ='variable'>FFFF</i><i class ='delimiter'>,</i><i class ='hexadecimal'>0x</i><i class ='integer'>110000</i><i class ='delimiter'>,</i><i class ='hexadecimal'>0x</i><i class ='integer'>10000</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>assert</i> <i class ='variable'>table</i> <i class ='operator'>==</i> <i class ='variable'>nonchar</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+def in_table_c4(code):
+    c = ord(code)
+    if c &lt; 0xFDD0: return False
+    if c &lt; 0xFDF0: return True
+    return (ord(code) &amp; 0xFFFF) in (0xFFFE, 0xFFFF)
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.5 Surrogate codes</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.5&quot;</i>
+
+<i class ='variable'>Cs</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>category</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;Cs&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>assert</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>Cs</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_c5(code):
+    return unicodedata.category(code) == &quot;</i><i class ='variable'>Cs</i><i class ='string'>&quot;
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.6 Inappropriate for plain text</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.6&quot;</i>
+
+<i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+c6_set = &quot;&quot;&quot;</i> <i class ='operator'>+</i> <i class ='variable'>compact_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='multilineComment'>&quot;&quot;&quot;
+def in_table_c6(code):
+    return ord(code) in c6_set
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.7 Inappropriate for canonical representation</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.7&quot;</i>
+
+<i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+c7_set = &quot;&quot;&quot;</i> <i class ='operator'>+</i> <i class ='variable'>compact_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='multilineComment'>&quot;&quot;&quot;
+def in_table_c7(code):
+    return ord(code) in c7_set
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.8 Change display properties or are deprecated</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.8&quot;</i>
+
+<i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+c8_set = &quot;&quot;&quot;</i> <i class ='operator'>+</i> <i class ='variable'>compact_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='multilineComment'>&quot;&quot;&quot;
+def in_table_c8(code):
+    return ord(code) in c8_set
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># C.9 Tagging characters</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;C.9&quot;</i>
+
+<i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='multilineComment'>&quot;&quot;&quot;
+c9_set = &quot;&quot;&quot;</i> <i class ='operator'>+</i> <i class ='variable'>compact_</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='multilineComment'>&quot;&quot;&quot;
+def in_table_c9(code):
+    return ord(code) in c9_set
+&quot;&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># D.1 Characters with bidirectional property &quot;R&quot; or &quot;AL&quot;</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;D.1&quot;</i>
+
+<i class ='variable'>RandAL</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>bidirectional</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;R&quot;</i><i class ='delimiter'>,</i><i class ='string'>&quot;AL&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>assert</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>RandAL</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_d1(code):
+    return unicodedata.bidirectional(code) in (&quot;</i><i class ='rstring'>R&quot;,&quot;</i><i class ='variable'>AL</i><i class ='string'>&quot;)
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># D.2 Characters with bidirectional property &quot;L&quot;</i>
+<i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>table</i> <i class ='delimiter'>=</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>del</i> <i class ='variable'>tables</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+<i class ='keyword'>assert</i> <i class ='variable'>name</i> <i class ='operator'>==</i> <i class ='string'>&quot;D.2&quot;</i>
+
+<i class ='variable'>L</i> <i class ='delimiter'>=</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>gen_</i><i class ='variable'>bidirectional</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='string'>&quot;L&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>assert</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>table</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>L</i>
+
+<i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+def in_table_d2(code):
+    return unicodedata.bidirectional(code) == &quot;</i><i class ='variable'>L</i><i class ='string'>&quot;
+&quot;</i><i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

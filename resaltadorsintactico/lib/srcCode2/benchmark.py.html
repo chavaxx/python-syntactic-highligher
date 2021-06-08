@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>argparse</i>
+<i class ='keyword'>import</i> <i class ='variable'>ast</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>from</i> <i class ='variable'>time</i> <i class ='keyword'>import</i> <i class ='variable'>time</i>
+
+<i class ='keyword'>try</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>memory_</i><i class ='variable'>profiler</i>
+<i class ='keyword'>except</i> <i class ='variable'>ModuleNotFoundError</i><i class ='delimiter'>:</i>
+    <i class ='print'>print</i><i class ='delimiter'>(</i>
+        <i class ='string'>&quot;Please run `make venv` to create a virtual environment and install&quot;</i>
+        <i class ='string'>&quot; all the dependencies, before running this script.&quot;</i>
+    <i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>getcwd</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+<i class ='keyword'>from</i> <i class ='variable'>scripts</i><i class ='delimiter'>.</i><i class ='variable'>test_</i><i class ='variable'>parse_</i><i class ='variable'>directory</i> <i class ='keyword'>import</i> <i class ='variable'>parse_</i><i class ='variable'>directory</i>
+
+<i class ='variable'>argparser</i> <i class ='delimiter'>=</i> <i class ='variable'>argparse</i><i class ='delimiter'>.</i><i class ='variable'>ArgumentParser</i><i class ='delimiter'>(</i>
+    <i class ='variable'>prog</i><i class ='delimiter'>=</i><i class ='string'>&quot;benchmark&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>description</i><i class ='delimiter'>=</i><i class ='string'>&quot;Reproduce the various pegen benchmarks&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>argument</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;--target&quot;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>action</i><i class ='delimiter'>=</i><i class ='string'>&quot;store&quot;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>choices</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='string'>&quot;xxl&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;stdlib&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+    <i class ='variable'>default</i><i class ='delimiter'>=</i><i class ='string'>&quot;xxl&quot;</i><i class ='delimiter'>,</i>
+    <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Which target to use for the benchmark (default is xxl.py)&quot;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>)</i>
+
+<i class ='variable'>subcommands</i> <i class ='delimiter'>=</i> <i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>subparsers</i><i class ='delimiter'>(</i><i class ='variable'>title</i><i class ='delimiter'>=</i><i class ='string'>&quot;Benchmarks&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>dest</i><i class ='delimiter'>=</i><i class ='string'>&quot;subcommand&quot;</i><i class ='delimiter'>)</i>
+<i class ='variable'>command_</i><i class ='variable'>compile</i> <i class ='delimiter'>=</i> <i class ='variable'>subcommands</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i>
+    <i class ='string'>&quot;compile&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Benchmark parsing and compiling to bytecode&quot;</i>
+<i class ='delimiter'>)</i>
+<i class ='variable'>command_</i><i class ='variable'>parse</i> <i class ='delimiter'>=</i> <i class ='variable'>subcommands</i><i class ='delimiter'>.</i><i class ='variable'>add_</i><i class ='variable'>parser</i><i class ='delimiter'>(</i><i class ='string'>&quot;parse&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>help</i><i class ='delimiter'>=</i><i class ='string'>&quot;Benchmark parsing and generating an ast.AST&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>benchmark</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='variable'>wrapper</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>times</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='hexadecimal'>_</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>3</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>result</i> <i class ='delimiter'>=</i> <i class ='variable'>func</i><i class ='delimiter'>(</i><i class ='operator'>*</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+            <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>times</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>end</i> <i class ='variable'>-</i> <i class ='variable'>start</i><i class ='delimiter'>)</i>
+        <i class ='variable'>memory</i> <i class ='delimiter'>=</i> <i class ='variable'>memory_</i><i class ='variable'>profiler</i><i class ='delimiter'>.</i><i class ='variable'>memory_</i><i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>func</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;{func.__name__}&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;\tTime: {sum(times)/3:.3f} seconds on an average of 3 runs&quot;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='fstring'>f&quot;\tMemory: {max(memory)} MiB on an average of 3 runs&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>result</i>
+
+    <i class ='keyword'>return</i> <i class ='variable'>wrapper</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>benchmark</i>
+<i class ='keyword'>def</i> <i class ='variable'>time_</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&lt;string&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;exec&quot;</i><i class ='delimiter'>)</i>
+
+
+<i class ='delimiter'>@</i><i class ='variable'>benchmark</i>
+<i class ='keyword'>def</i> <i class ='variable'>time_</i><i class ='variable'>parse</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>return</i> <i class ='variable'>ast</i><i class ='delimiter'>.</i><i class ='variable'>parse</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>benchmark_</i><i class ='variable'>xxl</i><i class ='delimiter'>(</i><i class ='variable'>subcommand</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>subcommand</i> <i class ='operator'>==</i> <i class ='string'>&quot;compile&quot;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>time_</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>subcommand</i> <i class ='operator'>==</i> <i class ='string'>&quot;parse&quot;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>time_</i><i class ='variable'>parse</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>run_</i><i class ='variable'>benchmark_</i><i class ='variable'>stdlib</i><i class ='delimiter'>(</i><i class ='variable'>subcommand</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>modes</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='string'>&quot;compile&quot;</i><i class ='delimiter'>:</i> <i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='string'>&quot;parse&quot;</i><i class ='delimiter'>:</i> <i class ='integer'>1</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='hexadecimal'>_</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='integer'>3</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>parse_</i><i class ='variable'>directory</i><i class ='delimiter'>(</i>
+            <i class ='string'>&quot;../../Lib&quot;</i><i class ='delimiter'>,</i>
+            <i class ='variable'>verbose</i><i class ='delimiter'>=</i><i class ='keyword'>False</i><i class ='delimiter'>,</i>
+            <i class ='variable'>excluded_</i><i class ='variable'>files</i><i class ='delimiter'>=</i><i class ='delimiter'>[</i><i class ='string'>&quot;*/bad*&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;*/lib2to3/tests/data/*&quot;</i><i class ='delimiter'>,</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+            <i class ='variable'>short</i><i class ='delimiter'>=</i><i class ='keyword'>True</i><i class ='delimiter'>,</i>
+            <i class ='variable'>mode</i><i class ='delimiter'>=</i><i class ='variable'>modes</i><i class ='delimiter'>[</i><i class ='variable'>subcommand</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i>
+        <i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>parse_</i><i class ='variable'>args</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>subcommand</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>subcommand</i>
+    <i class ='variable'>target</i> <i class ='delimiter'>=</i> <i class ='variable'>args</i><i class ='delimiter'>.</i><i class ='variable'>target</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>subcommand</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>argparser</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>(</i><i class ='string'>&quot;A benchmark to run is required&quot;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>target</i> <i class ='operator'>==</i> <i class ='string'>&quot;xxl&quot;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='string'>&quot;data&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;xxl.py&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='string'>&quot;r&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+            <i class ='variable'>source</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>run_</i><i class ='variable'>benchmark_</i><i class ='variable'>xxl</i><i class ='delimiter'>(</i><i class ='variable'>subcommand</i><i class ='delimiter'>,</i> <i class ='variable'>source</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>elif</i> <i class ='variable'>target</i> <i class ='operator'>==</i> <i class ='string'>&quot;stdlib&quot;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>run_</i><i class ='variable'>benchmark_</i><i class ='variable'>stdlib</i><i class ='delimiter'>(</i><i class ='variable'>subcommand</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+For each argument on the command line, look for it in the set of all Unicode
+names.  Arguments are treated as case-insensitive regular expressions, e.g.:
+
+    % find-uname &#39;small letter a$&#39; &#39;horizontal line&#39;
+    *** small letter a$ matches ***
+    LATIN SMALL LETTER A (97)
+    COMBINING LATIN SMALL LETTER A (867)
+    CYRILLIC SMALL LETTER A (1072)
+    PARENTHESIZED LATIN SMALL LETTER A (9372)
+    CIRCLED LATIN SMALL LETTER A (9424)
+    FULLWIDTH LATIN SMALL LETTER A (65345)
+    *** horizontal line matches ***
+    HORIZONTAL LINE EXTENSION (9135)
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>unicodedata</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>unicode_</i><i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>ix</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>maxunicode</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>unicode_</i><i class ='variable'>names</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>ix</i><i class ='delimiter'>,</i> <i class ='variable'>unicodedata</i><i class ='delimiter'>.</i><i class ='variable'>name</i><i class ='delimiter'>(</i><i class ='variable'>chr</i><i class ='delimiter'>(</i><i class ='variable'>ix</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>ValueError</i><i class ='delimiter'>:</i> <i class ='comment'># no name for the character</i>
+            <i class ='keyword'>pass</i>
+    <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>pat</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>I</i><i class ='delimiter'>)</i>
+        <i class ='variable'>matches</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>,</i><i class ='variable'>x</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i><i class ='variable'>y</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>unicode_</i><i class ='variable'>names</i>
+                   <i class ='keyword'>if</i> <i class ='variable'>pat</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>y</i><i class ='delimiter'>)</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>matches</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;***&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>arg</i><i class ='delimiter'>,</i> <i class ='string'>&quot;matches&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;***&quot;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>match</i> <i class ='keyword'>in</i> <i class ='variable'>matches</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s (%d)&quot;</i> <i class ='operator'>%</i> <i class ='variable'>match</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

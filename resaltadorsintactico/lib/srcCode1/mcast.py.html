@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+Send/receive UDP multicast packets.
+Requires that your OS kernel supports IP multicast.
+
+Usage:
+  mcast -s (sender, IPv4)
+  mcast -s -6 (sender, IPv6)
+  mcast    (receivers, IPv4)
+  mcast  -6  (receivers, IPv6)
+&quot;&quot;&quot;</i>
+
+<i class ='variable'>MYPORT</i> <i class ='delimiter'>=</i> <i class ='integer'>8123</i>
+<i class ='variable'>MYGROUP_4</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;225.0.0.250&#39;</i>
+<i class ='variable'>MYGROUP_6</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;ff15:7079:7468:6f6e:6465:6d6f:6d63:6173&#39;</i>
+<i class ='variable'>MYTTL</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i> <i class ='comment'># Increase to reach other networks</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>time</i>
+<i class ='keyword'>import</i> <i class ='variable'>struct</i>
+<i class ='keyword'>import</i> <i class ='variable'>socket</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>group</i> <i class ='delimiter'>=</i> <i class ='variable'>MYGROUP_6</i> <i class ='keyword'>if</i> <i class ='string'>&quot;-6&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='keyword'>else</i> <i class ='variable'>MYGROUP_4</i>
+
+    <i class ='keyword'>if</i> <i class ='string'>&quot;-s&quot;</i> <i class ='keyword'>in</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sender</i><i class ='delimiter'>(</i><i class ='variable'>group</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>receiver</i><i class ='delimiter'>(</i><i class ='variable'>group</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>sender</i><i class ='delimiter'>(</i><i class ='variable'>group</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>addrinfo</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>getaddrinfo</i><i class ='delimiter'>(</i><i class ='variable'>group</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>socket</i><i class ='delimiter'>(</i><i class ='variable'>addrinfo</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SOCK_</i><i class ='variable'>DGRAM</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Set Time-to-live (optional)</i>
+    <i class ='variable'>ttl_</i><i class ='variable'>bin</i> <i class ='delimiter'>=</i> <i class ='variable'>struct</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;@i&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>MYTTL</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>addrinfo</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>:</i> <i class ='comment'># IPv4</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>setsockopt</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IPPROTO_</i><i class ='variable'>IP</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IP_</i><i class ='variable'>MULTICAST_</i><i class ='variable'>TTL</i><i class ='delimiter'>,</i> <i class ='variable'>ttl_</i><i class ='variable'>bin</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>setsockopt</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IPPROTO_</i><i class ='variable'>IPV6</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IPV6_</i><i class ='variable'>MULTICAST_</i><i class ='variable'>HOPS</i><i class ='delimiter'>,</i> <i class ='variable'>ttl_</i><i class ='variable'>bin</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+        <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>time</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>encode</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;utf-8&#39;</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='variable'>b</i><i class ='charlist'>&#39;\0&#39;</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>sendto</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>addrinfo</i><i class ='delimiter'>[</i><i class ='integer'>4</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>MYPORT</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>time</i><i class ='delimiter'>.</i><i class ='variable'>sleep</i><i class ='delimiter'>(</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>receiver</i><i class ='delimiter'>(</i><i class ='variable'>group</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='comment'># Look up multicast group address in name server and find out IP version</i>
+    <i class ='variable'>addrinfo</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>getaddrinfo</i><i class ='delimiter'>(</i><i class ='variable'>group</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+
+    <i class ='comment'># Create a socket</i>
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>socket</i><i class ='delimiter'>(</i><i class ='variable'>addrinfo</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SOCK_</i><i class ='variable'>DGRAM</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Allow multiple copies of this program on one machine</i>
+    <i class ='comment'># (not strictly needed)</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>setsockopt</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SOL_</i><i class ='variable'>SOCKET</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>SO_</i><i class ='variable'>REUSEADDR</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Bind it to the port</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>MYPORT</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>group_</i><i class ='variable'>bin</i> <i class ='delimiter'>=</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>inet_</i><i class ='variable'>pton</i><i class ='delimiter'>(</i><i class ='variable'>addrinfo</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>addrinfo</i><i class ='delimiter'>[</i><i class ='integer'>4</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='comment'># Join group</i>
+    <i class ='keyword'>if</i> <i class ='variable'>addrinfo</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>:</i> <i class ='comment'># IPv4</i>
+        <i class ='variable'>mreq</i> <i class ='delimiter'>=</i> <i class ='variable'>group_</i><i class ='variable'>bin</i> <i class ='operator'>+</i> <i class ='variable'>struct</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;=I&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>INADDR_</i><i class ='variable'>ANY</i><i class ='delimiter'>)</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>setsockopt</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IPPROTO_</i><i class ='variable'>IP</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IP_</i><i class ='variable'>ADD_</i><i class ='variable'>MEMBERSHIP</i><i class ='delimiter'>,</i> <i class ='variable'>mreq</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>mreq</i> <i class ='delimiter'>=</i> <i class ='variable'>group_</i><i class ='variable'>bin</i> <i class ='operator'>+</i> <i class ='variable'>struct</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;@I&#39;</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>setsockopt</i><i class ='delimiter'>(</i><i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IPPROTO_</i><i class ='variable'>IPV6</i><i class ='delimiter'>,</i> <i class ='variable'>socket</i><i class ='delimiter'>.</i><i class ='variable'>IPV6_</i><i class ='variable'>JOIN_</i><i class ='variable'>GROUP</i><i class ='delimiter'>,</i> <i class ='variable'>mreq</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Loop, printing any data we receive</i>
+    <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+        <i class ='variable'>data</i><i class ='delimiter'>,</i> <i class ='variable'>sender</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>recvfrom</i><i class ='delimiter'>(</i><i class ='integer'>1500</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>while</i> <i class ='variable'>data</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;\0&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>-1</i><i class ='delimiter'>]</i> <i class ='comment'># Strip trailing \0&#39;s</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>sender</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='charlist'>&#39;  &#39;</i> <i class ='operator'>+</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

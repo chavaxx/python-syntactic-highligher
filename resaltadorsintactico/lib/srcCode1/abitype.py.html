@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='comment'># This script converts a C file to use the PEP 384 type definition API</i>
+<i class ='comment'># Usage: abitype.py &lt; old_code &gt; new_code</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i><i class ='delimiter'>,</i> <i class ='variable'>sys</i>
+
+<i class ='comment'>###### Replacement of PyTypeObject static instances ##############</i>
+
+<i class ='comment'># classify each token, giving it a one-letter code:</i>
+<i class ='comment'># S: static</i>
+<i class ='comment'># T: PyTypeObject</i>
+<i class ='comment'># I: ident</i>
+<i class ='comment'># W: whitespace</i>
+<i class ='comment'># =, {, }, ; : themselves</i>
+<i class ='keyword'>def</i> <i class ='variable'>classify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>t</i><i class ='delimiter'>,</i><i class ='variable'>v</i> <i class ='keyword'>in</i> <i class ='variable'>tokens</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>t</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;other&#39;</i> <i class ='keyword'>and</i> <i class ='variable'>v</i> <i class ='keyword'>in</i> <i class ='string'>&quot;={};&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>t</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;ident&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>v</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;PyTypeObject&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;T&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>v</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;static&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;S&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;I&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>elif</i> <i class ='variable'>t</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;ws&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;W&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;.&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>res</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># Obtain a list of fields of a PyTypeObject, in declaration order,</i>
+<i class ='comment'># skipping ob_base</i>
+<i class ='comment'># All comments are dropped from the variable (which are typically</i>
+<i class ='comment'># just the slot names, anyway), and information is discarded whether</i>
+<i class ='comment'># the original type was static.</i>
+<i class ='keyword'>def</i> <i class ='variable'>get_</i><i class ='variable'>fields</i><i class ='delimiter'>(</i><i class ='variable'>start</i><i class ='delimiter'>,</i> <i class ='variable'>real_</i><i class ='variable'>end</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>pos</i> <i class ='delimiter'>=</i> <i class ='variable'>start</i>
+    <i class ='comment'># static?</i>
+    <i class ='keyword'>if</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;static&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>2</i>
+    <i class ='comment'># PyTypeObject</i>
+    <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>2</i>
+    <i class ='comment'># name</i>
+    <i class ='variable'>name</i> <i class ='delimiter'>=</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>while</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;{&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='comment'># PyVarObject_HEAD_INIT</i>
+    <i class ='keyword'>while</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;ws&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;comment&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>if</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;PyVarObject_HEAD_INIT&#39;</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>raise</i> <i class ='variable'>Exception</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;%s has no PyVarObject_HEAD_INIT&#39;</i> <i class ='operator'>%</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>!=</i> <i class ='charlist'>&#39;)&#39;</i><i class ='delimiter'>:</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+    <i class ='comment'># field definitions: various tokens, comma-separated</i>
+    <i class ='variable'>fields</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>while</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;ws&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;comment&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='variable'>pos</i>
+        <i class ='keyword'>while</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>end</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='charlist'>&#39;,}&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>end</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;(&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>nesting</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+                <i class ='keyword'>while</i> <i class ='variable'>nesting</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>end</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>end</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;(&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>nesting</i><i class ='delimiter'>+=</i><i class ='integer'>1</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>end</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;)&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>nesting-</i><i class ='delimiter'>=</i><i class ='integer'>1</i>
+            <i class ='variable'>end</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>end</i> <i class ='operator'>&lt;</i> <i class ='variable'>real_</i><i class ='variable'>end</i>
+        <i class ='comment'># join field, excluding separator and trailing ws</i>
+        <i class ='variable'>end1</i> <i class ='delimiter'>=</i> <i class ='variable'>end-1</i>
+        <i class ='keyword'>while</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>end1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;ws&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;comment&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>end1</i> <i class ='delimiter'>-=</i> <i class ='integer'>1</i>
+        <i class ='variable'>fields</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>t</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>:</i><i class ='variable'>end1</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>end</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;}&#39;</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>=</i> <i class ='variable'>end</i><i class ='operator'>+</i><i class ='integer'>1</i>
+    <i class ='keyword'>return</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>fields</i>
+
+<i class ='comment'># List of type slots as of Python 3.2, omitting ob_base</i>
+<i class ='variable'>typeslots</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i>
+    <i class ='charlist'>&#39;tp_name&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_basicsize&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_itemsize&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_dealloc&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_print&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_getattr&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_setattr&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_reserved&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_repr&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_as_number&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_as_sequence&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_as_mapping&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_hash&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_call&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_str&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_getattro&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_setattro&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_as_buffer&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_flags&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_doc&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_traverse&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_clear&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_richcompare&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_weaklistoffset&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_iter&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;iternextfunc&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_methods&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_members&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_getset&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_base&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_dict&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_descr_get&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_descr_set&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_dictoffset&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_init&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_alloc&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_new&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_free&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_is_gc&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_bases&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_mro&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_cache&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_subclasses&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_weaklist&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_del&#39;</i><i class ='delimiter'>,</i>
+    <i class ='charlist'>&#39;tp_version_tag&#39;</i><i class ='delimiter'>,</i>
+<i class ='delimiter'>]</i>
+
+<i class ='comment'># Generate a PyType_Spec definition</i>
+<i class ='keyword'>def</i> <i class ='variable'>make_</i><i class ='variable'>slots</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>fields</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>res</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;static PyType_Slot %s_slots[] = {&#39;</i> <i class ='operator'>%</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='comment'># defaults for spec</i>
+    <i class ='variable'>spec</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i> <i class ='charlist'>&#39;tp_itemsize&#39;</i><i class ='delimiter'>:</i><i class ='charlist'>&#39;0&#39;</i> <i class ='delimiter'>}</i>
+    <i class ='keyword'>for</i> <i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>val</i> <i class ='keyword'>in</i> <i class ='variable'>enumerate</i><i class ='delimiter'>(</i><i class ='variable'>fields</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>val</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;0&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>continue</i>
+        <i class ='keyword'>if</i> <i class ='variable'>typeslots</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;tp_name&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tp_doc&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tp_basicsize&#39;</i><i class ='delimiter'>,</i>
+                         <i class ='charlist'>&#39;tp_itemsize&#39;</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;tp_flags&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>spec</i><i class ='delimiter'>[</i><i class ='variable'>typeslots</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>val</i>
+            <i class ='keyword'>continue</i>
+        <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    {Py_%s, %s},&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>typeslots</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>val</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;};&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;static PyType_Spec %s_spec = {&#39;</i> <i class ='operator'>%</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %s,&#39;</i> <i class ='operator'>%</i> <i class ='variable'>spec</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;tp_name&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %s,&#39;</i> <i class ='operator'>%</i> <i class ='variable'>spec</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;tp_basicsize&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %s,&#39;</i> <i class ='operator'>%</i> <i class ='variable'>spec</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;tp_itemsize&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %s,&#39;</i> <i class ='operator'>%</i> <i class ='variable'>spec</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;tp_flags&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;    %s_slots,&#39;</i> <i class ='operator'>%</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+    <i class ='variable'>res</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;};\n&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>res</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+
+    <i class ='comment'>############ Simplistic C scanner ##################################</i>
+    <i class ='variable'>tokenizer</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i>
+        <i class ='rstring'>r&quot;(?P&lt;preproc&gt;#.*\n)&quot;</i>
+        <i class ='rstring'>r&quot;|(?P&lt;comment&gt;/\*.*?\*/)&quot;</i>
+        <i class ='rstring'>r&quot;|(?P&lt;ident&gt;[a-zA-Z_][a-zA-Z0-9_]*)&quot;</i>
+        <i class ='rstring'>r&quot;|(?P&lt;ws&gt;[ \t\n]+)&quot;</i>
+        <i class ='rstring'>r&quot;|(?P&lt;other&gt;.)&quot;</i><i class ='delimiter'>,</i>
+        <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>MULTILINE</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>tokens</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='variable'>source</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>pos</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>while</i> <i class ='variable'>pos</i> <i class ='operator'>!=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenizer</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>source</i><i class ='delimiter'>,</i> <i class ='variable'>pos</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tokens</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>lastgroup</i><i class ='delimiter'>,</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>group</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;preproc&#39;</i><i class ='delimiter'>:</i>
+            <i class ='comment'># continuation lines are considered</i>
+            <i class ='comment'># only in preprocess statements</i>
+            <i class ='keyword'>while</i> <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\\\n&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>nl</i> <i class ='delimiter'>=</i> <i class ='variable'>source</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\n&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>pos</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>nl</i> <i class ='operator'>==</i> <i class ='variable'>-1</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>line</i> <i class ='delimiter'>=</i> <i class ='variable'>source</i><i class ='delimiter'>[</i><i class ='variable'>pos</i><i class ='delimiter'>:</i><i class ='variable'>nl</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+                <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i> <i class ='delimiter'>+=</i> <i class ='variable'>line</i>
+                <i class ='variable'>pos</i> <i class ='delimiter'>+=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+
+    <i class ='comment'># Main loop: replace all static PyTypeObjects until</i>
+    <i class ='comment'># there are none left.</i>
+    <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>c</i> <i class ='delimiter'>=</i> <i class ='variable'>classify</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;(SW)?TWIW?=W?{.*?};&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>c</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+        <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>start</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>end</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>end</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>fields</i> <i class ='delimiter'>=</i> <i class ='variable'>get_</i><i class ='variable'>fields</i><i class ='delimiter'>(</i><i class ='variable'>start</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tokens</i><i class ='delimiter'>[</i><i class ='variable'>start</i><i class ='delimiter'>:</i><i class ='variable'>end</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i><i class ='variable'>make_</i><i class ='variable'>slots</i><i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='variable'>fields</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+
+    <i class ='comment'># Output result to stdout</i>
+    <i class ='keyword'>for</i> <i class ='variable'>t</i><i class ='delimiter'>,</i> <i class ='variable'>v</i> <i class ='keyword'>in</i> <i class ='variable'>tokens</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

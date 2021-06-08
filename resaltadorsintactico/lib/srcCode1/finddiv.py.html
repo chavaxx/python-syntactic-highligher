@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;finddiv - a grep-like tool that looks for division operators.
+
+Usage: finddiv [-l] file_or_directory ...
+
+For directory arguments, all files in the directory whose name ends in
+.py are processed, and subdirectories are processed recursively.
+
+This actually tokenizes the files to avoid false hits in comments or
+strings literals.
+
+By default, this prints all lines containing a / or /= operator, in
+grep -n style.  With the -l option specified, it prints the filename
+of files that contain at least one / or /= operator.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>import</i> <i class ='variable'>getopt</i>
+<i class ='keyword'>import</i> <i class ='variable'>tokenize</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='string'>&quot;lh&quot;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>2</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='string'>&quot;at least one file argument is required&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>2</i>
+    <i class ='variable'>listnames</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>o</i><i class ='delimiter'>,</i> <i class ='variable'>a</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='string'>&quot;-h&quot;</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='hexadecimal'>__d</i><i class ='variable'>oc__</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='string'>&quot;-l&quot;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>listnames</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='variable'>exit</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>listnames</i><i class ='delimiter'>)</i>
+        <i class ='variable'>exit</i> <i class ='delimiter'>=</i> <i class ='variable'>exit</i> <i class ='keyword'>or</i> <i class ='variable'>x</i>
+    <i class ='keyword'>return</i> <i class ='variable'>exit</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>usage</i><i class ='delimiter'>(</i><i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s: %s\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Usage: %s [-l] file ...\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Try `%s -h&#39; for more information.\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>listnames</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>processdir</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>listnames</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fp</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Can&#39;t open: %s\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>msg</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+    <i class ='keyword'>with</i> <i class ='variable'>fp</i><i class ='delimiter'>:</i>
+        <i class ='variable'>g</i> <i class ='delimiter'>=</i> <i class ='variable'>tokenize</i><i class ='delimiter'>.</i><i class ='variable'>generate_</i><i class ='variable'>tokens</i><i class ='delimiter'>(</i><i class ='variable'>fp</i><i class ='delimiter'>.</i><i class ='variable'>readline</i><i class ='delimiter'>)</i>
+        <i class ='variable'>lastrow</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='keyword'>for</i> <i class ='variable'>type</i><i class ='delimiter'>,</i> <i class ='variable'>token</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>,</i> <i class ='variable'>col</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>,</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>g</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>token</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='string'>&quot;/&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;/=&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>listnames</i><i class ='delimiter'>:</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>break</i>
+                <i class ='keyword'>if</i> <i class ='variable'>row</i> <i class ='operator'>!=</i> <i class ='variable'>lastrow</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>lastrow</i> <i class ='delimiter'>=</i> <i class ='variable'>row</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%s:%d:%s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>row</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>processdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>listnames</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>OSError</i> <i class ='keyword'>as</i> <i class ='variable'>msg</i><i class ='delimiter'>:</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Can&#39;t list directory: %s\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>dir</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='integer'>1</i>
+    <i class ='variable'>files</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>names</i><i class ='delimiter'>:</i>
+        <i class ='variable'>fn</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>normcase</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.py&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>or</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>)</i>
+    <i class ='variable'>files</i><i class ='delimiter'>.</i><i class ='variable'>sort</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>=</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>normcase</i><i class ='delimiter'>)</i>
+    <i class ='variable'>exit</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+    <i class ='keyword'>for</i> <i class ='variable'>fn</i> <i class ='keyword'>in</i> <i class ='variable'>files</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>process</i><i class ='delimiter'>(</i><i class ='variable'>fn</i><i class ='delimiter'>,</i> <i class ='variable'>listnames</i><i class ='delimiter'>)</i>
+        <i class ='variable'>exit</i> <i class ='delimiter'>=</i> <i class ='variable'>exit</i> <i class ='keyword'>or</i> <i class ='variable'>x</i>
+    <i class ='keyword'>return</i> <i class ='variable'>exit</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

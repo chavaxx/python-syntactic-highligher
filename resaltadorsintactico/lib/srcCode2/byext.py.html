@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;Show file statistics by extension.&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>os</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>Stats</i><i class ='delimiter'>:</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>statargs</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>args</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>arg</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statdir</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isfile</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statfile</i><i class ='delimiter'>(</i><i class ='variable'>arg</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Can&#39;t find %s\n&quot;</i> <i class ='operator'>%</i> <i class ='variable'>arg</i><i class ='delimiter'>)</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;???&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;unknown&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>statdir</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>dir</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;dir&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;dirs&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='variable'>names</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>listdir</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>OSError</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Can&#39;t list %s: %s\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;dir&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;unlistable&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+        <i class ='keyword'>for</i> <i class ='variable'>name</i> <i class ='keyword'>in</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>names</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>startswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;.#&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>  <i class ='comment'># Skip CVS temp files</i>
+            <i class ='keyword'>if</i> <i class ='variable'>name</i><i class ='delimiter'>.</i><i class ='variable'>endswith</i><i class ='delimiter'>(</i><i class ='string'>&quot;~&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>continue</i>  <i class ='comment'># Skip Emacs backup files</i>
+            <i class ='variable'>full</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>dir</i><i class ='delimiter'>,</i> <i class ='variable'>name</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>islink</i><i class ='delimiter'>(</i><i class ='variable'>full</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='string'>&quot;&lt;lnk&gt;&quot;</i><i class ='delimiter'>,</i> <i class ='string'>&quot;links&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>elif</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>isdir</i><i class ='delimiter'>(</i><i class ='variable'>full</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statdir</i><i class ='delimiter'>(</i><i class ='variable'>full</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>statfile</i><i class ='delimiter'>(</i><i class ='variable'>full</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>statfile</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>head</i><i class ='delimiter'>,</i> <i class ='variable'>ext</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>splitext</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='variable'>head</i><i class ='delimiter'>,</i> <i class ='variable'>base</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>ext</i> <i class ='operator'>==</i> <i class ='variable'>base</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ext</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&quot;</i>  <i class ='comment'># E.g. .cvsignore is deemed not to have an extension</i>
+        <i class ='variable'>ext</i> <i class ='delimiter'>=</i> <i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>path</i><i class ='delimiter'>.</i><i class ='variable'>normcase</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>ext</i><i class ='delimiter'>:</i>
+            <i class ='variable'>ext</i> <i class ='delimiter'>=</i> <i class ='string'>&quot;&lt;none&gt;&quot;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='string'>&quot;files&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='string'>&quot;rb&quot;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>except</i> <i class ='variable'>IOError</i> <i class ='keyword'>as</i> <i class ='variable'>err</i><i class ='delimiter'>:</i>
+            <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stderr</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;Can&#39;t open %s: %s\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='variable'>err</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='string'>&quot;unopenable&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='string'>&quot;bytes&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>b</i><i class ='charlist'>&#39;\0&#39;</i> <i class ='keyword'>in</i> <i class ='variable'>data</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='string'>&quot;binary&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>return</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>data</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='string'>&quot;empty&quot;</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='comment'># self.addstats(ext, &quot;chars&quot;, len(data))</i>
+        <i class ='variable'>lines</i> <i class ='delimiter'>=</i> <i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>,</i> <i class ='string'>&quot;latin-1&quot;</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>splitlines</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='string'>&quot;lines&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>lines</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>del</i> <i class ='variable'>lines</i>
+        <i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='string'>&quot;words&quot;</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>words</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>addstats</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='variable'>n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>d</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>ext</i><i class ='delimiter'>,</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i><i class ='delimiter'>)</i>
+        <i class ='variable'>d</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>d</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='variable'>n</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>report</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>exts</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>)</i>
+        <i class ='comment'># Get the column keys</i>
+        <i class ='variable'>columns</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>exts</i><i class ='delimiter'>:</i>
+            <i class ='variable'>columns</i><i class ='delimiter'>.</i><i class ='variable'>update</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>[</i><i class ='variable'>ext</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>cols</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>columns</i><i class ='delimiter'>)</i>
+        <i class ='variable'>colwidth</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='string'>&quot;ext&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>map</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>,</i> <i class ='variable'>exts</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>minwidth</i> <i class ='delimiter'>=</i> <i class ='integer'>6</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>[</i><i class ='string'>&quot;TOTAL&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+        <i class ='keyword'>for</i> <i class ='variable'>col</i> <i class ='keyword'>in</i> <i class ='variable'>cols</i><i class ='delimiter'>:</i>
+            <i class ='variable'>total</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='variable'>cw</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>minwidth</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>col</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>exts</i><i class ='delimiter'>:</i>
+                <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>[</i><i class ='variable'>ext</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>col</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>value</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+                <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                    <i class ='variable'>w</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='string'>&quot;%d&quot;</i> <i class ='operator'>%</i> <i class ='variable'>value</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>total</i> <i class ='delimiter'>+=</i> <i class ='variable'>value</i>
+                <i class ='variable'>cw</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>cw</i><i class ='delimiter'>,</i> <i class ='variable'>w</i><i class ='delimiter'>)</i>
+            <i class ='variable'>cw</i> <i class ='delimiter'>=</i> <i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='variable'>cw</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>total</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>col</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>cw</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>[</i><i class ='string'>&quot;TOTAL&quot;</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='variable'>col</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>total</i>
+        <i class ='variable'>exts</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='string'>&quot;TOTAL&quot;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>exts</i><i class ='delimiter'>:</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>[</i><i class ='variable'>ext</i><i class ='delimiter'>]</i><i class ='delimiter'>[</i><i class ='string'>&quot;ext&quot;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>ext</i>
+        <i class ='variable'>cols</i><i class ='delimiter'>.</i><i class ='variable'>insert</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='string'>&quot;ext&quot;</i><i class ='delimiter'>)</i>
+
+        <i class ='keyword'>def</i> <i class ='variable'>printheader</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>col</i> <i class ='keyword'>in</i> <i class ='variable'>cols</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%*s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>col</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>col</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>printheader</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>ext</i> <i class ='keyword'>in</i> <i class ='variable'>exts</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>for</i> <i class ='variable'>col</i> <i class ='keyword'>in</i> <i class ='variable'>cols</i><i class ='delimiter'>:</i>
+                <i class ='variable'>value</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>stats</i><i class ='delimiter'>[</i><i class ='variable'>ext</i><i class ='delimiter'>]</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>col</i><i class ='delimiter'>,</i> <i class ='string'>&quot;&quot;</i><i class ='delimiter'>)</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%*s&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>colwidth</i><i class ='delimiter'>[</i><i class ='variable'>col</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>value</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>printheader</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>  <i class ='comment'># Another header at the bottom</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>os</i><i class ='delimiter'>.</i><i class ='variable'>curdir</i><i class ='delimiter'>]</i>
+    <i class ='variable'>s</i> <i class ='delimiter'>=</i> <i class ='variable'>Stats</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>statargs</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>)</i>
+    <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>report</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

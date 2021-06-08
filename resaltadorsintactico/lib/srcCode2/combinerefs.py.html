@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#! /usr/bin/env python3</i>
+
+<i class ='string'>&quot;&quot;</i><i class ='string'>&quot;
+combinerefs path
+
+A helper for analyzing PYTHONDUMPREFS output.
+
+When the PYTHONDUMPREFS envar is set in a debug build, at Python shutdown
+time Py_FinalizeEx() prints the list of all live objects twice:  first it
+prints the repr() of each object while the interpreter is still fully intact.
+After cleaning up everything it can, it prints all remaining live objects
+again, but the second time just prints their addresses, refcounts, and type
+names (because the interpreter has been torn down, calling repr methods at
+this point can get into infinite loops or blow up).
+
+Save all this output into a file, then run this script passing the path to
+that file.  The script finds both output chunks, combines them, then prints
+a line of output for each object still alive at the end:
+
+    address refcnt typename repr
+
+address is the address of the object, in whatever format the platform C
+produces for a %p format code.
+
+refcnt is of the form
+
+    &quot;</i><i class ='delimiter'>[</i><i class ='string'>&quot; ref &quot;</i><i class ='delimiter'>]</i><i class ='string'>&quot;
+
+when the object&#39;s refcount is the same in both PYTHONDUMPREFS output blocks,
+or
+
+    &quot;</i><i class ='delimiter'>[</i><i class ='string'>&quot; ref_before &quot;</i><i class ='delimiter'>-&gt;</i><i class ='string'>&quot; ref_after &quot;</i><i class ='delimiter'>]</i><i class ='string'>&quot;
+
+if the refcount changed.
+
+typename is Py_TYPE(object)-&gt;tp_name, extracted from the second PYTHONDUMPREFS
+output block.
+
+repr is repr(object), extracted from the first PYTHONDUMPREFS output block.
+CAUTION:  If object is a container type, it may not actually contain all the
+objects shown in the repr:  the repr was captured from the first output block,
+and some of the containees may have been released since then.  For example,
+it&#39;s common for the line showing the dict of interned strings to display
+strings that no longer exist at the end of Py_FinalizeEx; this can be recognized
+(albeit painfully) because such containees don&#39;t have a line of their own.
+
+The objects are listed in allocation order, with most-recently allocated
+printed first, and the first object allocated printed last.
+
+
+Simple examples:
+
+    00857060 [14] str &#39;__len__&#39;
+
+The str object &#39;__len__&#39; is alive at shutdown time, and both PYTHONDUMPREFS
+output blocks said there were 14 references to it.  This is probably due to
+C modules that intern the string &quot;</i><i class ='hexadecimal'>__</i><i class ='variable'>len__</i><i class ='string'>&quot; and keep a reference to it in a
+file static.
+
+    00857038 [46-&gt;5] tuple ()
+
+46-5 = 41 references to the empty tuple were removed by the cleanup actions
+between the times PYTHONDUMPREFS produced output.
+
+    00858028 [1025-&gt;1456] str &#39;&lt;dummy key&gt;&#39;
+
+The string &#39;&lt;dummy key&gt;&#39;, which is used in dictobject.c to overwrite a real
+key that gets deleted, grew several hundred references during cleanup.  It
+suggests that stuff did get removed from dicts by cleanup, but that the dicts
+themselves are staying alive for some reason. &quot;</i><i class ='string'>&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>re</i>
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+
+<i class ='comment'># Generate lines from fileiter.  If whilematch is true, continue reading</i>
+<i class ='comment'># while the regexp object pat matches line.  If whilematch is false, lines</i>
+<i class ='comment'># are read so long as pat doesn&#39;t match them.  In any case, the first line</i>
+<i class ='comment'># that doesn&#39;t match pat (when whilematch is true), or that does match pat</i>
+<i class ='comment'># (when whilematch is false), is lost, and fileiter will resume at the line</i>
+<i class ='comment'># following it.</i>
+<i class ='keyword'>def</i> <i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='variable'>fileiter</i><i class ='delimiter'>,</i> <i class ='variable'>pat</i><i class ='delimiter'>,</i> <i class ='variable'>whilematch</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>fileiter</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='datatype'>bool</i><i class ='delimiter'>(</i><i class ='variable'>pat</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i> <i class ='operator'>==</i> <i class ='variable'>whilematch</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>yield</i> <i class ='variable'>line</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>combinefile</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>fi</i> <i class ='delimiter'>=</i> <i class ='variable'>iter</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='variable'>fi</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;^Remaining objects:$&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>pass</i>
+
+    <i class ='variable'>crack</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;([a-zA-Z\d]+) \[(\d+)\] (.*)&#39;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>addr2</i><i class ='variable'>rc</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>addr2</i><i class ='variable'>guts</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='variable'>before</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='variable'>fi</i><i class ='delimiter'>,</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;^Remaining object addresses:$&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='keyword'>False</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>crack</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+            <i class ='variable'>addr</i><i class ='delimiter'>,</i> <i class ='variable'>addr2</i><i class ='variable'>rc</i><i class ='delimiter'>[</i><i class ='variable'>addr</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>addr2</i><i class ='variable'>guts</i><i class ='delimiter'>[</i><i class ='variable'>addr</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>before</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;??? skipped:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>after</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>for</i> <i class ='variable'>line</i> <i class ='keyword'>in</i> <i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='variable'>fi</i><i class ='delimiter'>,</i> <i class ='variable'>crack</i><i class ='delimiter'>,</i> <i class ='keyword'>True</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>after</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>crack</i><i class ='delimiter'>.</i><i class ='variable'>match</i><i class ='delimiter'>(</i><i class ='variable'>line</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>m</i>
+        <i class ='variable'>addr</i><i class ='delimiter'>,</i> <i class ='variable'>rc</i><i class ='delimiter'>,</i> <i class ='variable'>guts</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i> <i class ='comment'># guts is type name here</i>
+        <i class ='keyword'>if</i> <i class ='variable'>addr</i> <i class ='keyword'>not</i> <i class ='keyword'>in</i> <i class ='variable'>addr2</i><i class ='variable'>rc</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;??? new object created while tearing down:&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>line</i><i class ='delimiter'>.</i><i class ='variable'>rstrip</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>continue</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>addr</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>rc</i> <i class ='operator'>==</i> <i class ='variable'>addr2</i><i class ='variable'>rc</i><i class ='delimiter'>[</i><i class ='variable'>addr</i><i class ='delimiter'>]</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;[%s]&#39;</i> <i class ='operator'>%</i> <i class ='variable'>rc</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;[%s-&gt;%s]&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>addr2</i><i class ='variable'>rc</i><i class ='delimiter'>[</i><i class ='variable'>addr</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>rc</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>guts</i><i class ='delimiter'>,</i> <i class ='variable'>addr2</i><i class ='variable'>guts</i><i class ='delimiter'>[</i><i class ='variable'>addr</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;%d objects before, %d after&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>before</i><i class ='delimiter'>,</i> <i class ='variable'>after</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>combine</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>fname</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+        <i class ='variable'>combinefile</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>combine</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

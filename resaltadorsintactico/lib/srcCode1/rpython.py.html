@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+Remote python client.
+Execute Python commands remotely and send output back.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>import</i> <i class ='variable'>sys</i>
+<i class ='keyword'>from</i> <i class ='variable'>socket</i> <i class ='keyword'>import</i> <i class ='variable'>socket</i><i class ='delimiter'>,</i> <i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>,</i> <i class ='variable'>SOCK_</i><i class ='variable'>STREAM</i><i class ='delimiter'>,</i> <i class ='variable'>SHUT_</i><i class ='variable'>WR</i>
+
+<i class ='variable'>PORT</i> <i class ='delimiter'>=</i> <i class ='integer'>4127</i>
+<i class ='variable'>BUFSIZE</i> <i class ='delimiter'>=</i> <i class ='integer'>1024</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='integer'>3</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='string'>&quot;usage: rpython host command&quot;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+    <i class ='variable'>host</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i>
+    <i class ='variable'>port</i> <i class ='delimiter'>=</i> <i class ='variable'>PORT</i>
+    <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>host</i><i class ='delimiter'>.</i><i class ='variable'>find</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;:&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='variable'>i</i> <i class ='operator'>&gt;=</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='variable'>port</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>host</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>host</i> <i class ='delimiter'>=</i> <i class ='variable'>host</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+    <i class ='variable'>command</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>with</i> <i class ='variable'>socket</i><i class ='delimiter'>(</i><i class ='variable'>AF_</i><i class ='variable'>INET</i><i class ='delimiter'>,</i> <i class ='variable'>SOCK_</i><i class ='variable'>STREAM</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>s</i><i class ='delimiter'>:</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>connect</i><i class ='delimiter'>(</i><i class ='delimiter'>(</i><i class ='variable'>host</i><i class ='delimiter'>,</i> <i class ='variable'>port</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>send</i><i class ='delimiter'>(</i><i class ='variable'>command</i><i class ='delimiter'>.</i><i class ='variable'>encode</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>shutdown</i><i class ='delimiter'>(</i><i class ='variable'>SHUT_</i><i class ='variable'>WR</i><i class ='delimiter'>)</i>
+        <i class ='variable'>reply</i> <i class ='delimiter'>=</i> <i class ='variable'>b</i><i class ='charlist'>&#39;&#39;</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>s</i><i class ='delimiter'>.</i><i class ='variable'>recv</i><i class ='delimiter'>(</i><i class ='variable'>BUFSIZE</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>data</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>reply</i> <i class ='delimiter'>+=</i> <i class ='variable'>data</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>reply</i><i class ='delimiter'>.</i><i class ='variable'>decode</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>main</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

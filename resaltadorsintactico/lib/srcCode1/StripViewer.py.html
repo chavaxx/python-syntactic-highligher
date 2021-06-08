@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='multilineComment'>&quot;&quot;&quot;Strip viewer and related widgets.
+
+The classes in this file implement the StripViewer shown in the top two thirds
+of the main Pynche window.  It consists of three StripWidgets which display
+the variations in red, green, and blue respectively of the currently selected
+r/g/b color value.
+
+Each StripWidget shows the color variations that are reachable by varying an
+axis of the currently selected color.  So for example, if the color is
+
+  (R,G,B)=(127,163,196)
+
+then the Red variations show colors from (0,163,196) to (255,163,196), the
+Green variations show colors from (127,0,196) to (127,255,196), and the Blue
+variations show colors from (127,163,0) to (127,163,255).
+
+The selected color is always visible in all three StripWidgets, and in fact
+each StripWidget highlights the selected color, and has an arrow pointing to
+the selected chip, which includes the value along that particular axis.
+
+Clicking on any chip in any StripWidget selects that color, and updates all
+arrows and other windows.  By toggling on Update while dragging, Pynche will
+select the color under the cursor while you drag it, but be forewarned that
+this can be slow.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>from</i> <i class ='variable'>tkinter</i> <i class ='keyword'>import</i> <i class ='operator'>*</i>
+<i class ='keyword'>import</i> <i class ='variable'>ColorDB</i>
+
+<i class ='comment'># Load this script into the Tcl interpreter and call it in</i>
+<i class ='comment'># StripWidget.set_color().  This is about as fast as it can be with the</i>
+<i class ='comment'># current _tkinter.c interface, which doesn&#39;t support Tcl Objects.</i>
+<i class ='variable'>TCLPROC</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i><i class ='charlist'>&#39;\
+proc setcolor {canv colors} {
+    set i 1
+    foreach c $colors {
+        $canv itemconfigure $i -fill $c -outline $c
+        incr i
+    }
+}
+&#39;</i><i class ='charlist'>&#39;&#39;</i>
+
+<i class ='comment'># Tcl event types</i>
+<i class ='variable'>BTNDOWN</i> <i class ='delimiter'>=</i> <i class ='integer'>4</i>
+<i class ='variable'>BTNUP</i> <i class ='delimiter'>=</i> <i class ='integer'>5</i>
+<i class ='variable'>BTNDRAG</i> <i class ='delimiter'>=</i> <i class ='integer'>6</i>
+
+<i class ='variable'>SPACE</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i>
+
+
+
+<i class ='keyword'>def</i> <i class ='variable'>constant</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>step</i> <i class ='delimiter'>=</i> <i class ='float'>255.0</i> <i class ='operator'>/</i> <i class ='delimiter'>(</i><i class ='variable'>numchips</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+    <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='float'>0.0</i>
+    <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>while</i> <i class ='variable'>numchips</i> <i class ='operator'>&gt;</i> <i class ='integer'>0</i><i class ='delimiter'>:</i>
+        <i class ='variable'>seq</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>start</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>start</i> <i class ='delimiter'>=</i> <i class ='variable'>start</i> <i class ='operator'>+</i> <i class ='variable'>step</i>
+        <i class ='variable'>numchips</i> <i class ='delimiter'>=</i> <i class ='variable'>numchips</i> <i class ='variable'>-</i> <i class ='integer'>1</i>
+    <i class ='keyword'>return</i> <i class ='variable'>seq</i>
+
+<i class ='comment'># red variations, green+blue = cyan constant</i>
+<i class ='keyword'>def</i> <i class ='variable'>constant_</i><i class ='variable'>red_</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='variable'>constant</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='variable'>red</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># green variations, red+blue = magenta constant</i>
+<i class ='keyword'>def</i> <i class ='variable'>constant_</i><i class ='variable'>green_</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='variable'>constant</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='variable'>green</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># blue variations, red+green = yellow constant</i>
+<i class ='keyword'>def</i> <i class ='variable'>constant_</i><i class ='variable'>blue_</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='variable'>constant</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='variable'>blue</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># red variations, green+blue = cyan constant</i>
+<i class ='keyword'>def</i> <i class ='variable'>constant_</i><i class ='variable'>cyan_</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='variable'>constant</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='variable'>green</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='variable'>blue</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># green variations, red+blue = magenta constant</i>
+<i class ='keyword'>def</i> <i class ='variable'>constant_</i><i class ='variable'>magenta_</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='variable'>constant</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='variable'>red</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='variable'>blue</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+<i class ='comment'># blue variations, red+green = yellow constant</i>
+<i class ='keyword'>def</i> <i class ='variable'>constant_</i><i class ='variable'>yellow_</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='variable'>constant</i><i class ='delimiter'>(</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='variable'>red</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='variable'>green</i><i class ='delimiter'>]</i> <i class ='operator'>*</i> <i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+
+<i class ='keyword'>class</i> <i class ='variable'>LeftArrow</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_A</i><i class ='variable'>RROWWIDTH</i> <i class ='delimiter'>=</i> <i class ='integer'>30</i>
+    <i class ='hexadecimal'>_A</i><i class ='variable'>RROWHEIGHT</i> <i class ='delimiter'>=</i> <i class ='integer'>15</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>YOFFSET</i> <i class ='delimiter'>=</i> <i class ='integer'>13</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>TEXTYOFFSET</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>TAG</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;leftarrow&#39;</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>canvas</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i> <i class ='delimiter'>=</i> <i class ='variable'>canvas</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>rrow</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_c</i><i class ='variable'>reate</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>move_</i><i class ='variable'>to</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_c</i><i class ='variable'>reate</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>arrow</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>line</i><i class ='delimiter'>(</i>
+            <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWHEIGHT</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>YOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>YOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWWIDTH</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>YOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>arrow</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;first&#39;</i><i class ='delimiter'>,</i>
+            <i class ='variable'>width</i><i class ='delimiter'>=</i><i class ='float'>3.0</i><i class ='delimiter'>,</i>
+            <i class ='variable'>tags</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TAG</i><i class ='delimiter'>)</i>
+        <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>text</i><i class ='delimiter'>(</i>
+            <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWWIDTH</i> <i class ='operator'>+</i> <i class ='integer'>13</i><i class ='delimiter'>,</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWHEIGHT</i> <i class ='variable'>-</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TEXTYOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>tags</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TAG</i><i class ='delimiter'>,</i>
+            <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;128&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>arrow</i><i class ='delimiter'>,</i> <i class ='variable'>text</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>coords</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>coords</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TAG</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>coords</i>
+        <i class ='keyword'>return</i> <i class ='variable'>coords</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>move_</i><i class ='variable'>to</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>deltax</i> <i class ='delimiter'>=</i> <i class ='variable'>x</i> <i class ='variable'>-</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>move</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TAG</i><i class ='delimiter'>,</i> <i class ='variable'>deltax</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>set_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>itemconfigure</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>text</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>RightArrow</i><i class ='delimiter'>(</i><i class ='variable'>LeftArrow</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>TAG</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;rightarrow&#39;</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_c</i><i class ='variable'>reate</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>arrow</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>line</i><i class ='delimiter'>(</i>
+            <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>YOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWWIDTH</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>YOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWWIDTH</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWHEIGHT</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>YOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>arrow</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;last&#39;</i><i class ='delimiter'>,</i>
+            <i class ='variable'>width</i><i class ='delimiter'>=</i><i class ='float'>3.0</i><i class ='delimiter'>,</i>
+            <i class ='variable'>tags</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TAG</i><i class ='delimiter'>)</i>
+        <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>text</i><i class ='delimiter'>(</i>
+            <i class ='variable'>x</i> <i class ='variable'>-</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWWIDTH</i> <i class ='operator'>+</i> <i class ='integer'>15</i><i class ='delimiter'>,</i>            <i class ='comment'># BAW: kludge</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWHEIGHT</i> <i class ='variable'>-</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TEXTYOFFSET</i><i class ='delimiter'>,</i>
+            <i class ='variable'>justify</i><i class ='delimiter'>=</i><i class ='variable'>RIGHT</i><i class ='delimiter'>,</i>
+            <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;128&#39;</i><i class ='delimiter'>,</i>
+            <i class ='variable'>tags</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TAG</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>arrow</i><i class ='delimiter'>,</i> <i class ='variable'>text</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>coords</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>coords</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>TAG</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>coords</i>
+        <i class ='keyword'>return</i> <i class ='variable'>coords</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>+</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_A</i><i class ='variable'>RROWWIDTH</i>
+
+
+
+<i class ='keyword'>class</i> <i class ='variable'>StripWidget</i><i class ='delimiter'>:</i>
+    <i class ='hexadecimal'>_C</i><i class ='variable'>HIPHEIGHT</i> <i class ='delimiter'>=</i> <i class ='integer'>50</i>
+    <i class ='hexadecimal'>_C</i><i class ='variable'>HIPWIDTH</i> <i class ='delimiter'>=</i> <i class ='integer'>10</i>
+    <i class ='hexadecimal'>_</i><i class ='variable'>NUMCHIPS</i> <i class ='delimiter'>=</i> <i class ='integer'>40</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>switchboard</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>master</i>     <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>chipwidth</i>  <i class ='delimiter'>=</i> <i class ='hexadecimal'>_C</i><i class ='variable'>HIPWIDTH</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>chipheight</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>_C</i><i class ='variable'>HIPHEIGHT</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>numchips</i>   <i class ='delimiter'>=</i> <i class ='hexadecimal'>_</i><i class ='variable'>NUMCHIPS</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>generator</i>  <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>axis</i>       <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>label</i>      <i class ='delimiter'>=</i> <i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>uwdvar</i>     <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>,</i>
+                 <i class ='variable'>hexvar</i>     <i class ='delimiter'>=</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># instance variables</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>generator</i> <i class ='delimiter'>=</i> <i class ='variable'>generator</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>xis</i> <i class ='delimiter'>=</i> <i class ='variable'>axis</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>numchips</i> <i class ='delimiter'>=</i> <i class ='variable'>numchips</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>xis</i> <i class ='keyword'>in</i> <i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='integer'>2</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>uwd</i> <i class ='delimiter'>=</i> <i class ='variable'>uwdvar</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>hexp</i> <i class ='delimiter'>=</i> <i class ='variable'>hexvar</i>
+        <i class ='comment'># the last chip selected</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>lastchip</i> <i class ='delimiter'>=</i> <i class ='keyword'>None</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i> <i class ='delimiter'>=</i> <i class ='variable'>switchboard</i>
+
+        <i class ='variable'>canvaswidth</i> <i class ='delimiter'>=</i> <i class ='variable'>numchips</i> <i class ='operator'>*</i> <i class ='delimiter'>(</i><i class ='variable'>chipwidth</i> <i class ='operator'>+</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>canvasheight</i> <i class ='delimiter'>=</i> <i class ='variable'>chipheight</i> <i class ='operator'>+</i> <i class ='integer'>43</i>            <i class ='comment'># BAW: Kludge</i>
+
+        <i class ='comment'># create the canvas and pack it</i>
+        <i class ='variable'>canvas</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i> <i class ='delimiter'>=</i> <i class ='variable'>Canvas</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i>
+                                        <i class ='variable'>width</i><i class ='delimiter'>=</i><i class ='variable'>canvaswidth</i><i class ='delimiter'>,</i>
+                                        <i class ='variable'>height</i><i class ='delimiter'>=</i><i class ='variable'>canvasheight</i><i class ='delimiter'>,</i>
+<i class ='comment'>##                                        borderwidth=2,</i>
+<i class ='comment'>##                                        relief=GROOVE</i>
+                                        <i class ='delimiter'>)</i>
+
+        <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;ButtonPress-1&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>select_</i><i class ='variable'>chip</i><i class ='delimiter'>)</i>
+        <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;ButtonRelease-1&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>select_</i><i class ='variable'>chip</i><i class ='delimiter'>)</i>
+        <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>bind</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&lt;B1-Motion&gt;&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>select_</i><i class ='variable'>chip</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># Load a proc into the Tcl interpreter.  This is used in the</i>
+        <i class ='comment'># set_color() method to speed up setting the chip colors.</i>
+        <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='variable'>TCLPROC</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># create the color strip</i>
+        <i class ='variable'>chips</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__c</i><i class ='variable'>hips</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='integer'>30</i>
+        <i class ='variable'>tags</i> <i class ='delimiter'>=</i> <i class ='delimiter'>(</i><i class ='charlist'>&#39;chip&#39;</i><i class ='delimiter'>,</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>c</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>color</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;grey&#39;</i>
+            <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>rectangle</i><i class ='delimiter'>(</i>
+                <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='operator'>+</i><i class ='variable'>chipwidth</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='operator'>+</i><i class ='variable'>chipheight</i><i class ='delimiter'>,</i>
+                <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>color</i><i class ='delimiter'>,</i> <i class ='variable'>outline</i><i class ='delimiter'>=</i><i class ='variable'>color</i><i class ='delimiter'>,</i>
+                <i class ='variable'>tags</i><i class ='delimiter'>=</i><i class ='variable'>tags</i><i class ='delimiter'>)</i>
+            <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='variable'>chipwidth</i> <i class ='operator'>+</i> <i class ='integer'>1</i>                 <i class ='comment'># for outline</i>
+            <i class ='variable'>chips</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>color</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># create the strip label</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>label</i> <i class ='delimiter'>=</i> <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>create_</i><i class ='variable'>text</i><i class ='delimiter'>(</i>
+            <i class ='integer'>3</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='operator'>+</i> <i class ='variable'>chipheight</i> <i class ='operator'>+</i> <i class ='integer'>8</i><i class ='delimiter'>,</i>
+            <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>label</i><i class ='delimiter'>,</i>
+            <i class ='variable'>anchor</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># create the arrow and text item</i>
+        <i class ='variable'>chipx</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>rrow_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>leftarrow</i> <i class ='delimiter'>=</i> <i class ='variable'>LeftArrow</i><i class ='delimiter'>(</i><i class ='variable'>canvas</i><i class ='delimiter'>,</i> <i class ='variable'>chipx</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>chipx</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>rrow_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>chips</i><i class ='delimiter'>)</i> <i class ='variable'>-</i> <i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>rightarrow</i> <i class ='delimiter'>=</i> <i class ='variable'>RightArrow</i><i class ='delimiter'>(</i><i class ='variable'>canvas</i><i class ='delimiter'>,</i> <i class ='variable'>chipx</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__a</i><i class ='variable'>rrow_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>chipnum</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>coords</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>coords</i><i class ='delimiter'>(</i><i class ='variable'>chipnum</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>coords</i>
+        <i class ='variable'>x0</i><i class ='delimiter'>,</i> <i class ='variable'>y0</i><i class ='delimiter'>,</i> <i class ='variable'>x1</i><i class ='delimiter'>,</i> <i class ='variable'>y1</i> <i class ='delimiter'>=</i> <i class ='variable'>coords</i>
+        <i class ='keyword'>return</i> <i class ='delimiter'>(</i><i class ='variable'>x1</i> <i class ='operator'>+</i> <i class ='variable'>x0</i><i class ='delimiter'>)</i> <i class ='operator'>/</i> <i class ='float'>2.0</i>
+
+    <i class ='comment'># Invoked when one of the chips is clicked.  This should just tell the</i>
+    <i class ='comment'># switchboard to set the color on all the output components</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>select_</i><i class ='variable'>chip</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>x</i> <i class ='delimiter'>=</i> <i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>x</i>
+        <i class ='variable'>y</i> <i class ='delimiter'>=</i> <i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>y</i>
+        <i class ='variable'>canvas</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i>
+        <i class ='variable'>chip</i> <i class ='delimiter'>=</i> <i class ='variable'>canvas</i><i class ='delimiter'>.</i><i class ='variable'>find_</i><i class ='variable'>overlapping</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>,</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>chip</i> <i class ='keyword'>and</i> <i class ='delimiter'>(</i><i class ='integer'>1</i> <i class ='operator'>&lt;=</i> <i class ='variable'>chip</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i> <i class ='operator'>&lt;=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>numchips</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>color</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__c</i><i class ='variable'>hips</i><i class ='delimiter'>[</i><i class ='variable'>chip</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='variable'>-1</i><i class ='delimiter'>]</i>
+            <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>rrggbb_</i><i class ='variable'>to_</i><i class ='variable'>triplet</i><i class ='delimiter'>(</i><i class ='variable'>color</i><i class ='delimiter'>)</i>
+            <i class ='variable'>etype</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>event</i><i class ='delimiter'>.</i><i class ='variable'>type</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='delimiter'>(</i><i class ='variable'>etype</i> <i class ='operator'>==</i> <i class ='variable'>BTNUP</i> <i class ='keyword'>or</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>uwd</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                <i class ='comment'># update everyone</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>views</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='comment'># just track the arrows</i>
+                <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>trackarrow</i><i class ='delimiter'>(</i><i class ='variable'>chip</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>trackarrow</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>chip</i><i class ='delimiter'>,</i> <i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='comment'># invert the last chip</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>lastchip</i> <i class ='keyword'>is</i> <i class ='keyword'>not</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+            <i class ='variable'>color</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>itemcget</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>lastchip</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;fill&#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>itemconfigure</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>lastchip</i><i class ='delimiter'>,</i> <i class ='variable'>outline</i><i class ='delimiter'>=</i><i class ='variable'>color</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>lastchip</i> <i class ='delimiter'>=</i> <i class ='variable'>chip</i>
+        <i class ='comment'># get the arrow&#39;s text</i>
+        <i class ='variable'>coloraxis</i> <i class ='delimiter'>=</i> <i class ='variable'>rgbtuple</i><i class ='delimiter'>[</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>xis</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>if</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>hexp</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='comment'># hex</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>hex</i><i class ='delimiter'>(</i><i class ='variable'>coloraxis</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='comment'># decimal</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>coloraxis</i><i class ='delimiter'>)</i>
+        <i class ='comment'># move the arrow, and set its text</i>
+        <i class ='keyword'>if</i> <i class ='variable'>coloraxis</i> <i class ='operator'>&lt;=</i> <i class ='integer'>128</i><i class ='delimiter'>:</i>
+            <i class ='comment'># use the left arrow</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>leftarrow</i><i class ='delimiter'>.</i><i class ='variable'>set_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>leftarrow</i><i class ='delimiter'>.</i><i class ='variable'>move_</i><i class ='variable'>to</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>rrow_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='variable'>chip-1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>rightarrow</i><i class ='delimiter'>.</i><i class ='variable'>move_</i><i class ='variable'>to</i><i class ='delimiter'>(</i><i class ='variable'>-100</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='comment'># use the right arrow</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>rightarrow</i><i class ='delimiter'>.</i><i class ='variable'>set_</i><i class ='variable'>text</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>rightarrow</i><i class ='delimiter'>.</i><i class ='variable'>move_</i><i class ='variable'>to</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__a</i><i class ='variable'>rrow_</i><i class ='variable'>x</i><i class ='delimiter'>(</i><i class ='variable'>chip-1</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+            <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>leftarrow</i><i class ='delimiter'>.</i><i class ='variable'>move_</i><i class ='variable'>to</i><i class ='delimiter'>(</i><i class ='variable'>-100</i><i class ='delimiter'>)</i>
+        <i class ='comment'># and set the chip&#39;s outline</i>
+        <i class ='variable'>brightness</i> <i class ='delimiter'>=</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>triplet_</i><i class ='variable'>to_</i><i class ='variable'>brightness</i><i class ='delimiter'>(</i><i class ='variable'>rgbtuple</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>brightness</i> <i class ='operator'>&lt;=</i> <i class ='integer'>128</i><i class ='delimiter'>:</i>
+            <i class ='variable'>outline</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;white&#39;</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>outline</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;black&#39;</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>itemconfigure</i><i class ='delimiter'>(</i><i class ='variable'>chip</i><i class ='delimiter'>,</i> <i class ='variable'>outline</i><i class ='delimiter'>=</i><i class ='variable'>outline</i><i class ='delimiter'>)</i>
+
+
+    <i class ='keyword'>def</i> <i class ='variable'>update_</i><i class ='variable'>yourself</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>assert</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>generator</i>
+        <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+        <i class ='variable'>chip</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>chips</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__c</i><i class ='variable'>hips</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i>
+        <i class ='variable'>tk</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>tk</i>
+        <i class ='comment'># get the red, green, and blue components for all chips</i>
+        <i class ='keyword'>for</i> <i class ='variable'>t</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>generator</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>numchips</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>rrggbb</i> <i class ='delimiter'>=</i> <i class ='variable'>ColorDB</i><i class ='delimiter'>.</i><i class ='variable'>triplet_</i><i class ='variable'>to_</i><i class ='variable'>rrggbb</i><i class ='delimiter'>(</i><i class ='variable'>t</i><i class ='delimiter'>)</i>
+            <i class ='variable'>chips</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>rrggbb</i><i class ='delimiter'>)</i>
+            <i class ='variable'>tred</i><i class ='delimiter'>,</i> <i class ='variable'>tgreen</i><i class ='delimiter'>,</i> <i class ='variable'>tblue</i> <i class ='delimiter'>=</i> <i class ='variable'>t</i>
+            <i class ='keyword'>if</i> <i class ='variable'>tred</i> <i class ='operator'>&lt;=</i> <i class ='variable'>red</i> <i class ='keyword'>and</i> <i class ='variable'>tgreen</i> <i class ='operator'>&lt;=</i> <i class ='variable'>green</i> <i class ='keyword'>and</i> <i class ='variable'>tblue</i> <i class ='operator'>&lt;=</i> <i class ='variable'>blue</i><i class ='delimiter'>:</i>
+                <i class ='variable'>chip</i> <i class ='delimiter'>=</i> <i class ='variable'>i</i>
+            <i class ='variable'>i</i> <i class ='delimiter'>=</i> <i class ='variable'>i</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+        <i class ='comment'># call the raw tcl script</i>
+        <i class ='variable'>colors</i> <i class ='delimiter'>=</i> <i class ='variable'>SPACE</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>chips</i><i class ='delimiter'>)</i>
+        <i class ='variable'>tk</i><i class ='delimiter'>.</i><i class ='variable'>eval</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;setcolor %s {%s}&#39;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='hexadecimal'>_</i><i class ='variable'>w</i><i class ='delimiter'>,</i> <i class ='variable'>colors</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># move the arrows around</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>trackarrow</i><i class ='delimiter'>(</i><i class ='variable'>chip</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>label</i><i class ='delimiter'>,</i> <i class ='variable'>generator</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__ca</i><i class ='variable'>nvas</i><i class ='delimiter'>.</i><i class ='variable'>itemconfigure</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>label</i><i class ='delimiter'>,</i> <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='variable'>label</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>generator</i> <i class ='delimiter'>=</i> <i class ='variable'>generator</i>
+
+
+<i class ='keyword'>class</i> <i class ='variable'>StripViewer</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>master</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i> <i class ='delimiter'>=</i> <i class ='variable'>switchboard</i>
+        <i class ='variable'>optiondb</i> <i class ='delimiter'>=</i> <i class ='variable'>switchboard</i><i class ='delimiter'>.</i><i class ='variable'>optiondb</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='comment'># create a frame inside the master.</i>
+        <i class ='variable'>frame</i> <i class ='delimiter'>=</i> <i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>master</i><i class ='delimiter'>,</i> <i class ='variable'>relief</i><i class ='delimiter'>=</i><i class ='variable'>RAISED</i><i class ='delimiter'>,</i> <i class ='variable'>borderwidth</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>)</i>
+        <i class ='variable'>frame</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>columnspan</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;NSEW&#39;</i><i class ='delimiter'>)</i>
+        <i class ='comment'># create the options to be used later</i>
+        <i class ='variable'>uwd</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>uwdvar</i> <i class ='delimiter'>=</i> <i class ='variable'>BooleanVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>uwd</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>optiondb</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;UPWHILEDRAG&#39;</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>hexp</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>hexpvar</i> <i class ='delimiter'>=</i> <i class ='variable'>BooleanVar</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>hexp</i><i class ='delimiter'>.</i><i class ='datatype'>set</i><i class ='delimiter'>(</i><i class ='variable'>optiondb</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;HEXSTRIP&#39;</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='comment'># create the red, green, blue strips inside their own frame</i>
+        <i class ='variable'>frame1</i> <i class ='delimiter'>=</i> <i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>frame</i><i class ='delimiter'>)</i>
+        <i class ='variable'>frame1</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='variable'>YES</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>BOTH</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>reds</i> <i class ='delimiter'>=</i> <i class ='variable'>StripWidget</i><i class ='delimiter'>(</i><i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>frame1</i><i class ='delimiter'>,</i>
+                                  <i class ='variable'>generator</i><i class ='delimiter'>=</i><i class ='variable'>constant_</i><i class ='variable'>cyan_</i><i class ='variable'>generator</i><i class ='delimiter'>,</i>
+                                  <i class ='variable'>axis</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i>
+                                  <i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Red Variations&#39;</i><i class ='delimiter'>,</i>
+                                  <i class ='variable'>uwdvar</i><i class ='delimiter'>=</i><i class ='variable'>uwd</i><i class ='delimiter'>,</i> <i class ='variable'>hexvar</i><i class ='delimiter'>=</i><i class ='variable'>hexp</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>greens</i> <i class ='delimiter'>=</i> <i class ='variable'>StripWidget</i><i class ='delimiter'>(</i><i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>frame1</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>generator</i><i class ='delimiter'>=</i><i class ='variable'>constant_</i><i class ='variable'>magenta_</i><i class ='variable'>generator</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>axis</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Green Variations&#39;</i><i class ='delimiter'>,</i>
+                                    <i class ='variable'>uwdvar</i><i class ='delimiter'>=</i><i class ='variable'>uwd</i><i class ='delimiter'>,</i> <i class ='variable'>hexvar</i><i class ='delimiter'>=</i><i class ='variable'>hexp</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>lues</i> <i class ='delimiter'>=</i> <i class ='variable'>StripWidget</i><i class ='delimiter'>(</i><i class ='variable'>switchboard</i><i class ='delimiter'>,</i> <i class ='variable'>frame1</i><i class ='delimiter'>,</i>
+                                   <i class ='variable'>generator</i><i class ='delimiter'>=</i><i class ='variable'>constant_</i><i class ='variable'>yellow_</i><i class ='variable'>generator</i><i class ='delimiter'>,</i>
+                                   <i class ='variable'>axis</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>,</i>
+                                   <i class ='variable'>label</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Blue Variations&#39;</i><i class ='delimiter'>,</i>
+                                   <i class ='variable'>uwdvar</i><i class ='delimiter'>=</i><i class ='variable'>uwd</i><i class ='delimiter'>,</i> <i class ='variable'>hexvar</i><i class ='delimiter'>=</i><i class ='variable'>hexp</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># create a frame to contain the controls</i>
+        <i class ='variable'>frame2</i> <i class ='delimiter'>=</i> <i class ='variable'>Frame</i><i class ='delimiter'>(</i><i class ='variable'>frame</i><i class ='delimiter'>)</i>
+        <i class ='variable'>frame2</i><i class ='delimiter'>.</i><i class ='variable'>pack</i><i class ='delimiter'>(</i><i class ='variable'>expand</i><i class ='delimiter'>=</i><i class ='variable'>YES</i><i class ='delimiter'>,</i> <i class ='variable'>fill</i><i class ='delimiter'>=</i><i class ='variable'>BOTH</i><i class ='delimiter'>)</i>
+        <i class ='variable'>frame2</i><i class ='delimiter'>.</i><i class ='variable'>columnconfigure</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>weight</i><i class ='delimiter'>=</i><i class ='integer'>20</i><i class ='delimiter'>)</i>
+        <i class ='variable'>frame2</i><i class ='delimiter'>.</i><i class ='variable'>columnconfigure</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>weight</i><i class ='delimiter'>=</i><i class ='integer'>20</i><i class ='delimiter'>)</i>
+
+        <i class ='variable'>padx</i> <i class ='delimiter'>=</i> <i class ='integer'>8</i>
+
+        <i class ='comment'># create the black button</i>
+        <i class ='variable'>blackbtn</i> <i class ='delimiter'>=</i> <i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>frame2</i><i class ='delimiter'>,</i>
+                          <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Black&#39;</i><i class ='delimiter'>,</i>
+                          <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>toblack</i><i class ='delimiter'>)</i>
+        <i class ='variable'>blackbtn</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>rowspan</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>,</i> <i class ='variable'>padx</i><i class ='delimiter'>=</i><i class ='variable'>padx</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># create the controls</i>
+        <i class ='variable'>uwdbtn</i> <i class ='delimiter'>=</i> <i class ='variable'>Checkbutton</i><i class ='delimiter'>(</i><i class ='variable'>frame2</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Update while dragging&#39;</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>variable</i><i class ='delimiter'>=</i><i class ='variable'>uwd</i><i class ='delimiter'>)</i>
+        <i class ='variable'>uwdbtn</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+        <i class ='variable'>hexbtn</i> <i class ='delimiter'>=</i> <i class ='variable'>Checkbutton</i><i class ='delimiter'>(</i><i class ='variable'>frame2</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;Hexadecimal&#39;</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>variable</i><i class ='delimiter'>=</i><i class ='variable'>hexp</i><i class ='delimiter'>,</i>
+                             <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>togglehex</i><i class ='delimiter'>)</i>
+        <i class ='variable'>hexbtn</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>1</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='variable'>W</i><i class ='delimiter'>)</i>
+
+        <i class ='comment'># create the white button</i>
+        <i class ='variable'>whitebtn</i> <i class ='delimiter'>=</i> <i class ='variable'>Button</i><i class ='delimiter'>(</i><i class ='variable'>frame2</i><i class ='delimiter'>,</i>
+                          <i class ='variable'>text</i><i class ='delimiter'>=</i><i class ='charlist'>&#39;White&#39;</i><i class ='delimiter'>,</i>
+                          <i class ='variable'>command</i><i class ='delimiter'>=</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>towhite</i><i class ='delimiter'>)</i>
+        <i class ='variable'>whitebtn</i><i class ='delimiter'>.</i><i class ='variable'>grid</i><i class ='delimiter'>(</i><i class ='variable'>row</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>column</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>rowspan</i><i class ='delimiter'>=</i><i class ='integer'>2</i><i class ='delimiter'>,</i> <i class ='variable'>sticky</i><i class ='delimiter'>=</i><i class ='variable'>E</i><i class ='delimiter'>,</i> <i class ='variable'>padx</i><i class ='delimiter'>=</i><i class ='variable'>padx</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>update_</i><i class ='variable'>yourself</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>reds</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>yourself</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>greens</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>yourself</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__b</i><i class ='variable'>lues</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>yourself</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>togglehex</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>current_</i><i class ='variable'>rgb</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>yourself</i><i class ='delimiter'>(</i><i class ='variable'>red</i><i class ='delimiter'>,</i> <i class ='variable'>green</i><i class ='delimiter'>,</i> <i class ='variable'>blue</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>toblack</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>views</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='integer'>0</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>towhite</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>event</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>sb</i><i class ='delimiter'>.</i><i class ='variable'>update_</i><i class ='variable'>views</i><i class ='delimiter'>(</i><i class ='integer'>255</i><i class ='delimiter'>,</i> <i class ='integer'>255</i><i class ='delimiter'>,</i> <i class ='integer'>255</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>save_</i><i class ='variable'>options</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>optiondb</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>optiondb</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;UPWHILEDRAG&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>uwdvar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>optiondb</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;HEXSTRIP&#39;</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='hexadecimal'>__</i><i class ='variable'>hexpvar</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

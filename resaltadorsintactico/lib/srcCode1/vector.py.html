@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+A demonstration of classes and their special methods in Python.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>Vec</i><i class ='delimiter'>:</i>
+    <i class ='multilineComment'>&quot;&quot;&quot;A simple vector class.
+
+    Instances of the Vec class can be constructed from numbers
+
+    &gt;&gt;&gt; a = Vec(1, 2, 3)
+    &gt;&gt;&gt; b = Vec(3, 2, 1)
+
+    added
+    &gt;&gt;&gt; a + b
+    Vec(4, 4, 4)
+
+    subtracted
+    &gt;&gt;&gt; a - b
+    Vec(-2, 0, 2)
+
+    and multiplied by a scalar on the left
+    &gt;&gt;&gt; 3.0 * a
+    Vec(3.0, 6.0, 9.0)
+
+    or on the right
+    &gt;&gt;&gt; a * 3.0
+    Vec(3.0, 6.0, 9.0)
+
+    and dot product
+    &gt;&gt;&gt; a.dot(b)
+    10
+
+    and printed in vector notation
+    &gt;&gt;&gt; print(a)
+    &lt;1 2 3&gt;
+
+    &quot;&quot;&quot;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='operator'>*</i><i class ='variable'>v</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='datatype'>list</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+
+    <i class ='delimiter'>@</i><i class ='variable'>classmethod</i>
+    <i class ='keyword'>def</i> <i class ='variable'>fromlist</i><i class ='delimiter'>(</i><i class ='variable'>cls</i><i class ='delimiter'>,</i> <i class ='variable'>v</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>,</i> <i class ='datatype'>list</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>TypeError</i>
+        <i class ='variable'>inst</i> <i class ='delimiter'>=</i> <i class ='variable'>cls</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>inst</i><i class ='delimiter'>.</i><i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='variable'>v</i>
+        <i class ='keyword'>return</i> <i class ='variable'>inst</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>repr__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39;, &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>f</i><i class ='charlist'>&#39;{type(self).__name__}({args})&#39;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>str__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>components</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='delimiter'>[</i><i class ='datatype'>str</i><i class ='delimiter'>(</i><i class ='variable'>x</i><i class ='delimiter'>)</i> <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i> <i class ='variable'>f</i><i class ='charlist'>&#39;&lt;{components}&gt;&#39;</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>len__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>getitem__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>i</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>return</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>]</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__add__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Element-wise addition&quot;</i>
+        <i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>x</i> <i class ='operator'>+</i> <i class ='variable'>y</i> <i class ='keyword'>for</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='variable'>Vec</i><i class ='delimiter'>.</i><i class ='variable'>fromlist</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>sub__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Element-wise subtraction&quot;</i>
+        <i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>x</i> <i class ='variable'>-</i> <i class ='variable'>y</i> <i class ='keyword'>for</i> <i class ='variable'>x</i><i class ='delimiter'>,</i> <i class ='variable'>y</i> <i class ='keyword'>in</i> <i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>)</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='variable'>Vec</i><i class ='delimiter'>.</i><i class ='variable'>fromlist</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>mul__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>scalar</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Multiply by scalar&quot;</i>
+        <i class ='variable'>v</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='variable'>x</i> <i class ='operator'>*</i> <i class ='variable'>scalar</i> <i class ='keyword'>for</i> <i class ='variable'>x</i> <i class ='keyword'>in</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>v</i><i class ='delimiter'>]</i>
+        <i class ='keyword'>return</i> <i class ='variable'>Vec</i><i class ='delimiter'>.</i><i class ='variable'>fromlist</i><i class ='delimiter'>(</i><i class ='variable'>v</i><i class ='delimiter'>)</i>
+
+    <i class ='hexadecimal'>__</i><i class ='variable'>rmul__</i> <i class ='delimiter'>=</i> <i class ='hexadecimal'>__</i><i class ='variable'>mul__</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>dot</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='string'>&quot;Vector dot product&quot;</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>isinstance</i><i class ='delimiter'>(</i><i class ='variable'>other</i><i class ='delimiter'>,</i> <i class ='variable'>Vec</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>raise</i> <i class ='variable'>TypeError</i>
+        <i class ='keyword'>return</i> <i class ='variable'>sum</i><i class ='delimiter'>(</i><i class ='variable'>x_</i><i class ='variable'>i</i> <i class ='operator'>*</i> <i class ='variable'>y_</i><i class ='variable'>i</i> <i class ='keyword'>for</i> <i class ='delimiter'>(</i><i class ='variable'>x_</i><i class ='variable'>i</i><i class ='delimiter'>,</i> <i class ='variable'>y_</i><i class ='variable'>i</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>zip</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>other</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>doctest</i>
+    <i class ='variable'>doctest</i><i class ='delimiter'>.</i><i class ='variable'>testmod</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+<i class ='string'>&quot;&quot;</i><i class ='string'>&quot; Utility for parsing HTML entity definitions available from:
+
+      http://www.w3.org/ as e.g.
+      http://www.w3.org/TR/REC-html40/HTMLlat1.ent
+
+    Input is read from stdin, output is written to stdout in form of a
+    Python snippet defining a dictionary &quot;</i><i class ='variable'>entitydefs</i><i class ='string'>&quot; mapping literal
+    entity name to character or numeric entity.
+
+    Marc-Andre Lemburg, mal@lemburg.com, 1999.
+    Use as you like. NO WARRANTIES.
+
+&quot;</i><i class ='string'>&quot;&quot;</i>
+<i class ='keyword'>import</i> <i class ='variable'>re</i><i class ='delimiter'>,</i><i class ='variable'>sys</i>
+
+<i class ='variable'>entityRE</i> <i class ='delimiter'>=</i> <i class ='variable'>re</i><i class ='delimiter'>.</i><i class ='variable'>compile</i><i class ='delimiter'>(</i><i class ='variable'>r</i><i class ='charlist'>&#39;&lt;!ENTITY +(\w+) +CDATA +&quot;([^&quot;]+)&quot; +-- +((?:.|\n)+?) *--&gt;&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>parse</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i><i class ='variable'>pos</i><i class ='delimiter'>=</i><i class ='integer'>0</i><i class ='delimiter'>,</i><i class ='variable'>endpos</i><i class ='delimiter'>=</i><i class ='keyword'>None</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>pos</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+    <i class ='keyword'>if</i> <i class ='variable'>endpos</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i><i class ='delimiter'>:</i>
+        <i class ='variable'>endpos</i> <i class ='delimiter'>=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+    <i class ='variable'>d</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+    <i class ='keyword'>while</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>entityRE</i><i class ='delimiter'>.</i><i class ='variable'>search</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>,</i><i class ='variable'>pos</i><i class ='delimiter'>,</i><i class ='variable'>endpos</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>m</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>break</i>
+        <i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='variable'>charcode</i><i class ='delimiter'>,</i><i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>groups</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>d</i><i class ='delimiter'>[</i><i class ='variable'>name</i><i class ='delimiter'>]</i> <i class ='delimiter'>=</i> <i class ='variable'>charcode</i><i class ='delimiter'>,</i><i class ='variable'>comment</i>
+        <i class ='variable'>pos</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>end</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>return</i> <i class ='variable'>d</i>
+
+<i class ='keyword'>def</i> <i class ='variable'>writefile</i><i class ='delimiter'>(</i><i class ='variable'>f</i><i class ='delimiter'>,</i><i class ='variable'>defs</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;entitydefs = {\n&quot;</i><i class ='delimiter'>)</i>
+    <i class ='variable'>items</i> <i class ='delimiter'>=</i> <i class ='variable'>sorted</i><i class ='delimiter'>(</i><i class ='variable'>defs</i><i class ='delimiter'>.</i><i class ='variable'>items</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>for</i> <i class ='variable'>name</i><i class ='delimiter'>,</i> <i class ='delimiter'>(</i><i class ='variable'>charcode</i><i class ='delimiter'>,</i><i class ='variable'>comment</i><i class ='delimiter'>)</i> <i class ='keyword'>in</i> <i class ='variable'>items</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='variable'>charcode</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>2</i><i class ='delimiter'>]</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;&amp;#&#39;</i><i class ='delimiter'>:</i>
+            <i class ='variable'>code</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>charcode</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>:</i><i class ='variable'>-1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='variable'>code</i> <i class ='operator'>&lt;</i> <i class ='integer'>256</i><i class ='delimiter'>:</i>
+                <i class ='variable'>charcode</i> <i class ='delimiter'>=</i> <i class ='rstring'>r&quot;&#39;\%o&#39;&quot;</i> <i class ='operator'>%</i> <i class ='variable'>code</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>charcode</i> <i class ='delimiter'>=</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>charcode</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>charcode</i> <i class ='delimiter'>=</i> <i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>charcode</i><i class ='delimiter'>)</i>
+        <i class ='variable'>comment</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>comment</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+        <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='string'>&quot;    &#39;%s&#39;:\t%s,  \t# %s\n&quot;</i> <i class ='operator'>%</i> <i class ='delimiter'>(</i><i class ='variable'>name</i><i class ='delimiter'>,</i><i class ='variable'>charcode</i><i class ='delimiter'>,</i><i class ='variable'>comment</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i>
+    <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>write</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\n}\n&#39;</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;__main__&#39;</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>infile</i><i class ='delimiter'>:</i>
+            <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>infile</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+    <i class ='variable'>defs</i> <i class ='delimiter'>=</i> <i class ='variable'>parse</i><i class ='delimiter'>(</i><i class ='variable'>text</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='integer'>2</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>with</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>2</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i><i class ='charlist'>&#39;w&#39;</i><i class ='delimiter'>)</i> <i class ='keyword'>as</i> <i class ='variable'>outfile</i><i class ='delimiter'>:</i>
+            <i class ='variable'>writefile</i><i class ='delimiter'>(</i><i class ='variable'>outfile</i><i class ='delimiter'>,</i> <i class ='variable'>defs</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+        <i class ='variable'>writefile</i><i class ='delimiter'>(</i><i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdout</i><i class ='delimiter'>,</i> <i class ='variable'>defs</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>

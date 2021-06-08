@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+  <head>
+    <title>Resaltador sitactico python</title>
+    <link rel='stylesheet' href='tags.css'>
+  </head>
+  <body>
+    <pre>
+    <code>
+
+  <i class ='comment'>#!/usr/bin/env python3</i>
+
+<i class ='multilineComment'>&quot;&quot;&quot;
+Markov chain simulation of words or characters.
+&quot;&quot;&quot;</i>
+
+<i class ='keyword'>class</i> <i class ='variable'>Markov</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>def</i> <i class ='hexadecimal'>__</i><i class ='variable'>init__</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>histsize</i><i class ='delimiter'>,</i> <i class ='variable'>choice</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>histsize</i> <i class ='delimiter'>=</i> <i class ='variable'>histsize</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>choice</i> <i class ='delimiter'>=</i> <i class ='variable'>choice</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>trans</i> <i class ='delimiter'>=</i> <i class ='delimiter'>{</i><i class ='delimiter'>}</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>state</i><i class ='delimiter'>,</i> <i class ='variable'>next</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>trans</i><i class ='delimiter'>.</i><i class ='variable'>setdefault</i><i class ='delimiter'>(</i><i class ='variable'>state</i><i class ='delimiter'>,</i> <i class ='delimiter'>[</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i><i class ='delimiter'>.</i><i class ='variable'>append</i><i class ='delimiter'>(</i><i class ='variable'>next</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>put</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>histsize</i>
+        <i class ='variable'>add</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>add</i>
+        <i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='keyword'>None</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>[</i><i class ='delimiter'>:</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>for</i> <i class ='variable'>i</i> <i class ='keyword'>in</i> <i class ='datatype'>range</i><i class ='delimiter'>(</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>[</i><i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>i-n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='variable'>seq</i><i class ='delimiter'>[</i><i class ='variable'>i</i><i class ='delimiter'>:</i><i class ='variable'>i</i><i class ='operator'>+</i><i class ='integer'>1</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='variable'>add</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>[</i><i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='variable'>-n</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>,</i> <i class ='keyword'>None</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>def</i> <i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='variable'>self</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+        <i class ='variable'>choice</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>choice</i>
+        <i class ='variable'>trans</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>trans</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='variable'>self</i><i class ='delimiter'>.</i><i class ='variable'>histsize</i>
+        <i class ='variable'>seq</i> <i class ='delimiter'>=</i> <i class ='variable'>choice</i><i class ='delimiter'>(</i><i class ='variable'>trans</i><i class ='delimiter'>[</i><i class ='keyword'>None</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+            <i class ='variable'>subseq</i> <i class ='delimiter'>=</i> <i class ='variable'>seq</i><i class ='delimiter'>[</i><i class ='variable'>max</i><i class ='delimiter'>(</i><i class ='integer'>0</i><i class ='delimiter'>,</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>seq</i><i class ='delimiter'>)</i><i class ='variable'>-n</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+            <i class ='variable'>options</i> <i class ='delimiter'>=</i> <i class ='variable'>trans</i><i class ='delimiter'>[</i><i class ='variable'>subseq</i><i class ='delimiter'>]</i>
+            <i class ='variable'>next</i> <i class ='delimiter'>=</i> <i class ='variable'>choice</i><i class ='delimiter'>(</i><i class ='variable'>options</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>next</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>break</i>
+            <i class ='variable'>seq</i> <i class ='delimiter'>+=</i> <i class ='variable'>next</i>
+        <i class ='keyword'>return</i> <i class ='variable'>seq</i>
+
+
+<i class ='keyword'>def</i> <i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+    <i class ='keyword'>import</i> <i class ='variable'>sys</i><i class ='delimiter'>,</i> <i class ='variable'>random</i><i class ='delimiter'>,</i> <i class ='variable'>getopt</i>
+    <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='variable'>opts</i><i class ='delimiter'>,</i> <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>getopt</i><i class ='delimiter'>(</i><i class ='variable'>args</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;0123456789cdwq&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>getopt</i><i class ='delimiter'>.</i><i class ='variable'>error</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Usage: %s [-#] [-cddqw] [file] ...&#39;</i> <i class ='operator'>%</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>argv</i><i class ='delimiter'>[</i><i class ='integer'>0</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Options:&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-#: 1-digit history size (default 2)&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-c: characters (default)&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-w: words&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-d: more debugging output&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;-q: no debugging output&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Input files (default stdin) are split in paragraphs&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;separated blank lines and each paragraph is split&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;in words by whitespace, then reconcatenated with&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;exactly one space separating words.&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Output consists of paragraphs separated by blank&#39;</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;lines, where lines are no longer than 72 characters.&#39;</i><i class ='delimiter'>)</i>
+        <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>exit</i><i class ='delimiter'>(</i><i class ='integer'>2</i><i class ='delimiter'>)</i>
+    <i class ='variable'>histsize</i> <i class ='delimiter'>=</i> <i class ='integer'>2</i>
+    <i class ='variable'>do_</i><i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+    <i class ='variable'>debug</i> <i class ='delimiter'>=</i> <i class ='integer'>1</i>
+    <i class ='keyword'>for</i> <i class ='variable'>o</i><i class ='delimiter'>,</i> <i class ='variable'>a</i> <i class ='keyword'>in</i> <i class ='variable'>opts</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>if</i> <i class ='charlist'>&#39;-0&#39;</i> <i class ='operator'>&lt;=</i> <i class ='variable'>o</i> <i class ='operator'>&lt;=</i> <i class ='charlist'>&#39;-9&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>histsize</i> <i class ='delimiter'>=</i> <i class ='datatype'>int</i><i class ='delimiter'>(</i><i class ='variable'>o</i><i class ='delimiter'>[</i><i class ='integer'>1</i><i class ='delimiter'>:</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-c&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>do_</i><i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='keyword'>False</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-d&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>debug</i> <i class ='delimiter'>+=</i> <i class ='integer'>1</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-q&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>debug</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='keyword'>if</i> <i class ='variable'>o</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-w&#39;</i><i class ='delimiter'>:</i> <i class ='variable'>do_</i><i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='keyword'>True</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+        <i class ='variable'>args</i> <i class ='delimiter'>=</i> <i class ='delimiter'>[</i><i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>]</i>
+
+    <i class ='variable'>m</i> <i class ='delimiter'>=</i> <i class ='variable'>Markov</i><i class ='delimiter'>(</i><i class ='variable'>histsize</i><i class ='delimiter'>,</i> <i class ='variable'>random</i><i class ='delimiter'>.</i><i class ='variable'>choice</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>try</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>filename</i> <i class ='keyword'>in</i> <i class ='variable'>args</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>filename</i> <i class ='operator'>==</i> <i class ='charlist'>&#39;-&#39;</i><i class ='delimiter'>:</i>
+                <i class ='variable'>f</i> <i class ='delimiter'>=</i> <i class ='variable'>sys</i><i class ='delimiter'>.</i><i class ='variable'>stdin</i>
+                <i class ='keyword'>if</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>isatty</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+                    <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Sorry, need stdin from file&#39;</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>continue</i>
+            <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                <i class ='variable'>f</i> <i class ='delimiter'>=</i> <i class ='variable'>open</i><i class ='delimiter'>(</i><i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;r&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>with</i> <i class ='variable'>f</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>debug</i><i class ='delimiter'>:</i> <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;processing&#39;</i><i class ='delimiter'>,</i> <i class ='variable'>filename</i><i class ='delimiter'>,</i> <i class ='charlist'>&#39;...&#39;</i><i class ='delimiter'>)</i>
+                <i class ='variable'>text</i> <i class ='delimiter'>=</i> <i class ='variable'>f</i><i class ='delimiter'>.</i><i class ='variable'>read</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+            <i class ='variable'>paralist</i> <i class ='delimiter'>=</i> <i class ='variable'>text</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;\n\n&#39;</i><i class ='delimiter'>)</i>
+            <i class ='keyword'>for</i> <i class ='variable'>para</i> <i class ='keyword'>in</i> <i class ='variable'>paralist</i><i class ='delimiter'>:</i>
+                <i class ='keyword'>if</i> <i class ='variable'>debug</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i> <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;feeding ...&#39;</i><i class ='delimiter'>)</i>
+                <i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='variable'>para</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='keyword'>if</i> <i class ='variable'>words</i><i class ='delimiter'>:</i>
+                    <i class ='keyword'>if</i> <i class ='variable'>do_</i><i class ='variable'>words</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='datatype'>tuple</i><i class ='delimiter'>(</i><i class ='variable'>words</i><i class ='delimiter'>)</i>
+                    <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+                        <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>.</i><i class ='variable'>join</i><i class ='delimiter'>(</i><i class ='variable'>words</i><i class ='delimiter'>)</i>
+                    <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>put</i><i class ='delimiter'>(</i><i class ='variable'>data</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>except</i> <i class ='variable'>KeyboardInterrupt</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;Interrupted -- continue with data read so far&#39;</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>if</i> <i class ='keyword'>not</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>trans</i><i class ='delimiter'>:</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;No valid input files&#39;</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>return</i>
+    <i class ='keyword'>if</i> <i class ='variable'>debug</i><i class ='delimiter'>:</i> <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;done.&#39;</i><i class ='delimiter'>)</i>
+
+    <i class ='keyword'>if</i> <i class ='variable'>debug</i> <i class ='operator'>&gt;</i> <i class ='integer'>1</i><i class ='delimiter'>:</i>
+        <i class ='keyword'>for</i> <i class ='variable'>key</i> <i class ='keyword'>in</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>trans</i><i class ='delimiter'>.</i><i class ='variable'>keys</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>key</i> <i class ='keyword'>is</i> <i class ='keyword'>None</i> <i class ='keyword'>or</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>)</i> <i class ='operator'>&lt;</i> <i class ='variable'>histsize</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='variable'>key</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>trans</i><i class ='delimiter'>[</i><i class ='variable'>key</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>histsize</i> <i class ='operator'>==</i> <i class ='integer'>0</i><i class ='delimiter'>:</i> <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>repr</i><i class ='delimiter'>(</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>)</i><i class ='delimiter'>,</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>trans</i><i class ='delimiter'>[</i><i class ='charlist'>&#39;&#39;</i><i class ='delimiter'>]</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+    <i class ='keyword'>while</i> <i class ='keyword'>True</i><i class ='delimiter'>:</i>
+        <i class ='variable'>data</i> <i class ='delimiter'>=</i> <i class ='variable'>m</i><i class ='delimiter'>.</i><i class ='variable'>get</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='keyword'>if</i> <i class ='variable'>do_</i><i class ='variable'>words</i><i class ='delimiter'>:</i>
+            <i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i>
+        <i class ='keyword'>else</i><i class ='delimiter'>:</i>
+            <i class ='variable'>words</i> <i class ='delimiter'>=</i> <i class ='variable'>data</i><i class ='delimiter'>.</i><i class ='variable'>split</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+        <i class ='variable'>limit</i> <i class ='delimiter'>=</i> <i class ='integer'>72</i>
+        <i class ='keyword'>for</i> <i class ='variable'>w</i> <i class ='keyword'>in</i> <i class ='variable'>words</i><i class ='delimiter'>:</i>
+            <i class ='keyword'>if</i> <i class ='variable'>n</i> <i class ='operator'>+</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>)</i> <i class ='operator'>&gt;</i> <i class ='variable'>limit</i><i class ='delimiter'>:</i>
+                <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+                <i class ='variable'>n</i> <i class ='delimiter'>=</i> <i class ='integer'>0</i>
+            <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>,</i> <i class ='variable'>end</i><i class ='delimiter'>=</i><i class ='charlist'>&#39; &#39;</i><i class ='delimiter'>)</i>
+            <i class ='variable'>n</i> <i class ='delimiter'>+=</i> <i class ='variable'>len</i><i class ='delimiter'>(</i><i class ='variable'>w</i><i class ='delimiter'>)</i> <i class ='operator'>+</i> <i class ='integer'>1</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+        <i class ='print'>print</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+<i class ='keyword'>if</i> <i class ='hexadecimal'>__</i><i class ='variable'>name__</i> <i class ='operator'>==</i> <i class ='string'>&quot;__main__&quot;</i><i class ='delimiter'>:</i>
+    <i class ='variable'>test</i><i class ='delimiter'>(</i><i class ='delimiter'>)</i>
+
+      </code>
+      </pre>
+    </body>
+  </html>
